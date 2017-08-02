@@ -1,0 +1,25 @@
+- Generate method comments: /** + enter
+
+IDEA configuration:
+1. Right Bottom corner->Project Default->Project Structure->Project SDK->JDK7
+2. if #1 cannot find JDK7. SDKs -> select JDK home
+3. Maven->Maven home directory->MAVEN_HOME
+4. Configure->keymap->shortcut->Eclipse
+5. Creat from Architype: Maven-webapp-archtype
+6. create java under main, mark as source root
+7. create test and java under test, mark as test source root
+# Local Tomcat Server 
+8. Edit Configuration
+9. Tomcat Sever->Local->Tomcat home->tomcat instllation directory
+10. Deployment->artifact->select mmall.war
+11. verify by http://localhost:8080
+
+Git initilization:
+- create repository
+- 
+
+https://www.facebook.com/v2.5/dialog/oauth?
+client_id=865281030289794
+&response_type=code
+&redirect_uri=http%3A%2F%2Fatwjsw.s1.natapp.cc%2Fconnect%2Ffacebook&
+scope=user_posts&state=787b0f23-f420-47f7-b842-c91ac1f58285

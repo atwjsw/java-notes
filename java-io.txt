@@ -1,0 +1,63 @@
+- java文件模型：在硬盘上的文件以byte-byte-byte的形式存储，是数据的集合，打开文件有两种模式“rw”读写，“r“（只读）
+- RandomAccessFile raf = new RandomAccessFile(file, "rw");
+- 文件指针，打开文件时指针在开头pointer=0；
+- raf.write(int) //只写一个字节（后8位），同时指针指向下一个位置
+- int b = raf.read() -> 读一个字节
+- 文件读写完成以后一定要关闭
+- raf.getFilePointer()
+- raf.write('A'); //只写了一个字节
+- raf.writeInt(i); //可以直接写一个int
+- raf.seek(0); //读文件，必须把指针移到头部
+-  //一次性读取，把文件中的内容都读到字节数组中
+        byte[] buf = new byte[(int)raf.length()];
+        raf.read(buf);
+        System.out.println(Arrays.toString(buf));
+
+IO流
+- 输入、输出流
+- 字节流、字符流 （输入输出可以以字节Byte为单位，也可以以字符为单位（编码需要考虑？））
+1） InputStream, OutputStream抽象类：抽象了应用程序读取-写入数据的方式
+2）EOF = End 读到-1就读到结尾
+3）输入流基本方法
+int b = int.read(); //读取一个字节无符号填充到int低8位。 -1是EOF
+in.read(byte[] buf) //读取数据填充到字节数组buf
+in.read(byte[] buf, int start, int size); //读取数据到字节数据buf,从buf的start位置开始，存放size长度的数据
+4)输出流基本方法
+out.write(int b) 写出一个byte到流，b的低8位
+out.write(byte[] buf) //将buf字节数组都写入到流
+out.write(byte[] buf, int start, int size) //将字节数组buf从start位开始写size长度的字节。
+
+5）FileInputStream 
+- 具体实现了在文件上读取数据 
+6）FileOutputStream 实现了向文件中写出byte数据的方法
+
+7)DataOutputStream/DataInputStream
+对流功能的扩展，可以更加方便的读取int, long, 字符等数据类型
+
+8）BufferedInoutStream&BufferedOutputStream
+这两个流位为IO提供了带缓冲区的操作， 一般打开文件进行写入或读取操作时，都会加上缓冲，提高IO的性能
+
+#字符流
+- java的文本（char）是16位无符号整数，是字符的unicode编码（双字节编码）
+- 文件是byte-byte-byte数据序列
+- 文本文件是文本（char）序列按照某种编码方案（utf-8，utf-16be， gbk）序列化为byte存储
+- 字符流（Reader Writer）
+- 操作的是文本文件
+- 字符的处理方式是一次处理一个字符，字符的底层仍然是基本的字节序列
+- InputStreamReader 完成byte流解析为char流，按照编码解析
+- OutputStreamWriter 提供char流到byte流，按照编码处理。
+
+FileReader/FileWriter
+
+isLetter()
+isDigit()
+isWhitespace()
+toString（）
+isUpperCase()
+isLowerCase()
+toUpperCase()
+toLowerCase()
+
+
+
+

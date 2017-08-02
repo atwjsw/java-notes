@@ -1,0 +1,115 @@
+1. Data Types
+- Hexadecimal
+numbers have a prefix 0x or 0X (for example, 0xCAFE). 
+- Octal numbers have a prefix
+0 (for example, 010 is 8)
+- Starting with Java SE 7, you can write numbers in binary, with a prefix 0b or 0B. For example, 0b1001 is 9. 
+- Also starting with Java SE 7, you can add underscores to
+number literals, such as 1_000_000 (or 0b1111_0100_0010_0100_0000) to denote one million.
+- Values of type char can be expressed as hexadecimal values that run from \u0000 to \uFFFF. For example, \u2122 is the trademark symbol (™) and \u03C0
+is the Greek letter pi (π).
+
+- Java was designed from the ground up to use 16-bit Unicode characters, which was a major advance over other programming languages that used 8-bit characters.
+
+-  A variable name must begin with a letter and must be a sequence of letters or digits. Note that the terms “letter” and “digit” are much broader in Java than in most languages. A letter is defined as 'A'–'Z', 'a'–'z', '_', '$', or any Unicode character that denotes a letter in a language.
+
+- After you declare a variable, you must explicitly initialize it by means of an assignment
+statement—you can never use the value of an uninitialized variable.
+
+- It is probably more common in Java to create a constant so it’s available to multiple methods inside a single class. These are usually called class constants. Set up a
+class constant with the keywords static final.
+
+- Note that integer division by 0 raises an exception, whereas floating-point division by 0 yields an infinite or NaN result.
+
+- The methods in the Math class use the routines in the computer’s floatingpoint unit for fastest performance. If completely predictable results are more important than performance, use the StrictMath class instead
+
+- You cannot cast between boolean values and any numeric type. This convention prevents common errors. In the rare case when you want to convert a boolean value to a number, you can use a conditional expression such as b ? 1 : 0.
+
+- Java SE 5.0 brought back the venerable printf method from the C library. For example, the call System.out.printf("%8.2f", x); //3333.33 the printout contains a leading space and the seven characters
+System.out.printf("Hello, %s. Next year, you'll be %d", name, age);
+
+-Java also offers a labeled break statement that lets you break out of multiple nested loops.
+
+-The BigInteger class implements arbitrary-precision integer arithmetic, and BigDecimal does the same for floating-point numbers.
+
+- the standard Java library contains two separate classes: the Date class, which represents a point in time, and the LocalDate class, which expresses days in the familiar calendar notation.
+- LocalDate.now()
+- LocalDate newYearsEve = LocalDate.of(1999, 12, 31);
+- LocalDate aThousandDaysLater = newYearsEve.plusDays(1000);
+- year = aThousandDaysLater.getYear(); // 2002
+- month = aThousandDaysLater.getMonthValue(); // 09
+- day = aThousandDaysLater.getDayOfMonth(); // 26
+
+- As a rule of thumb, always use clone whenever you need to return a copy of a mutable field.
+public Date getHireDay()
+{
+return (Date) hireDay.clone(); // Ok
+}
+
+- You know that a method can access the private data of the object on which it is invoked. What many people find surprising is that a method can access the private
+data of all objects of its class.
+public boolean equals(Employee other)
+{
+return name.equals(other.name);
+}
+
+- This demonstrates that the Java programming language does not use call by reference for objects. Instead, object references are passed by value.
+
+Here is a summary of what you can and cannot do with method parameters
+• A method cannot modify a parameter of a primitive type (that is, numbers or boolean values).
+• A method can change the state of an object parameter.
+• A method cannot make an object parameter refer to a new object.
+
+- The return type is not part of the method signature. That is, you cannot have two methods with the same names and parameter types but different return types.
+
+- If the first statement of a constructor has the form this(. . .), then the constructor calls another constructor of the same class. Here is a typical example:
+public Employee(double s)
+{
+// calls Employee(String, double)
+this("Employee #" + nextId, s);
+nextId++;
+}
+
+Here is what happens in detail when a constructor is called:
+1. All data fields are initialized to their default values (0, false, or null).
+2. All field initializers and initialization blocks are executed, in the order in which they occur in the class declaration.
+3. If the first line of the constructor calls a second constructor, then the body of the second constructor is executed.
+4. The body of the constructor is executed.
+
+java.util.Random
+int nextInt(int n) 1.2
+returns a random number between 0 and n – 1.
+
+
+Each comment is placed immediately above the feature it describes. A comment starts with a /** and ends with a */.
+Each /** . . . */ documentation comment contains free-form text followed by tags. A tag starts with an @, such as @author or @param.
+
+java.util.Arrays 1.2
+• static boolean equals(type[] a, type[] b)
+
+java.util.Objects 7
+• static boolean equals(Object a, Object b)
+
+To correctly print multidimensional arrays (that is, arrays of arrays), use Arrays.deepToString.
+
+It is possible to provide methods that can be called with a variable number of parameters. (These are sometimes called “varargs” methods.)
+
+for the implementor of printf, the Object... parameter type is exactly the same as Object[]. The compiler needs to transform each call to printf, bundling the parameters into
+an array and autoboxing as necessary:
+System.out.printf("%d %s", n, "widgets"); //==
+System.out.printf("%d %s", new Object[] { new Integer(n), "widgets" } );
+
+The virtual machine manages a unique Class object for each type. Therefore, you can use the == operator to compare class objects. For example: if (e.getClass() == Employee.class) . . .
+
+lambda expressions, a concise way for expressing a block of code that can be executed at a later point in time. Using lambda expressions, you can express code that uses callbacks or variable behavior in an elegant and concise fashion.
+
+methods in an interface are automatically public, fields are always public static final.
+
+- As of Java SE 8, you are allowed to add static methods to interfaces. There was never a technical reason why this should be outlawed. It simply seemed to be against the spirit of interfaces as abstract specifications.
+
+- A lambda expression is a block of code that you can pass around so it can be executed later, once or multiple times.
+
+Up to now, giving someone a block of code hasn’t been easy in Java. You couldn’t just pass code blocks around. Java is an object-oriented language, so you had to construct an object belonging to a class that has a method with the desired code.
+
+- lambda expressions in Java: parameters, the ->
+arrow, and an expression.

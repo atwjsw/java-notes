@@ -1,0 +1,132 @@
+Spring MVC
+
+Machenism
+1. DispatcherServlet as a front controller will intercept http request based on URL pattern (e.g. / or /*.do, /* does not work)
+
+- Typically DispatcherServlet is expected to load beans containing web components such as controllers, view resolvers, and handler mappings. 
+
+- web.xml:
+	<servlet>
+		<description>spring mvc servlet</description>
+		<servlet-name>springMvc</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<init-param>
+			<description>spring mvc configuration file</description>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:spring-mvc.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>springMvc</servlet-name>
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>
+			/WEB-INF/spitter-security.xml
+			classpath:service-context.xml
+			classpath:persistence-context.xml
+			classpath:dataSource-context.xml
+		</param-value>
+<	/context-param>
+
+- spring-mvc.xml: 
+	<!-- #1 处理对静态资源的请求: 所有以rousources开头的请求都会自动由应用程序根目录下的/resources目录提供服务 -->
+	<mvc:resources mapping="/resources/**" location="/resources/" >
+
+	<!-- 由于DispatcherServlet默认创建BeanNameUrlHandlerMapping和DefaultAnnotationHandlerMapping bean, 不需要显示配置MappingHandler，DefaultAnnotationHandlerMapping将请求按@RequestMapping注解进行映射， 还有BeanNameUrlHandlerMapping等等其他的mapping rules  -->
+
+	<!-- #2 激活注解驱动特性: JSR303 校验，信息转换， 地域格式化, 例如数据绑定支持，@NumberFormatannotation支持，@DateTimeFormat支持，@Valid支持，读写XML的支持（JAXB），读写JSON的支持（Jackson）。 -->
+	<mvc:annotation-driven>
+
+	<!-- #3 View Resolver maps logical view name to actual implementation of org.springframework.web.servlet.View -->
+	<!-- 配置InternalResource视图解析器 -->
+	<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
+		<property name="prefix" value="/WEB-INF/views/" />
+		<property name="suffix" value=".jsp" />		
+	</bean>
+
+	<!-- #4 使用ContentNegotiatingViewResolver来选择最适合客户端的表述；使用@ResponseBody注解和各种HttpMethodConverter来实现视图的渲染和HTTP request数据转换为Java Object -->
+
+	<bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+		<property name="mediaTypes">
+			<map>
+				<entry key="json" value="application/json" />
+				<entry key="xml" value="text/xml" />
+				<entry key="htm" value="text/html" />
+			</map>
+		</property>
+		<property name="defaultContentType" value="text/html">
+	</bean>
+
+	<!-- 文件上传配置 -->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="maxUploadSize" value="10485760"/> <!-- 10m -->
+        <property name="maxInMemorySize" value="4096" />
+        <property name="defaultEncoding" value="UTF-8"></property>
+    </bean>
+
+	<!-- 组件自动扫描 -->
+	<context:component-scan base-package="com.atwjsw.*.controller;com.atwjsw.*.*.controller" />	
+
+ 
+- Spring core config is loaded through ContextConfig Listener. ContextLoaderListener is expected to load the other beans in your application. These beans are typically the middle-tier and data-tier components that drive the back end of the application.
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>classpath:spring.xml</param-value>
+	</context-param>
+	<listener>
+		<description>spring context loader listener</description>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+
+- In spring.xml
+	<!-- 激活 @Required @Autowired,JSR250 @PostConstruct @PreDestroy and @Resource等标注 -->
+ 	<context:annotation-config/>
+	
+
+2. Dispatcher servelt ask Request Mapping to analyze requests based on url, http headers(content type, accept...), params etc, and route them to appropriate controller method.
+
+
+3. Conroller obtains the parameters from request, process the request and 
+- using @RequestParam @PathVariable to get parameters and put into domain object to be delivered to service object.
+- validation can be done by using @Valid and validation annoation in domain object. (e.g. @NULL, @NOT NULL, @MAX, @MIN...)
+- most of the business logic is done in service object.
+- service object calls DAO obejct using mybatis or hibernate (how does maybatis and hibernate integrate and work)
+- service object returns convert the domain object into a VO(View Object), for handling data not stored in domain object and db, such as converting date/time, aggregating total etc.
+- for restful stype of web application, service object return a Common Service Response object, warpping the VO and a response status and message.
+- In spring-mvc.xml
+
+- for traditional Spring MVC application, service object will return a VO or domain object, and VO will be put into model object
+
+4. controller returns a logical "view" name and model object to Dispatcher Servlet.
+
+5. DispactherServlet ask ViewResolver to get the real view template
+- ViewResolver is configured in spring web config xml, InteralViewResolver, FreemarkerViewResolver
+- ViewResolver gets the view template using location, prefix, suffix
+- ViewResolver implementations includes ContentNegotiatingViewResolver: 委托给一个或多个视图解析器，选择哪一个取决于请求的内容类型 -->
+	FreeMarkerViewResolver: 查找一个基于Free Marker的模板，视图模板的路径根据加完前缀和后缀的逻辑视图名称来确定
+	InternalResourceViewResolver: 在Web应用程序的War文件中查找视图模板。视图模板的路径根据加完前缀和后缀的逻辑视图名称来确定
+	JasperReportsViewResolver
+	ResourceBundleViewResolver
+	TitleViewResolver
+	UrlBasedViewResolver
+	VelocityLayoutViewResolver
+	VelocityViewResolver
+	XmlViewResolver
+	XsltViewResolver
+- For restful style controller, ContentNegotiatingViewResolver will use diffrent view resolver for different media types depending on the request url's extension and Accept header。
+- Another way to provide restful style support is to use @ResponseBody, Spring will invoke proper MessageConverter based on the request header ACCEPT. No need to declare message converter explicitly.
+
+6. Dispacther ask View object to process the view and put the values into view template.
+- Using a template engine to compose the view, including inserting the domain object value into the view.
+
+7. View object writes the view to reponse object and return to client
+
+
+
+
+

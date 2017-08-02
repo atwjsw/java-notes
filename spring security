@@ -1,0 +1,250 @@
+Chapter#1 - Overview
+
+POJO
+- 基于POJO的轻量级和最小侵入性编程
+
+DI
+- all about loose coupling 依赖注入和面向接口实现松耦合
+- decoupling with interface
+- Wiring in application Context
+- XML (ClassPathXmlApplicationContext)  vs. Java Configuration (@Configuration, @Bean)
+
+AOP
+- all about high cohesion of system services logic (logging, transaction, security)
+- aspects -> logging, transaction, security
+
+Reduce biolderplate codes
+- JDBC，JMS、JNDI和使用REST服务通常也涉及大量的重复代码。
+- JDBCTemplate etc
+
+Bean container
+AnnotationConfigApplicationContext：从一个或多个基于Java的配置类中加载Spring应用上下文。
+AnnotationConfigWebApplicationContext：从一个或多个基于Java的配置类中加载Spring Web应用上下文。
+ClassPathXmlApplicationContext：从"类路径"下的一个或多个XML配置文件中加载上下文定义，把应用上下文的定义文件作为类资源。
+FileSystemXmlapplicationcontext：从"文件系统下"的一个或多个XML配置文件中加载上下文定义。
+XmlWebApplicationContext：从Web应用下的一个或多个XML配置文件中加载上
+下文定义。
+
+Bean lifecycle:
+- 你或许要利用Spring提供的扩展点来自定义bean的创建过程。
+1．Spring对bean进行实例化；
+2．Spring将值和bean的引用注入到bean对应的属性中；
+3．如果bean实现了BeanNameAware接口，Spring将bean的ID传递给setBean-Name()方
+法；
+4．如果bean实现了BeanFactoryAware接口，Spring将调用setBeanFactory()方法，将BeanFactory容器实例传入；
+5．如果bean实现了ApplicationContextAware接口，Spring将调用setApplicationContext()方法，将bean所在的应用上下文的引用传入进来；
+6．如果bean实现了BeanPostProcessor接口，Spring将调用它们的post-ProcessBeforeInitialization()方法；
+7．如果bean实现了InitializingBean接口，Spring将调用它们的afterPropertiesSet()方法。类似地，如果bean使用init-method声明了初始化方法，该方法也会被调用；
+8．如果bean实现了BeanPostProcessor接口，Spring将调用它们的post-ProcessAfterInitialization()方法；
+9．此时，bean已经准备就绪，可以被应用程序使用了，它们将一直驻留在应用上下文中，直到该应用上下文被销毁；
+10．如果bean实现了DisposableBean接口，Spring将调用它的destroy()接口方法。同样，如果bean使用destroy-method声明了销毁方法，该方法也会被调用。
+
+Spring modules:
+- Spring framework + ecosystems (Web services, REST, mobile, NoSQL)
+- Spring framework (20个不同的模块，每个模块会有3个JAR文件（二进制类
+库、源码的JAR文件以及JavaDoc的JAR文件）
+#Core conatiner
+- spring-core/spring-beans: IOC/DI
+- spring-context: accessing object. 
+- spring-context-support: integrating 3rd party libs into a Spring application context for caching (EhCache, Guava, JCache), mailing (JavaMail), scheduling (CommonJ, Quartz) and template engines (FreeMarker, JasperReports, Velocity).
+- spring-expression: Expression language supports setting and getting property values, property assignment, method invocation, accessing the content of arrays, collections and indexers, logical and arithmetic operators, named variables, and retrieval of objects by name from Spring’s IoC container. 
+
+#AOP and Instrumentation
+- spring-aop: provides an AOP Alliance-compliant aspect-oriented programming implementation
+- spring-aspects: integration with AspectJ
+- spring-instrument: provides class instrumentation support and classloader implementations to be used in certain application servers
+
+#Messagging
+- spring-messaging: integration with messaging-based applications
+
+#Data Access/Integration
+- spring-jdbc: JDBC-layer abstraction
+- spring-tx: programmatic and declarative transaction
+- spring-orm: integration layers for popular object-relational mapping APIs, including JPA, JDO, and Hibernate
+- spring-oxm: Object/XML mapping implementations such as JAXB, Castor, XMLBeans, JiBX and XStream
+- spring-jms: producing and consuming messages
+
+#Web
+- spring-web: multipart file upload functionality, initialization of the IoC container using Servlet listeners and a web-oriented application context. HTTP client and the web-related parts of Spring’s remoting support.
+
+- spring-webmvc: Spring’s model-view-controller (MVC) and REST Web Services implementation for web application
+
+- spring-webmvc-portlet: MVC implementation to be used in a Portlet environment
+
+#Test
+spring-test: supports the unit testing and integration testing of Spring components with JUnit or TestNG. loading of Spring ApplicationContexts and caching of those contexts. It also provides mock objects that you can use to test your code in isolation
+
+Spring Portfolio
+- Spring Web Flow: 基于流程的会话式Web应用（可以想一下购物车或者向导功能）提供了支持
+- Spring Web Service: 将Spring bean以声明的方式发布为Web Service
+- Spring Security: 利用Spring AOP，Spring Security为Spring应用提供了声明式的安全机
+- Spring Integration: 提供了多种通用应用集成模式的Spring声明式风格实现
+- Spring Batch: 需要对数据进行大量操作时，没有任何技术可以比批处理更胜任这种场景。
+- Spring data: 不管你使用文档数据库， 如MongoDB， 图数据库， 如Neo4j， 还是传统的关系型数据库，Spring Data都为持久化提供了一种简单的编程模型。 这包括为多种数据库类型提供了一种自动化的Repository机制，它负责为你创建Repository的实现。 相对于NoSQL， 我更喜欢非关系型（ non-relational） 或无模式（ schema-less） 这样的术语。 将这些数据库称之为NoSQL，实际上将问题归因于查询语言， 而不是数据模型。
+- spring social: Spring的一个社交网络扩展模块。帮助你通过REST API连接Spring应用， 其中有些Spring应用可能原本并没有任何社交方面的功能目标。
+-spring mobile: Spring MVC新的扩展模块， 用于支持移动Web应用开发
+-Spring for Android: 提供了Spring RestTemplate的一个可以用于Android应用之中的版本; 与Spring Social协作， 使得原生应用可以通过REST API进行社交网络的连接。
+- spring boot: 依赖于自动配置技术， 它能够消除大部分,甚至是全部Spring配置。 还提供了多个Starter项目，不管你使用Maven还是Gradle，能减少Spring
+工程构建文件的大小。
+
+Chapter#2 - Bean wiring
+- 在Spring中， 对象无需自己查找或创建与其所关联的其他对象。 相反， 容器负责把需要相互协作的对象引用赋予各个对象
+
+2.1 autowiring
+
+三种主要的装配机制：
+- 在XML中进行显式配置。 <bean id="aBean" class="com.atwjsw.bean"...
+- 在Java中进行显式配置: @Configuration @Bean
+- 隐式的bean发现机制和自动装配。 @Autowired @Component @Configuration @ComponentScan
+组件扫描（ component scanning）: 自动发现应用上下文中所创建的bean。
+自动装配（ autowiring） ： Spring自动满足bean之间的依赖。
+
+- 因此Spring将会扫描@ComponentScan注解类的包以及这个包下的所有子包， 查找带有@Component注解的类
+@ComponentScan(basePackages={"soundsystem", "video"})
+@ComponentScan(basePackages={CDplayer.class, DVDPlayer.class})
+
+- @RunWith(SpringJUnit4ClassRunner.class)在测试开始的时候自动创建Spring的应用上下文。 
+- 注解@ContextConfiguration(classes=CDPlayerConfig.class)会告诉它需要在CDPlayerConfig中加载配置。 因为CDPlayerConfig类中包含了@ComponentScan， 因此最终的应用上下文中应该包含CompactDiscbean。
+
+- import static静态导入是JDK1.5中的新特性。一般我们导入一个类都用 import com.....ClassName;而静态导入是这样：import static com.....ClassName.*;这里的多了个static，还有就是类名ClassName后面多了个 .* ，意思是导入这个类里的静态方法。当然，也可以只导入某个静态方法，只要把 .* 换成静态方法名就行了。然后在这个类中，就可以直接用方法名调用静态方法，而不必用ClassName.方法名 的方式来调用。 
+
+- 还有另外一种为bean命名的方式， 这种方式不使用@Component注解， 而是使用Java依赖注入规范（ Java Dependency Injection） 中所提供的@Named注解来为bean设置ID. 如果想为这个bean设置不同的ID， 你所要做的就是将期望的ID作为值传递给@Component注解。 @Component("beanId")
+
+- Bean ID: 尽管我们没有明确地为SgtPeppersbean设置ID， 但Spring会根据类名为其指定一个ID。 具体来讲， 这个bean所给定的ID就是将类名的第一个字母变为小写。
+
+-@Autowired: 
+@Autowired //constructor injection
+public CDplayer(CompactDisc cd) {
+	this.cd = cd;
+}
+
+@Autowired //method injection
+public void insertDisc(CompactDisc cd) {
+	this.cd = cd;
+}
+
+@Autowired //field injection
+private CompactDisc cd;
+
+如果没有匹配的bean， 那么在应用上下文创建的时候， Spring会抛出一个异常。 为了避免异常的出现， 你可以将@Autowired的required属性设置为false
+@Autowired(required=false)
+public CDplayer(CompactDisc cd) {
+	this.cd = cd;
+}
+
+如果有多个bean都能满足依赖关系的话， Spring将会抛出一个异常， 表明没有明确指定要选择哪个bean进行自动装配。
+
+@Inject - @Inject注解来源于Java依赖注入规范
+
+2.2 Wiring by Java codes
+
+- 尽管在很多场景下通过组件扫描和自动装配实现Spring的自动化配置是更为推荐的方式， 但有时候自动化配置的方案行不通，因此需要明确配置Spring。 比如说， 你想要将第三方库中的组件装配到你的应用中， 在这种情况下，是没有办法在它的类上添加@Component和@Autowired注解的， 因此就不能使用自动化装配的方案了。
+
+- 通常会将JavaConfig放到单独的包中， 使它与其他的应用程序逻辑分离开来， 这样对于它的意图就不会产生困惑了。
+
+- 创建JavaConfig类的关键在于为其添加@Configuration注解， @Configuration注解表明这个类是一个配置类，该类应该包含在Spring应用上下文中如何创建bean的细节。
+@Configuration
+public class CDPlayerConfig {
+}
+
+- 要在JavaConfig中声明bean， 我们需要编写一个方法，这个方法会创建所需类型的实例， 然后给这个方法添加@Bean注解。 这里是使用Java来进行描述的， 因此我们可以发挥Java提供的所有功能， 只要最终生成一个CompactDisc实例即可。
+
+@Bean 
+public CompactDisc sgtPeppers() {
+	return new SgtPeppers();
+}
+
+- 默认情况下， bean的ID与带有@Bean注解的方法名是一样的。 在本例中， bean的名字将会是sgtPeppers。 如果你想为其设置成一个不同的名字的话， 那么可以重命名该方法， 也可
+以通过name属性指定一个不同的名字
+
+@Bean(name="lonelyHeartsClubBand") 
+public CompactDisc sgtPeppers() {
+	return new SgtPeppers();
+}
+
+
+2.2 借助JavaConfig实现注入
+
+@Bean
+public CDPlayer cdPlayer() {
+	return new CDPlayer(sgtPeppers());
+}
+
+@Bean
+public CDPlayer cdPlayer(CompactDisc compactDisc) {
+	return new CDplayer(compactDisc);
+}
+
+
+2.3 通过XML装配bean
+
+在使用XML为Spring装配bean之前， 你需要创建一个新的配置规范。 在使用JavaConfig的时候， 这意味着要创建一个带有@Configuration注解的类， 而在XML配置中， 这意味着要创建一个XML文件， 并且要以<beans>元素为根
+
+<bean id="compactDisc" class="soundsystem.SgtPeppers"/>
+
+在这个简单的<bean>声明中， 我们将bean的类型以字符串的形式设置在了class属性中。 谁能保证设置给class属性的值是真正的类呢？ Spring的XML配置并不能从编译期的类型检查中受益。 即便它所引用的是实际的类型， 如果你重命名了类， 会发生什么呢？
+
+- 借助构造器注入初始化bean
+- <constructor-arg>元素
+<bean id="cdPlayer" class="soundsystem.CDPlayer">
+	<constructor-arg ref="compactDisc" />
+</bean>
+- 使用Spring 3.0所引入的c-命名空间
+<bean id="cdPlayer" class="soundSystem.CDPlayer" c:cd-ref="compactDisc" />
+
+- 将字面量注入到构造器中
+<constructor-arg value="The Beatles" />
+<c:_artities="The Beatles" />
+
+- 属性注入
+
+@Autowired
+public void setCompactDisc(CompactDisc compactDisc) {
+	this.compactDisc = compactDisc;
+}
+
+<bean od="cdPlayer" class="soundsystem.CDPlayer">
+	<property name="compactDisc" ref="compactDisc" />
+</bean>
+
+<bean id="cdPlayer" class="soundsystem.CDPlayer" p:compactDisc-ref="compactDisc" />
+
+- util-命名空间中的元素
+util:list 建一个java.util.List类型的bean，其中包含值或引用
+util:map 创建一个java.util.Map类型的bean，其中包含值或引用
+。。。
+
+2.4 Import and Hybrid config
+@Configuration
+@Import(CDConfig.class)
+public class CDPlayerConfig{
+	...
+}
+
+- 在JavaConfig中引用XML配置
+
+@Configuration
+@Import(CDPlayerConfig.class)
+@ImportResource("classpath:cd-config.xml")
+public class SoundSystemConfig {
+	
+}
+
+- 在XML配置中引用JavaConfig
+
+Chapter#3 Advanced wiring
+Spring为环境相关的bean所提供的解决方案其实与构建时的方案没有太大的差别。当然，在这个过程中需要根据环境决定该创建哪个bean和不创建哪个bean。不过Spring并不是在构建
+的时候做出这样的决策，而是等到运行时再来确定。这样的结果就是同一个部署单元（可能会是WAR文件）能够适用于所有的环境，没有必要进行重新构建。
+
+- Bean profile
+
+
+
+
+spring security
+
+- Spring Security是为基于Spring的应用程序提供声明式安全保护的安全性框架
+
+- 使用Servlet规范中的Filter保护Web请求并限制URL级别的访问。
+
+- 使用Spring AOP保护方法调用

@@ -1,0 +1,278 @@
+Spring MVC
+
+1. Simple
+@Controller
+@ResponseBody
+@RequestMapping("/user")
+@RequestMapping(value="/simple/revisited", method=RequestMethod.GET, headers="Accept=text/plain")
+
+2. RequestMapping
+- Spring maps request to controller method by combination of data of Http Request. value(path), method/RequestMethod(HTTP Verb GET/POST...), params(foo=bar), headers, consumes(Content-Type)), produces(Accept))
+
+@RequestMapping("/mapping/path")
+@RequestMapping(value="/mapping/path/*", method=RequestMethod.GET)
+@RequestMapping(value="/mapping/method", method=RequestMethod.GET)
+@RequestMapping(value="/mapping/parameter", method=RequestMethod.GET, params="foo")
+@RequestMapping(value="/mapping/parameter", method=RequestMethod.GET, params="!foo")
+@RequestMapping(value="/mapping/header", method=RequestMethod.GET, headers="FooHeader=foo")
+@RequestMapping(value="/mapping/header", method=RequestMethod.GET, headers="!FooHeader")
+@RequestMapping(value="/mapping/consumes", method=RequestMethod.POST, consumes=MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value="/mapping/produces", method=RequestMethod.GET, produces=MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value="/mapping/produces", method=RequestMethod.GET, produces=MediaType.APPLICATION_XML_VALUE)
+
+3. Request Data
+- Spring obtain data from http request, param, path, header, cookie, body reuest as a whole(Entity) by using annoataion.
+- Meanwhile, Spring also injects java servlet objects into controller, such as request, response, session, user, locale etc. so that developer can operates on servlet API directly. 
+@RequestParam
+@PathVariable
+@MatrixVariable
+@RequestHeader
+@CookieValue
+@RequestBody
+HttpEntity<String> entity (Represents an HTTP request or response entity)
+HttpServletRequest request
+Principal user
+Locale locale
+Reader requestBodyReader (Read char request body)
+InputStream requestBodyIs (Read binary request body)
+HttpServletResponse response
+HttpSession session
+
+- @RequestParam String foo: ?foo=bar
+- public @ResponseBody String withParamGroup(JavaBean bean): ?param1=foo&param2=bar&param3=baz
+- @PathVariable String var: path/{var}
+- @PathVariable String path, @MatrixVariable String foo
+@RequestMapping(value="{path}/simple", method=RequestMethod.GET)
+/matrixvars;foo=bar/simple
+- @RequestMapping(value="{path1}/{path2}", method=RequestMethod.GET)
+	public @ResponseBody String withMatrixVariablesMultiple (
+			@PathVariable String path1, @MatrixVariable(value="foo", pathVar="path1") String foo1,
+			@PathVariable String path2, @MatrixVariable(value="foo", pathVar="path2") String foo2) {
+- @RequestHeader String Accept
+- @CookieValue String openid_provider
+- @RequestBody String body
+
+4. Response Writing
+- @ResponseBody return a String as response body.
+- ResponseEntity<String> can be used to construct customized response object.
+
+- if request contains header: Accept=text/plain;charset=UTF8, Response will write Content-Type:text/plain;charset=UTF-8, so that the browser can interprete the reponse body correctly
+- if produces="text/plain;charset=UTF-8", Response will write Content-Type:text/plain;charset=UTF-8. 
+- return new ResponseEntity<String>("The String ResponseBody with custom status code (403 Forbidden)", 			HttpStatus.FORBIDDEN);
+- HttpHeaders headers = new HttpHeaders();
+headers.setContentType(MediaType.TEXT_PLAIN);
+return new ResponseEntity<String>("The String ResponseBody with custom header Content-Type=text/plain", 				headers, HttpStatus.OK);
+
+5. Message Converters
+- For http post request, Spring invokes different kind of Message Converter based on the "Content-Type" header, if the request payload syntax does not match the Content-Type specified, return 400 Bad Request.
+- For http get request, Spring invokes different kind of Message Converter based on the "Accept" header, if the message conveter can not convert a type to the Accept type specified, return 406 Media Type Not Supported.
+- If the client does not specify any content-type or accept header fields, content-type will be default to text/plain and accept will be */*, then server will response with default setup Content-Type: text/html;charset=utf-8
+Content-Type, Accept: text/plain, text/html, text/css..., application/json, application/xml, application/mp4, application/javascript，application/x-www-form-urlencoded...
+Message Converter:
+StringHttpMessageConverter: text/plain
+@RequestBody String string
+FormHttpMessageConverter: application/x-www-form-urlencoded
+@ModelAttribute JavaBean bean
+Jaxb2RootElementHttpMessageConverter: application/xml
+@RequestBody JavaBean bean
+MappingJacksonHttpMessageConverter: application/json
+@Valid @RequestBody JavaBean bean
+AtomFeedHttpMessageConverter: application/xml-atom
+RssChannelHttpMessageConverter: application/
+
+
+6. View Rendering
+In servlet-context.xml specified the location of view templates=prefix+viewname+suffix (i.e. /WEB-INF/views/ + views/html + .jsp)
+<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/" />
+		<beans:property name="suffix" value=".jsp" />
+</beans:bean>
+
+@RequestMapping(value="html", method=RequestMethod.GET)
+public String prepare(Model model) { //inject model object
+		model.addAttribute("foo", "bar");  //set model attributes and jsp to use
+		model.addAttribute("fruit", "apple");
+		return "views/html"; //views/html is the viewname
+}
+
+<h3>foo: "${foo}"</h3>
+<h3>fruit: "${fruit}"</h3>
+
+@RequestMapping(value="dataBinding/{foo}/{fruit}", method=RequestMethod.GET)
+	public String dataBinding(@Valid JavaBean javaBean, Model model) {
+		// JavaBean "foo" and "fruit" properties populated from URI variables 
+		return "views/dataBinding";
+}
+
+<h3>javaBean.foo: ${javaBean.foo}</h3>
+<h3>javaBean.fruit: ${javaBean.fruit}</h3>
+
+7.1 Type Conversion
+- primitive:
+http://localhost:8080/convert/primitive?value=3
+@RequestParam Integer value
+
+-date
+http://localhost:8080/convert/date/2010-07-04
+@PathVariable @DateTimeFormat(iso=ISO.DATE) Date value
+
+-Collection
+http://localhost:8080/convert/collection?values=1&values=2&values=3&val
+@RequestParam Collection<Integer> values
+
+- formatted collection
+http://localhost:8080/convert/formattedCollection?values=2010-07-04,2011-07-04
+@RequestParam @DateTimeFormat(iso=ISO.DATE) Collection<Date> values
+
+-Custom Value Object
+http://localhost:8080/convert/value?value=123456789
+@RequestParam SocialSecurityNumber value
+
+-Custom Converter
+http://localhost:8080/convert/custom?value=123-45-6789
+@RequestParam @MaskFormat("###-##-####") String value
+
+7.2 JavaBean Property Binding
+
+@RequestMapping("bean")
+public @ResponseBody String bean(JavaBean bean) {
+	return "Converted " + bean;
+}
+
+- Primitive
+http://localhost:8080/convert/bean?primitive=3
+
+-Date
+http://localhost:8080/convert/bean?date=2010-07-04
+@DateTimeFormat(iso=ISO.DATE)
+
+-Masked
+http://localhost:8080/convert/bean?masked=(205)333-3333
+@MaskFormat("(###) ###-####")
+private String masked;
+
+-List Elements
+http://localhost:8080/convert/bean?list[0]=1&list[1]=2&list[2]=3
+private List<Integer> list;
+
+-Formatted List Elements
+localhost:8080/convert/bean?formattedList[0]=2010-07-04&formattedList[1]=2011-07-04
+
+Map Elements
+http://localhost:8080/convert/bean?map[0]=apple&map[1]=pear
+private Map<Integer, String> map;
+
+Nested
+http://localhost:8080/convert/bean?nested.foo=bar&nested.list[0].foo=baz&nested.map[key].list[0].foo=bip
+private NestedBean nested;
+
+8. Validation
+- Validate, no errors
+http://localhost:8080/validate?number=3&date=2029-07-04
+@Valid JavaBean bean, BindingResult result
+public class JavaBean {	
+	@NotNull
+	@Max(5)
+	private Integer number;
+
+	@NotNull
+	@Future
+	@DateTimeFormat(iso=ISO.DATE)
+	private Date date;
+}
+
+Validate, errors
+http://localhost:8080/validate?number=3&date=2010-07-01
+
+9. Forms
+
+- Create a controller
+
+@Controller
+@RequestMapping("/form")
+@SessionAttributes("formBean")
+public class FormController {
+	
+	@ModelAttribute("formBean")
+	public FormBean createFormBean() {
+		return new FormBean();
+	}
+}
+
+- Create a form bean, validation/format conversion on the fields
+public class FormBean {
+	
+	@NotEmpty
+	private String name;
+	
+	@Min(21)
+	private int age;
+
+	@DateTimeFormat(iso=ISO.DATE)
+	@Past
+	private Date birthDate;
+	...
+}
+
+
+- Create a JSP, label path is matched to formBean's field name
+
+<form:label path="name">
+	Name <form:errors path="name" cssClass="error" />
+	</form:label>
+	<form:input path="name" />
+	...
+</form>
+
+10. File Upload
+- form: enctype="multipart/form-data" 
+<form id="fileuploadForm" action="${actionUrl}" method="POST" enctype="multipart/form-data" class="cleanform">
+<input id="file" type="file" name="file" />
+
+-controller
+public void processUpload(@RequestParam MultipartFile file, Model model) throws IOException {
+		model.addAttribute("message", "File '" + file.getOriginalFilename() + "' uploaded successfully");
+}
+
+
+11. Exception Handling
+- Controller
+@ExceptionHandler
+public @ResponseBody String handle(IllegalStateException e) {
+	return "IllegalStateException handled!";
+}
+
+@ControllerAdvice
+public class GlobalExceptionHandler {
+
+	@ExceptionHandler
+	public @ResponseBody String handleBusinessException(BusinessException ex) {
+		return "Handled BusinessException";
+	}
+
+}
+
+12. Redirecting
+
+@RequestMapping(value="/uriTemplate", method=RequestMethod.GET)
+public String uriTemplate(RedirectAttributes redirectAttrs) {
+	redirectAttrs.addAttribute("account", "a123");  // Used as URI template variable
+	redirectAttrs.addAttribute("date", new LocalDate(2011, 12, 31));  // Appended as a query parameter
+	return "redirect:/redirect/{account}";
+}
+
+13. Async Request 
+
+请求处理线程会在Call了之后等待Return，自身处于阻塞状态。这也是绝大多数Web服务器的做法，一般来说这样做也够了，为啥？一来“长时间处理服务”调用通常不多，二来请求数其实也不多。要不是这样的话，这种模式会出现什么问题呢？——会出现的问题就是请求处理线程的短缺！因为请求处理线程的总数是有限的，如果类似的请求多了，所有的处理线程处于阻塞的状态，那新的请求也就无法处理了，也就所谓影响了服务器的吞吐能力。要更加好地发挥服务器的全部性能，就要使用异步.
+
+-DefferredResult
+
+
+public @ResponseBody Callable<String> callableWithException(
+			final @RequestParam(required=false, defaultValue="true") boolean handled) {
+
+public @ResponseBody DeferredResult<String> deferredResult() {
+	DeferredResult<String> result = new DeferredResult<String>();
+	this.responseBodyQueue.add(result);
+	return result;
+}

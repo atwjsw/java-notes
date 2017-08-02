@@ -1,0 +1,51 @@
+Maven
+
+installation: 
+- env variable:maven_home; path; mvn -version
+
+settings.xml 
+- global config: Local Repository, Mirrors, copy settings.xml from installation directory to local repository directory to keep the configuration in case of maven reinstalltion 
+- repository - local repository vs. remote repository (central repository, mirror)
+- change mirror, local repository in settings
+- server id+username+privateKey+passPhase
+- 
+
+Initilization
+- mvn archetype:generate -DgroupId=com.mycompany.app -DartifactId=my-app -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+- archetype:generate - archetype is the plugin, generate is the goal
+- standard project structure pom.xml, src-main/test-java/resource/webapp-com/atwjsw/webmall
+- mvn pakage - package is the phase. A phase is a step in the build lifecycle, which is an ordered sequence of phases. When a phase is given, Maven will execute every phase in the sequence up to and including the one defined. Phases are actually mapped to underlying goals. 
+
+pom.xml 
+- project specific config: profile, dependencies, plugins, properties etc.
+lifecycle 
+- maven-model-builder.jar/pom-4.0.0.xml, super pom provided by maven, inherited by all maven pom.xml.
+- coordinate(groupId=company domain+project name, artifactId=module name)
+- <distribution management><Repository>
+
+lifecycle: 
+- clean; validate compile test package verify install site deploy; site
+- goals: under lifecycle stages: compile:compile/compile:testCompile，site:deploy...; mybatis-generator:generate
+- running of 'package' will trigger clean, compile, test
+- mvn compile (classes), mvn test (junit test/surfire reports), mvn package (generate jar/war), mvn clean (delete target), mvn install (install jar to local repository), mvn archetype:generate (generate skeleton for maven project structures)
+
+Plugins:
+- plugins are implementations of maven lifecycle stage
+- plugins: maven-clean-plugin, maven-compiler-plugin, mybatis-generator，maven-site-plugin, jetty-maven-plugin, tomcat-maven-plugin
+- jetty:run will start the jetty server. by including <execution><phase>package</phase><goal>run</goal></execution>, jetty can be started by mvn -package.
+- tomcat7-maven-plugin works the same way. 
+- plugin can be found on maven website. use plugin to do different kind of stuff to project sources, e.g. packaging source codes.
+
+Exclusion:
+- a->b->c; in a:pom.xml dependency to b add exclusion to c. then a will not need c's jar file.
+Conflict resultion:
+- a->b->s1, a->s2,a and b has dependcy on different versions of s, that will cause version conflicts. i.e. a is not sure which version of s should be imported. In this case, short route principle and first declaration principle applied. a should use s2. 
+- In another case, if a->b->s1, a->c->s2, route length are the same, if b's dependency is declared first then s1 is used, vice versa.
+
+Aggregation: 
+- create main pom, packaging type is pom, <modules><module>a</module><module>b</module><module>c</module></modules>, run maven on main pom will run all the modules. 
+
+Parent:
+- move common configurations of module to parent. e.g. move junit dependency to parent's dependencyManagement, all pom include the parent module will inherent the properties of parent .e.g. version, scope etc. groupId and artifactId of dependency is still required in the inheriting pom.
+- pom.xml + appA/pom.xml + appB/pom.xml
+

@@ -1,0 +1,7 @@
+- Annotation 注解是框架开发者提供给使用者的接口上级，通过注解来获取使用者意图，在适当的时候执行
+
+-  Java Lambda表达式
+- 基本语法:
+(parameters) -> expression
+或
+(parameters) ->{ statements; }

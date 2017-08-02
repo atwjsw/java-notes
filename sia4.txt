@@ -1,0 +1,453 @@
+1. Chapter 1 Spring Basics
+- Injecting object with xml
+<bean id="knight" class="com.springinaction.knights.BraveKnight">
+	<constructor-arg ref="quest" />
+</bean>
+- Injecting static class
+<bean id="quest" class="com.springinaction.knights.SlayDragonQuest">
+	<constructor-arg value="#{T(System).out}" />
+</bean>
+
+#Injecting with java config, more natural
+@Configuration
+public class KnightConfig {
+	@Bean
+	public Knight knight() {
+		return new BraveKnight(quest());
+	}
+	@Bean
+	public Quest quest() {
+		return new SlayDragonQuest(System.out);
+	}
+}
+
+# uses the application context as a factory to retrieve the bean whose ID is knight.
+Knight knight = context.getBean(Knight.class);
+Knight knight = (Knight) context.getBean("knight"); //equivalence in spring3
+
+#Application Context
+- AnnotationConfigApplicationContext: Loads an application context from Java-based configuration classes (new in S4)
+- AnnotationConfigWebApplicationContext:Loads a web application context from Java-based configuration classes (new in S4)
+- ClassPathXmlApplicationContext: Loads a context definition from one or more XML files located in the classpath, treating context-definition files as classpath resources
+- FileSystemXmlApplicationContext: Loads a context definition from one or more XML files in the filesystem
+- XmlWebApplicationContext: Loads context definitions from one or more XML files contained in a web application
+
+#AnnotationConfigApplicationContext
+ApplicationContext context = new AnnotationConfigApplicationContext(KnightConfig.class);
+
+2. Chapter 2 Wiring bean
+#options
+- XML
+- Java config
+- autowiring and auto-discovery
+
+#mix-and-match, best practice is auto->java->xml
+- so you could choose XML to wire up some beans, use Spring’s Java-based configuration (JavaConfig) for other beans, and let other beans be automatically discovered by Spring. 
+- use automatic configuration as much as you can. 
+- When you must explicitly configure beans (such as when you’re configuring beans for which you don’t maintain the source code), prefer type-safe and more powerful JavaConfig over XML.
+- fall back on XML only in situations where there’s a convenient XML namespace you want to use that has no equivalent in JavaConfig.
+
+#Component scanning + Autowiring
+@Configuration
+@ComponentScan
+public class CDPlayerConfig {
+}
+
+@Component
+public class CDPlayer implements MediaPlayer {}
+@Component
+public class SgtPeppers implements CompactDisc {}
+@Autowire
+public CDPlayer(CompactDisc cd) {
+    this.cd = cd;
+}
+
+#JUnit Test
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes=CDPlayerConfig.class)
+public class CDPlayerTest {
+...
+}
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations="classpath:META-INF/spring/soundsystem.xml")
+public class CDPlayerXMLConfigTest {
+...
+}
+
+#Naming a component-scanned bean
+- by default, the annotated bean is given an ID lowercasing the first letter of the class name
+- provide a differnt name
+@Component("lonelyHeartsClub")
+
+#Setting a base package for component scanning
+@Configuration
+@ComponentScan("soundsystem")
+public class CDPlayerConfig {}
+
+@Configuration
+@ComponentScan(basePackages="soundsystem")
+public class CDPlayerConfig {}
+
+- scan multiple packages 
+@Configuration
+@ComponentScan(basePackages={"soundsystem", "video"}) //scan for beans in soundsystem and video packages
+public class CDPlayerConfig {}
+
+- specifying them via classes or interfaces that are in the packages:
+@Configuration
+//scan for beans of packages in where CDPlayer and DVDPlayer resides 
+@ComponentScan(basePackageClasses={CDPlayer.class, DVDPlayer.class}) 
+public class CDPlayerConfig {}
+
+#Java Config
+- bean wiring through @bean method
+@Configuration
+public class CDPlayerConfig {  
+  @Bean
+  public CompactDisc sgtPeppers() {
+    return new SgtPeppers();
+  }
+
+  @Bean
+  public CDPlayer cdPlayer() {
+    return new CDPlayer(sgtPeppers());
+  }
+}
+- bean wiring through constructor
+public class CDPlayerConfig {  
+  @Bean
+  public CompactDisc compactDisc() {
+    return new SgtPeppers();
+  }  
+  @Bean
+  public CDPlayer cdPlayer(CompactDisc compactDisc) { 
+    return new CDPlayer(compactDisc);
+  }  
+}
+- When Spring calls cdPlayer() to create the CDPlayer bean, it autowires a CompactDisc into the configuration method.
+- This approach to referring to other beans is usually the best choice because it doesn’t depend on the CompactDisc bean being declared in the same configuration class. it can even be defined in defined xml.
+
+#Referencing XML configuration in JavaConfig
+- Java Config import other java config
+@Configuration
+@Import(CDConfig.class)
+public class CDPlayerConfig {
+	...
+}
+
+- Main Java Config import sub java configs
+@Configuration
+@Import({CDPlayerConfig.class, CDConfig.class})
+public class SoundSystemConfig {
+}
+
+- Java Config importing xml config
+@Configuration
+@Import(CDPlayerConfig.class)
+@ImportResource("classpath:cd-config.xml")
+public class SoundSystemConfig {
+}
+
+- test config
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes=SoundSystemConfig.class)
+public class ImportXmlConfigTest {
+}
+
+#Referencing JavaConfig in XML configuration
+- xml config imports other xml config
+<import resource="cd-config.xml" />
+
+- xml config import java config, define a bean in xml
+<bean id="cdPlayer" class="soundsystem.CDPlayer" c:cd-ref="compactDisc" />
+
+- test
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration("classpath:cdplayer-config.xml")
+public class ImportJavaConfigTest {
+}
+
+3. Chapter3 - Advanced wiring
+#Environments and profiles
+- the beans in this configuration class should be created only if the dev profile is active. If the dev profile isn’t active, then the @Bean methods will be ignored.
+@Configuration
+@Profile("dev")
+public class DevelopmentProfileConfig {
+	@Bean...
+}
+
+@Configuration
+@Profile("prod")
+public class ProductionProfileConfig {
+	@Bean...
+}
+
+- bean level profile config
+@Configuration
+public class DataSourceConfig {
+@Bean(destroyMethod="shutdown")
+@Profile("dev")
+public DataSource embeddedDataSource() {
+...
+}
+@Bean
+@Profile("prod")
+public DataSource jndiDataSource() {
+...
+}
+
+#CONFIGURING PROFILES IN XML
+- option1, setup different xml files for different profiles
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+...
+http://www.springframework.org/schema/beans/spring-beans.xsd"
+profile="dev">
+
+- optional2. all profiles in a single xml
+<beans profile="dev">
+	<bean id="dataSource"
+	class="org.apache.commons.dbcp.BasicDataSource"
+	destroy-method="close"
+	.../>
+</beans>
+<beans profile="qa">
+
+</beans>
+<beans profile="prod">
+...
+</beans>
+
+#Activating profiles
+- two separate properties when determining which profiles are active: spring.profiles.active and spring.profiles.default.
+- ways to set these properties:
+As initialization parameters on DispatcherServlet
+As context parameters of a web application
+As JNDI entries
+As environment variables
+As JVM system properties
+Using the @ActiveProfiles annotation on an integration test class
+
+- In web.xml, for context listener
+<context-param>
+	<param-name>spring.profiles.default</param-name>
+	<param-value>dev</param-value>
+</context-param>
+
+- for context listener 
+<init-param>
+	<param-name>spring.profiles.default</param-name>
+	<param-value>dev</param-value>
+</init-param>
+
+- In qa/production, set spring.profiles.active using system properties, environment variables, or JNDI as appropriate.
+
+#TESTING WITH PROFILES
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes={PersistenceTestConfig.class})
+@ActiveProfiles("dev")
+public class PersistenceTest {
+...
+}
+
+#Conditional Bean
+@Bean
+@Conditional(MagicExistsCondition.class)
+public MagicBean magicBean() {
+	return new MagicBean();
+}
+
+- MagicExistsCondition need to be implemented
+
+#Addressing ambiguity in autowiring
+- Spring tries byName first, if fails, tries byType
+- Designating a primary bean
+- by component scanning
+@Component
+@Primary
+public class IceCream implements Dessert
+
+- in java Configuration
+@Bean
+@Primary
+public Dessert iceCream() {
+	return new IceCream();
+}
+
+in XML
+<bean id="iceCream" class="com.desserteater.IceCream primary="true" />
+
+#Qualifying autowired beans
+@Autowired
+@Qualifier("iceCream")
+public void setDessert(Dessert dessert) {
+	this.dessert = dessert;
+}
+
+- use "cold" decouple IceCream class name
+@Component
+@Qualifier("cold")
+public class IceCream implements Dessert { ... }
+
+@Autowired
+@Qualifier("cold")
+public void setDessert(Dessert dessert) {
+	this.dessert = dessert;
+}
+
+DEFINING CUSTOM QUALIFIER ANNOTATIONS
+- define @creamy qualifier
+@Target({ElementType.CONSTRUCTOR, ElementType.FIELD,
+ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Qualifier
+public @interface Creamy { }
+
+- define @cold qualifier
+@Target({ElementType.CONSTRUCTOR, ElementType.FIELD,
+ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Qualifier
+public @interface Cold { }
+
+-apply @cold and @creamy to component
+@Component
+@Cold
+@Creamy
+public class IceCream implements Dessert { ... }
+
+- autowired with @cold and @creamy annotation
+@Autowired
+@Cold
+@Creamy
+public void setDessert(Dessert dessert) {
+	this.dessert = dessert;
+}
+
+#Bean scoping
+- Singleton/Prototype/Session/Request
+
+@Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+public class Notepad { ... }
+
+@Bean
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+public Notepad notepad() {
+	return new Notepad();
+}
+==
+<bean id="notepad" class="com.myapp.Notepad" scope="prototype" />
+
+@Component
+@Scope(value=WebApplicationContext.SCOPE_SESSION, proxyMode=ScopedProxyMode.INTERFACES)
+public ShoppingCart cart() { ... }
+
+#CGLib
+if ShoppingCart is a concrete class, there’s no way Spring can create an interface-based proxy. Instead, it must use CGLib to generate a class-based proxy.
+
+- session bean definition in xml
+<bean id="cart" class="com.myapp.ShoppingCart" scope="session">
+	<aop:scoped-proxy />
+</bean>
+
+- generate an interface-based proxy by setting the proxy-target-class attribute to false:
+<bean id="cart" class="com.myapp.ShoppingCart" scope="session">
+	<aop:scoped-proxy proxy-target-class="false" />
+</bean>
+
+#Runtime value injection
+- by property placeholders
+- by SpEL
+
+#Injecting external values
+- The simplest way to resolve external values in Spring is to declare a property source and retrieve the properties via the Spring Environment.
+@Configuration
+@PropertySource("classpath:/com/soundsystem/app.properties") //This properties file is loaded into Spring’s Environment, from which it can be retrieved later.
+public class ExpressiveConfig {
+	@Autowired
+	Environment env;
+	
+	@Bean
+	public BlankDisc disc() {
+		return new BlankDisc(
+			env.getProperty("disc.title"),
+			env.getProperty("disc.artist"));
+	}
+}
+- app.properties. 
+disc.title=Sgt. Peppers Lonely Hearts Club Band
+disc.artist=The Beatles
+- String getProperty(String key)
+- String getProperty(String key, String defaultValue)
+- T getProperty(String key, Class<T> type) //get Integer
+- T getProperty(String key, Class<T> type, T defaultValue)
+
+@Bean
+public BlankDisc disc() {
+	return new BlankDisc(
+		env.getProperty("disc.title", "Rattle and Hum"),
+		env.getProperty("disc.artist", "U2"));
+}
+
+int connectionCount = env.getProperty("db.connection.count", Integer.class, 30);
+
+#RESOLVING PROPERTY PLACEHOLDERS
+- Spring has always supported the option of externalizing properties into a properties file and then plugging them into Spring beans using placeholder values. In Spring wiring, placeholder values are property names wrapped with ${ ... }.
+- xml config:
+<bean id="sgtPeppers" class="soundsystem.BlankDisc" c:_title="${disc.title}" c:_artist="${disc.artist}" />
+- you can use the @Value annotation in much the same way as you might use the @Autowired annotation.
+public BlankDisc(
+	@Value("${disc.title}") String title,
+	@Value("${disc.artist}") String artist) {
+	this.title = title;
+	this.artist = artist;
+}
+
+- In Java config
+- In order to use placeholder values, you must configure either a PropertyPlaceholderConfigurer bean or a PropertySourcesPlaceholderConfigurer bean. Starting with Spring 3.1, PropertySourcesPlaceholderConfigurer is preferred because it resolves placeholders against the Spring Environment and its set of property sources.
+@Configuration
+@ComponentScan
+@PropertySource("classpath:/com/soundsystem/app.properties")
+public class PropertiesConfig {
+    @Bean
+    public static PropertySourcesPlaceholderConfigurer placeholderConfigurer() {
+        return new PropertySourcesPlaceholderConfigurer();
+    }
+}
+
+- In XML
+<context:property-placeholder location="com/soundsystem/app.properties" />
+- the <context:property-placeholder> element from Spring’s context namespace will give you a PropertySourcesPlaceholderConfigurer bean
+
+#SpEL
+#{T(System).currentTimeMillis()}
+#{systemProperties['disc.title']}
+#{sgtPeppers}
+#{sgtPeppers.artist}
+#{artistSelector.selectArtist()}
+#{artistSelector.selectArtist().toUpperCase()}
+#{artistSelector.selectArtist()?.toUpperCase()}
+#{jukebox.songs.?[artist eq 'Aerosmith']}
+#{jukebox.songs.![title]}
+#{jukebox.songs.^[artist eq 'Aerosmith']}
+#{jukebox.songs.?[artist eq 'Aerosmith'].![title]}
+
+4. Chapter4 Aop
+#@EnableAspectJAutoProxy
+- If you’re using JavaConfig, you can turn on auto-proxying by applying the @EnableAspectJAutoProxy annotation at the class level of the configuration class.
+@Configuration
+@EnableAspectJAutoProxy
+@ComponentScan
+public class ConcertConfig {
+	@Bean
+	public Audience audience() {
+		return new Audience();
+	}
+}
+== 
+in xml congfig
+<context:component-scan base-package="concert" />
+<aop:aspectj-autoproxy />
+<bean class="concert.Audience" />

@@ -1,0 +1,47 @@
+Logback
+
+Logback is built upon three main classes: Logger, Appender and Layout. These three types of components work together to enable developers to log messages according to message type and level, and to control at runtime how these messages are formatted and where they are reported.
+- What to log (Logger), selective logging
+- How to log (Layout)
+- Where to log (Appender)
+
+appender:
+- Output destination. Where to output, console/file?, how to output, encoding/utf-8, output pattern, output file location/rolling policy
+- name: appender's name, console, mmall, error etc.
+- class: ch.qos.logback.core.ConsoleAppender, RollingFileAppender
+- An Appender is a class that can be seen as an output destination. Appenders exist for many different destinations including the console, files, Syslog, TCP Sockets, JMS and many more. Users can also easily create their own Appenders as appropriate for their specific situation.
+- More than one appender can be attached to a logger.
+
+logger:
+- Named Hierarchy. Loggers are named entities. Their names are case-sensitive and they follow the hierarchical naming rule: the logger named "com.foo" is a parent of the logger named "com.foo.Bar". 
+- name: com.atwjsw.logback. only if the class with logger match the namespace of logger name, output will be logged.
+- level: TRACE/DEBUG/INFO/WARN/ERROR (only log the level above the specified) .e.g if level=INFO, then only logger.info, logger.warn and logger.error will be output.
+- If a given logger is not assigned a level, then it inherits one from its closest ancestor with an assigned level.
+
+root:
+- The root logger resides at the top of the logger hierarchy. 
+- level: root logger's level
+- appender-ref：root logger applied to any appender speficied in appender-ref
+- root logger always has an assigned level. By default, this level is DEBUG.
+
+Layout：
+TBD
+
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</Pattern>
+        </layout>
+    </appender>
+
+    <logger name="com.atwjsw.logback" level="TRACE"/>
+
+    <root level="warn">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>
+
+Performance:
+- To avoid the cost of parameter construction you can take advantage of SLF4J's parameterized logging: x.debug("Entry number: {} is {}", i, entry[i]);

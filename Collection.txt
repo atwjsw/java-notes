@@ -1,0 +1,137 @@
+Collection
+
+1. Collection vs. Map interface
+
+2. Collection: List, Queue, Set-> ArrayList, LinkedList, HashSet
+
+3. List->ArralyList; ordered, repeatable
+- ArrayList.add(element);
+- ArrayList.add(index, element);
+- ArrayList.addAll(list);
+- ArrayList.addAll(index, all);
+- ArrayList.get(index);
+- ArrayList.size();
+- ArrayList.iterator();
+- iterator.hasNext();
+- iterator.next();
+- for each: for (Object o: list) {} (foreach is a shorthand for iterator)
+- ArrayList.set(index, element);
+- ArrayList.remove(element);
+- ArrayList.remove(index);
+- ArrayList.removeAll(list);
+- List<Course> courseList = new ArrayList<Course>(); //Generics
+- for (Course course: courseList)
+- ArrayList.add(1); //autoboxing
+- ArrayList.contains(element); //use equals() to evaluate if any element in the list equals input, most of them needs to rewrite
+- ArrayList.indexOf(element);
+- ArrayList.lastIndexOf(element);
+
+4. Set->HashSet; unordered, not repeatable.
+- provides most of the add and remove methods as List did but not "set(index, element)" because set is not ordered.
+- HashSet.add(element);
+- HashSet.add(null);
+- HashSet.contains(element); //use hashCode() to evaluate first, only hashCode() equals then evaluate equals() 
+
+5. Map->HashMap; 
+- key-value
+- Entry (key-value)
+- key is unique
+- Map<K, V> //generics
+- Map.put(key, value);
+- Map.remove(key);
+- Set<E> elementSet = Map.keySet(); //用于遍历map
+- Collection(V) values = Map.values(); //用于遍历map
+- Set<Entry<K, V>> entrySet = Map.entrySet(); //用于遍历map
+- Map.get(key);
+- Map.size();
+- Map.containsKey(key);
+- Map.containsValue(value);
+
+6. Collections vs. Arrays: Utility class
+- Arrays: 包含操作数组的各种静态方法
+- Arrays.asList(anArray);
+
+- Collections： 包含操作Collection的各种静态方法
+- Collections.sort(list); //element Type needs to implements Comparable interface
+- Collections.sort(list, comparator); //list element doesn't need to implements Comparable, a class needs to implments comparator to compare list element) 
+
+7. Comparable vs. Comparator interface
+- Comparable.compareTo(); //required by Collections.sort(list) 默认的比较规则
+- Comparator: 临时的比较规则， 例如我们想给String设计一种不同的比较方式吗，可以生成一个StringComparator类，实现compareTo(str1, str2)方法，比comparable更灵活，可以有多种比较方法，可以对无法修改源码的类提供比较方法。
+
+
+#String
+- int length()
+- int indexOf(int ch)
+- int indexOf(String str)
+- int lastIndexOf(String ch)
+- int lastIndexof(String str)
+- String substring(int beginIndex)
+- String substring(int beginIndex, int endIndex)
+- String trim()
+- boolean equals(Object obj)
+- String toLowerCase()
+- String toUpperCase()
+- char charAt(int index)
+- String[] split(String regex, int limit)
+- byte[] getBytes()
+
+#SrtringBuilder vs. StringBuffer
+- 当频繁操作字符串时，就会额外产生很多临时变量。使用 StringBuilder 或 StringBuffer 就可以避免这个问题。
+- StringBuffer is synchronized; StringBuilder more efficient
+StringBuilder常用方法:
+- StringBuilder append(str)
+- StringBuilder insert(index, str)
+- String toString()
+- int length() 
+
+#Exceptions
+
+1.Java中的所有不正常类都继承于Throwable类。Throwable主要包括两个大类，一个是Error类，另一个是Exception类；
+
+2.其中Error类中包括虚拟机错误和线程死锁，一旦Error出现了，程序就彻底的挂了，被称为程序终结者；
+
+3.Exception类主要指编码、环境、用户操作输入出现问题，Exception主要包括两大类，非检查异常（RuntimeException）和检查异常（其他的一些异常）
+
+4.RuntimeException异常主要包括以下四种异常：空指针异常、数组下标越界异常、类型转换异常、算术异常。
+
+#Wrapper
+- Integer, Double, Long, Float, Byte, Float, Character, Boolean
+- Integer常用方法：
+- double doubleValue()
+- int intValue()
+- static int parseInt(String str)
+- String toString();
+- Integer valueOf(String s)
+
+在程序开发中，我们经常需要在基本数据类型和字符串之间进行转换。
+
+其中，基本类型转换为字符串有三种方法：
+
+1. 使用包装类的 toString() 方法
+2. 使用String类的 valueOf() 方法
+
+再来看，将字符串转换成基本类型有两种方法：
+
+1. 调用包装类的 parseXxx 静态方法
+2. 调用包装类的 valueOf() 方法转换为基本类型的包装类，会自动拆箱
+
+#Date, SimpleDateFormat, Calendar
+- SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy年MM月dd日 HH时mm分ss秒");
+- Date now = new Date();        
+- System.out.println(sdf1.format(now));
+
+- String d = "2014-6-1 21:05:36";
+- SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+- Date date = sdf.parse(d);
+- System.out.println(date);
+
+- Calendar c = Calendar.getInstance();
+- Date date = c.getTime();
+- int year = c.get(Calendar.Year)
+
+#Math
+- long round()
+- double floor()
+- double ceil()
+- double random()

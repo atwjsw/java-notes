@@ -1,0 +1,13 @@
+1. Mybatis
+- MyBatis is an open source, lightweight, persistence framework. It is an alternative to JDBC and Hibernate. 
+- It automates the mapping between SQL databases and objects in Java
+- The mappings are decoupled from the application logic by packaging the SQL statements in XML configuration files.
+- It abstracts almost all of the JDBC code, and reduces the burden of setting of parameters manually and retrieving the results. 
+- It also provides support for custom SQL, stored procedures and advanced mappings.
+- A significant difference between MyBatis and other persistence frameworks is that MyBatis emphasizes the use of SQL, while other frameworks such as Hibernate typically uses a custom query language i.e. the Hibernate Query Language (HQL) or Enterprise JavaBeans Query Language (EJB QL).
+
+2. Advantages
+- Supports stored procedures
+- Supports inline SQL
+- Supports dynamic SQL − MyBatis provides features for dynamic building SQL queries based on parameters.
+- Supports O/RM − MyBatis supports many of the same features as an O/RM tool, such as lazy loading, join fetching, caching, runtime code generation, and inheritance.

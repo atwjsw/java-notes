@@ -1,0 +1,13 @@
+1. chmod 400 turtle.pem
+2. ssh -i "turtle.pem" ec2-user@ec2-13-59-13-119.us-east-2.compute.amazonaws.com 
+3. $ ssh danielwen@1ec2-13-59-13-119.us-east-2.compute.amazonaws.com 
+Permission denied (publickey,gssapi-with-mic).
+4. vi /etc/ssh/sshd_config "PasswordAuthentication"参数值为"no",修改回"yes"，sudo service restart sshd。
+5. mkdir -p  /developer/
+
+https://open.weixin.qq.com/connect/qrconnect?
+appid=wx6b26b7c75e8f3e5a&
+redirect_uri=http%3A%2F%2Fwww.imooc.com%2Fpassport%2Fuser%2Ftpcallback%3Freferer%3Dhttp%3A%2F%2Fwww.imooc.com%26browser_key%3D2b0d008909a3faff607ba795a4c216bb%26tp%3Dweixin%26bind%3D0
+&response_type=code
+&scope=snsapi_login
+#wechat_redirect

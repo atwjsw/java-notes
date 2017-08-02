@@ -1,0 +1,200 @@
+Spring Cache
+
+1. Annotation-driven caching vs. XML-declared caching
+- If you’re using Java configuration, you can enable annotation-driven caching by adding @EnableCaching to one of your configuration classes.
+- in xml configuration, use <cache:annotation-driven>
+<bean id="cacheManager" class="org.springframework.cache.concurrent.ConcurrentMapCacheManager" />
+- They create an aspect with pointcuts that trigger off of Spring’s caching annotations. Depending on the annotation used and the state of the cache, that aspect will fetch a value from the cache, add a value to the cache, or remove a value from the cache.
+
+<?xml version="1.0" encoding="UTF-8"?>
+<beans 	xmlns="http://www.springframework.org/schema/beans"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:cache="http://www.springframework.org/schema/cache"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/cache
+		http://www.springframework.org/schema/cache/spring-cache.xsd">
+		
+		<cache:annotation-driven />
+		
+		<bean id="cacheManager" class="org.springframework.cache.concurrent.ConcurrentMapCacheManager" />
+</beans>
+
+2. Cache Manager
+- a ConcurrentMapCacheManager is declared. This simple cache manager uses a java.util.concurrent.ConcurrentHashMap as its cache store. Its simplicity
+makes it a tempting choice for development, testing, or basic applications. because its cache storage is memory-based and thus tied to the lifecycle of the application, it’s probably not an ideal choice for larger production applications.
+
+Spring 3.1 comes with five cache-manager implementations
+- SimpleCacheManager
+- NoOpCacheManager
+- ConcurrentMapCacheManager
+- CompositeCacheManager
+- EhCacheCacheManager
+
+Spring Data offers two more cache managers:
+- RedisCacheManager (from Spring Data Redis)
+- GemfireCacheManager (from Spring Data GemFire)
+
+3. CACHING WITH EHCACHE
+
+spring.xml:
+
+<?xml version="1.0" encoding="UTF-8"?>  
+<beans xmlns="http://www.springframework.org/schema/beans"   
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
+    xmlns:context="http://www.springframework.org/schema/context"   
+    xmlns:cache="http://www.springframework.org/schema/cache"  
+    xsi:schemaLocation="http://www.springframework.org/schema/beans   
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd  
+        http://www.springframework.org/schema/context   
+        http://www.springframework.org/schema/context/spring-context-3.0.xsd  
+        http://www.springframework.org/schema/cache  
+        http://www.springframework.org/schema/cache/spring-cache-3.2.xsd">  
+      
+     <cache:annotation-driven cache-manager="cacheManager"/>  
+      
+     <bean id="cacheManagerFactory" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">  
+        <property name="configLocation" value="classpath:application/ehcache.xml" />  
+    </bean>  
+      
+    <bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">      
+        <property name="cacheManager"  ref="cacheManagerFactory"/>      
+    </bean>  
+   
+</beans>  
+
+4. ehcache.xml
+<ehcache>
+	<cache name="spittleCache" 
+		maxBytesLocalHeap="50m"
+		timeToLiveSeconds="100">
+	</cache>
+</ehcache>  
+
+<?xml version="1.0" encoding="UTF-8"?>  
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://ehcache.org/ehcache.xsd">  
+     
+    <diskStore path="java.io.tmpdir/ehcache"/>  
+      
+    <!-- 默认缓存 -->  
+    <defaultCache  
+           maxElementsInMemory="1000"  
+           eternal="false"  
+           timeToIdleSeconds="120"  
+           timeToLiveSeconds="120"  
+           overflowToDisk="false"/>  
+             
+    <!-- 菜单缓存 -->      
+    <cache name="menuCache"   
+           maxElementsInMemory="1000"   
+           eternal="false"  
+           timeToIdleSeconds="120"  
+           timeToLiveSeconds="120"  
+           overflowToDisk="false"   
+           memoryStoreEvictionPolicy="LRU"/>  
+      
+</ehcache>  
+
+
+5. USING REDIS FOR CACHING
+- a cache entry is nothing more than a key-value pair where the key describes the operation and parameters from which the value was produced.
+Therefore, it isn’t surprising to learn that Redis, which is a key-value store, is perfectly suited to be a cache store.
+
+spring cache，基本能够满足一般应用对缓存的需求，但现实总是很复杂，当你的用户量上去或者性能跟不上，总需要进行扩展，这个时候你或许对其提供的内存缓存不满意了，因为其不支持高可用性，也不具备持久化数据能力，这个时候，你就需要自定义你的缓存方案了，还好，spring 也想到了这一点。
+
+- @Cacheable(value="menuCache",key="'UserMenuKey'+#userid")  
+    public List<MenuBean> queryMenuByUserId(String userid)  
+{  
+……  
+}  
+
+- redis.properties
+redis.host=192.168.0.43  
+redis.port=6379  
+redis.pass=2015  
+redis.maxIdle=50  
+redis.maxActive=50  
+redis.maxWait=50  
+redis.testOnBorrow=true  
+redis.timeout=1000  
+
+In Spring.xml:
+	<context:property-placeholder location="classpath:conf/redis.properties" />  
+  
+    <bean id="poolConfig" class="redis.clients.jedis.JedisPoolConfig">  
+        <property name="maxIdle" value="${redis.maxIdle}" />  
+        <property name="maxTotal" value="${redis.maxActive}" />  
+        <property name="maxWaitMillis" value="${redis.maxWait}" />  
+        <property name="testOnBorrow" value="${redis.testOnBorrow}" />  
+    </bean>  
+  
+    <bean id="connectionFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">  
+        <property name="poolConfig" ref="poolConfig" />  
+        <property name="port" value="${redis.port}" />  
+        <property name="hostName" value="${redis.host}" />  
+        <property name="password" value="${redis.pass}" />  
+        <property name="timeout" value="${redis.timeout}" />  
+    </bean>  
+  
+    <bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate">  
+        <property name="connectionFactory" ref="connectionFactory" />  
+    </bean>  
+
+Jedis in pom.xml
+
+6. Annotating methods for caching
+
+@Cacheable: Indicates that Spring should look in a cache for the method’s return value before invoking the method. If the value is found, the cached value is returned.If not, then the method is invoked and the return value is put in the cache.
+@CachePut: Indicates that Spring should put the method’s return value in a cache. The cache isn’t checked prior to method invocation, and the method is always
+invoked.
+@CacheEvict: Indicates that Spring should evict one or more entries from a cache.
+@Caching: A grouping annotation for applying multiples of the other caching annotations at once.
+
+@Cacheable and @CachePut properties
+- value: String[], The name(s) of the cache(s) to use 
+- condition: String, A SpEL expression that, if it evaluates to false, results in caching not being applied to the method call
+- key: String, A SpEL expression to calculate a custom cache key 
+- unless: String A SpEL expression that, if it evaluates to true, prevents the return value from being put in the cache
+
+For example, consider the findOne() method from SpittleRepository. Once it’s initially saved, a Spittle isn’t likely to change. If any particular Spittle is popular and is requested frequently, it’s a waste of time and resources to fetch it from the database repeatedly. By annotating the findOne()
+method with @Cacheable, as shown in the following listing, you can make sure the Spittle is cached and avoid unnecessary trips to the database
+
+@Cacheable("spittleCache")
+public Spittle findOne(long id) {
+	try {
+		return jdbcTemplate.queryForObject(SELECT_SPITTLE_BY_ID, new SpittleRowMapper(), id);
+	} catch (EmptyResultDataAccessException e) {
+		return null;
+	}
+}
+
+the default cache key is based on the parameters to the method.
+
+7. CUSTOMIZING THE CACHE KEY
+
+@CachePut(value="spittleCache", key="#result.id")
+Spittle save(Spittle spittle);
+
+@Cacheable(value="spittleCache" unless="#result.message.contains('NoCache')")
+Spittle findOne(long id);
+
+- Any time a cached value is no longer valid, you should make sure it’s removed from the cache so that future cache hits won’t return stale or otherwise nonexistent data.
+@CacheEvict("spittleCache")
+void remove(long spittleId);
+
+- Unlike @Cacheable and @CachePut, @CacheEvict can be used on void methods. @Cacheable and @CachePut require a non-void return value, which
+is the item to place in the cache. But because @CacheEvict is only removing items from the cache, it can be placed on any method, even a void one.
+
+ContextLoaderListener和DispatcherServlet这两个类分别是两个不同的ApplicationContext
+
+如果以下信息是在spring-mvc.xml这个文件里配置
+
+
+<context:component-scan base-package="com.zhang" />
+<mvc:annotation-driven />
+
+<cache:annotation-driven cache-manager="cacheManager" />配置在spring-core.xml，就算在代码里加了@Cache注解，也是无效的
+
+正确方式，是把context:component-scan和cache:annotation-driven配置在同一个xml文件里
+
+具体的原因，可以搜索ContextLoaderListener和DispatcherServlet这两个类加载bean的不同

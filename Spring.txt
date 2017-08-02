@@ -1,0 +1,221 @@
+Web - Full-stack web development with Tomcat and Spring MVC
+
+Freemarker - FreeMarker templating engine
+
+Rest Repositories - Exposing Spring Data repositories over REST via spring-data-rest-webmvc
+
+AOP - Aspect-oriented programming including spring-aop and AspectJ
+
+Security - Secure your application via spring-security
+
+JPA - Java Persistence API including spring-data-jpa, spring-orm and Hibernate
+
+MyBatis - Persistence support using MyBatis
+
+JDBC - JDBC databases
+
+MySQL - MySQL jdbc driver
+
+Guides
+1. Building Java Projects with Maven. 
+- Learn how to build a Java project with Maven.
+- Create the directory structure mkdir -p src/main/java/hello
+- Create the pom.xml
+- mvn compile/package
+- Declare dependency
+- Write a test (Junit) src/test/java/hello/GreeterTest.java 
+
+2. Serving Web Content with Spring MVC
+- This guide walks you through the process of creating a "hello world" web site with Spring.
+- Create a web controller
+@Controller
+public class GreetingController {
+    @RequestMapping("/greeting")
+    public String greeting(@RequestParam(value="name", required=false, defaultValue="World") String name, Model model) {
+        model.addAttribute("name", name);
+        return "greeting";
+    }
+}
+- The implementation of the method body relies on a view technology, in this case Thymeleaf, to perform server-side rendering of the HTML. 
+- Web Development Tools. Hot swapping etc.
+
+3. Accessing Data with JPA
+- Learn how to work with JPA data persistence using Spring Data JPA.
+- Create Domain Object
+- Create Repository Object
+public interface CustomerRepository extends CrudRepository<Customer, Long> {
+    List<Customer> findByLastName(String lastName);
+}
+
+4. Accessing JPA Data with REST. 
+- This guide walks you through the process of creating an application that accesses relational JPA data through a hypermedia-based RESTful front end.
+- hypermedia-driven interface: A very convenient aspect of this hypermedia-driven interface is how you can discover all the RESTful endpoints using curl (or whatever REST client you are using). There is no need to exchange a formal contract or interface document with your customers.
+- HAL: Hypertext Application Language
+- Create Domain Object:
+- @Entity public class Person {
+- @Id @GeneratedValue(strategy = GenerationType.AUTO) private long id;
+- Create Repositary Object:
+- @RepositoryRestResource(collectionResourceRel = "people", path = "people")
+public interface PersonRepository extends PagingAndSortingRepository<Person, Long> {
+- At runtime, Spring Data REST will create an implementation of this interface automatically. Then it will use the @RepositoryRestResource annotation to direct Spring MVC to create RESTful endpoints at /people.
+
+5. Accessing Relational Data using JDBC with Spring
+- This guide walks you through the process of accessing relational data with Spring.
+- Create a Domain object (e.g. Customer)
+- Store and retrieve data using JDBCTemplate
+
+6. Building an Application with Spring Boot
+- Spring Boot offers a fast way to build applications. It looks at your classpath and at beans you have configured, makes reasonable assumptions about what you’re missing, and adds it. With Spring Boot you can focus more on business features and less on infrastructure.
+- Parent: spring-boot-starter-parent
+- Dependency: spring-boot-starter-web
+- Plugin: spring-boot-maven-plugin
+- @RestController, @RequestMapping("/")
+- @SpringBootApplication, @Bean
+- @SpringBootApplication is a convenience annotation that adds all of the following:
+@Configuration tags the class as a source of bean definitions for the application context.
+@EnableAutoConfiguration tells Spring Boot to start adding beans based on classpath settings, other beans, and various property settings.
+Normally you would add @EnableWebMvc for a Spring MVC app, but Spring Boot adds it automatically when it sees spring-webmvc on the classpath. This flags the application as a web application and activates key behaviors such as setting up a DispatcherServlet.
+@ComponentScan tells Spring to look for other components, configurations, and services in the hello package, allowing it to find the controllers.
+
+7. Building a RESTful Web Service
+- This guide walks you through the process of creating a "hello world" RESTful web service with Spring.
+- Spring uses the Jackson JSON library to automatically marshal instances of type Greeting into JSON.
+- public Greeting greeting(@RequestParam(value="name", defaultValue="World") String name) {
+- A key difference between a traditional MVC controller and the RESTful web service controller above is the way that the HTTP response body is created. Rather than relying on a view technology to perform server-side rendering of the greeting data to HTML, this RESTful web service controller simply populates and returns a Greeting object. The object data will be written directly to the HTTP response as JSON.
+- Spring 4’s new @RestController annotation marks the class as a controller where every method returns a domain object instead of a view. It’s shorthand for @Controller and @ResponseBody rolled together.
+- The Greeting object must be converted to JSON. Thanks to Spring’s HTTP message converter support, you don’t need to do this conversion manually. Because Jackson 2 is on the classpath, Spring’s MappingJackson2HttpMessageConverter is automatically chosen to convert the Greeting instance to JSON.
+
+8. Consuming a RESTful Web Service
+- This guide walks you through the process of creating an application that consumes a RESTful web service.
+- RestTemplate: Not terribly useful when fetched through a browser or through curl. A more useful way to consume a REST web service is programmatically. To help you with that task, Spring provides a convenient template class called RestTemplate. RestTemplate makes interacting with most RESTful services a one-line incantation. And it can even bind that data to custom domain types.
+- First, create a domain class to contain the data that you need. 
+- @JsonIgnoreProperties(ignoreUnknown = true) It’s annotated with @JsonIgnoreProperties from the Jackson JSON processing library to indicate that any properties not bound in this type should be ignored.
+- In order for you to directly bind your data to your custom types, you need to specify the variable name exact same as the key in the JSON Document returned from the API. In case your variable name and key in JSON doc are not matching, you need to use @JsonProperty annotation to specify the exact key of JSON document.
+
+9. Validating Form Input
+- This guide walks you through the process of configuring a web application form to support validation.
+- You’ll build a simple Spring MVC application that take user input and checks the input using standard validation annotations. You’ll also see how to display the error message on the screen so the user can re-enter a valid input.
+- Create a PersonForm object
+- @Size(min=2, max=30) will only allow names between 2 and 30 characters long
+- @NotNull won’t allow a null value, which is what Spring MVC generates if the entry is empty
+- @Min(18) won’t allow if the age is less than 18
+- Create a web controller
+
+10. Securing a Web Application
+- This guide walks you through the process of creating a simple web application with resources that are protected by Spring Security. You’ll build a Spring MVC application that secures the page with a login form backed by a fixed list of users.
+
+11. Accessing data with MySQL
+
+- This guide walks you through the process of creating a Spring application connected with a MySQL Database, as opposed to an in-memory, embedded database, which all of the other guides and many sample apps use. It uses Spring Data JPA to access the database, but this is only one of many possible choices (e.g. you could use plain Spring JDBC).
+- Create the database
+mysql> create database db_example; -- Create the new database
+mysql> create user 'springuser'@'localhost' identified by 'ThePassword'; -- Creates the user
+mysql> grant all on db_example.* to 'springuser'@'localhost'; -- Gives all the privileges to the new user on the newly created database
+
+- Create the application.properties file
+spring.jpa.hibernate.ddl-auto=create
+spring.datasource.url=jdbc:mysql://localhost:3306/db_example
+spring.datasource.username=springuser
+spring.datasource.password=ThePassword
+
+- Create the @Entity model
+@Entity // This tells Hibernate to make a table out of this class
+public class User {
+    @Id
+    @GeneratedValue(strategy=GenerationType.AUTO)
+    private Integer id;
+
+- Create the repository
+public interface UserRepository extends CrudRepository<User, Long> {
+
+Make some security changes
+- revoke all on db_example.* from 'springuser'@'localhost';
+- grant select, insert, delete, update on db_example.* to 'springuser'@'localhost';
+- spring.jpa.hibernate.ddl-auto=none
+
+12. Uploading Files
+
+- This guide walks you through the process of creating a server application that can receive HTTP multi-part file uploads. You will create a Spring Boot web application that accepts file uploads. You will also build a simple HTML interface to upload a test file.
+- Create an Application class
+To start a Spring Boot MVC application, we first need a starter; here, spring-boot-starter-thymeleaf and spring-boot-starter-web are already added as dependencies. To upload files with Servlet containers, you need to register a MultipartConfigElement class (which would be <multipart-config> in web.xml). Thanks to Spring Boot, everything is auto-configured for you!
+- As part of auto-configuring Spring MVC, Spring Boot will create a MultipartConfigElement bean and make itself ready for file uploads.
+- MockMvc
+- @RunWith(SpringRunner.class)
+@AutoConfigureMockMvc
+@SpringBootTest
+
+
+13. Testing the Web Layer
+- You’ll build a simple Spring application and test it with JUnit. You probably already know how to write and run unit tests of the individual classes in your application, so for this guide we will concentrate on using Spring Test and Spring Boot features to test the interactions between Spring and your code. You will start with a simple test that the application context loads successfully, and continue on to test just the web layer using Spring’s MockMvc.
+- 使用MockMvc测试Controller: 对模块进行集成测试时，希望能够通过输入URL对Controller进行测试，如果通过启动服务器，建立http client进行测试，这样会使得测试变得很麻烦，比如，启动速度慢，测试验证不方便，依赖网络环境等，这样会导致测试无法进行，为了可以对Controller进行测试，可以通过引入MockMVC进行解决。
+- 用到的注解
+RunWith(SpringJUnit4ClassRunner.class): 表示使用Spring Test组件进行单元测试;
+WebAppConfiguration: 使用这个Annotate会在跑单元测试的时候真实的启一个web服务，然后开始调用Controller的Rest API，待单元测试跑完之后再将web服务停掉;
+ContextConfiguration: 指定Bean的配置文件信息，可以有多种方式，这个例子使用的是文件路径形式，如果有多个配置文件，可以将括号中的信息配置为一个字符串数组来表示;
+
+14. Enabling Cross Origin Requests for a RESTful Web Service
+
+- This guide walks you through the process of creating a "hello world" RESTful web service with Spring that includes headers for Cross-Origin Resource Sharing (CORS) in the response. You will find more information about Spring CORS support in this blog post.
+- Create a resource representation class: Create a pojo domain class. Spring uses the Jackson JSON library to automatically marshal instances of type Greeting into JSON.
+- Create a resource controller
+- Enabling CORS
+- Controller method CORS configuration: @CrossOrigin(origins = "http://localhost:9000")
+- Global CORS configuration: 
+@Bean //return a bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurerAdapter() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/greeting-javaconfig").allowedOrigins("http://localhost:9000");
+            }
+        };
+    }
+- Java-based configuration
+
+15. Handling Form Submission
+- using Spring to create and submit a web form.
+- @Controller
+- return view -> html
+- Domain Object
+- model.addAttribute("greeting", new Greeting());
+- public String greetingSubmit(@ModelAttribute Greeting greeting) {
+
+
+16. Consuming a RESTful Web Service with jQuery
+
+- You will build a jQuery client that consumes a Spring-based RESTful web service. Specifically, the client will consume the service created in Building a RESTful Web Service with CORS. The jQuery client will be accessed by opening the index.html file in your browser, and will consume the service accepting requests at:
+
+17. Tutorial: Building REST services with Spring
+1) Spring Initializer: Web, JPA, H2
+2) Use two JPA entities to model the records as they’ll live in a database. Account and Bookmark
+3) Use two Spring Data JPA repositories to handle the tedious database interactions. Spring Data repositories are typically interfaces with methods supporting reading, updating, deleting, and creating records against a backend data store. Some repositories also typically support data paging, and sorting, where appropriate. Spring Data synthesizes implementations based on conventions found in the naming of the methods in the interface. There are multiple repository implementations besides the JPA ones. You can use Spring Data MongoDB, Spring Data GemFire, Spring Data Cassandra, etc.
+4) RestController
+- These controller methods return simple POJOs - Collection<Bookmark>, and Bookmark, etc., in all but the add case. When an HTTP request comes in that specifies an Accept header, Spring MVC loops through the configured HttpMessageConverter until it finds one that can convert from the POJO domain model types into the content-type specified in the Accept header, if so configured. Spring Boot automatically wires up an HttpMessageConverter that can convert generic Object s to JSON, absent any more specific converter. HttpMessageConverter s work in both directions: incoming requests bodies are converted to Java objects, and Java objects are converted into HTTP response bodies.
+- The add method accepts incoming HTTP requests, saves them and then sends back a ResponseEntity<T>. ResponseEntity is a wrapper for a response and, optionally, HTTP headers and a status code. The add method sends back a ResponseEntity with a status code of 201 (CREATED) and a header (Location) that the client can consult to learn how the newly created record is referencable. It’s a bit like extracting the just generated primary key after saving a record in the database.
+5) Test
+- MocMvc.perform
+- MockHttpServletRequestBuilder.get/post, 
+- MockMvcResultMatchers#jsonPath,
+- ResultActions.andExpect
+- MockMvcResultMatchers.status()/content()
+- MvcResult
+
+5) Building a HATEOAS REST Service
+- As Wikipedia says: Clients must know the API a priori. Changes in the API break clients and they break the documentation about the service. Hypermedia as the engine of application state (a.k.a. HATEOAS) is one more constraint that addresses and removes this coupling. 
+- It is a slight simplification to say that Spring HATEOAS makes it easy to provide links - metadata about payloads being returned to the client - but that is how we will approach it. 
+- Fundamentally, all we will do is wrap our response payloads using Spring HATEOAS' ResourceSupport type. ResourceSupport accumulates Link objects which in turn describe useful, related resources. 
+
+6) Securing a REST Service
+- Fundamentally, Spring Security needs to have some idea of your application’s users and their privileges. These privileges, or authorities, answer the question: what may an application user see, or do?
+- At the heart of Spring Security is the UserDetailsService interface, which has one job: given a username, produce a UserDetails implementation, UserDetails implementations must be able to answer questions about an account’s validity, its password, its username, and its authorities (represented by instances of type org.springframework.security.core.GrantedAuthority).
+- Spring Security provides many implementations of this contract that adapt existing identity providers, like Active Directory, LDAP, pam, CAAS, etc. Spring Social even provides a nice integration that delegates to different OAuth-based services like Facebook, Twitter, etc., for authentication.
+
+OATH2
+https://graph.qq.com/oauth/show?
+which=Login&
+display=pc&
+client_id=100490398&
+response_type=code&
+scope=get_user_info&
+redirect_uri=http://passport.mukewang.com/user%2
+

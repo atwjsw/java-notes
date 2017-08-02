@@ -1,0 +1,172 @@
+JUnit
+
+Assertions:
+- primitives/Objects/arrays
+- The parameter order is expected value followed by actual value. Optionally the first parameter can be a String message that is output on failure. There is a slightly different assertion, assertThat that has parameters of the optional failure message, the actual value, and a Matcher object. 
+- assertEquals("failure - strings are not equal", "text", "text");
+- assertArrayEquals("failure - byte arrays not same", expected, actual);
+- assertTrue("failure - should be true", true);
+- assertFalse("failure - should be false", false);
+- assertNotNull("should not be null", new Object());
+- assertSame("should be same", aNumber, aNumber);
+- assertThat("albumen", both(containsString("a")).and(containsString("b")));
+- assertThat("good", allOf(equalTo("good"), startsWith("good")));
+- assertThat("good", not(allOf(equalTo("bad"), equalTo("good"))));
+- assertThat("good", anyOf(equalTo("bad"), equalTo("good")));
+- assertThat(7, not(CombinableMatcher.<Integer> either(equalTo(3)).or(equalTo(4))));
+- assertThat(new Object(), not(sameInstance(new Object())));
+
+Test runners
+- NetBeans, Eclipse and IntelliJ Idea have native graphical test runners built in.
+- Console based Test runner: java org.junit.runner.JUnitCore TestClass1 [...other test classes...]
+- @RunWith: When a class is annotated with @RunWith or extends a class annotated with @RunWith, JUnit will invoke the class it references to run the tests in that class instead of the runner built into JUnit.
+- The default runner is BlockJUnit4ClassRunner which supersedes the older JUnit4ClassRunner
+- Annotating a class with @RunWith(JUnit4.class) will always invoke the default JUnit 4 runner in the current version of JUnit, this class aliases the current default JUnit 4 class runner.
+- Suite is a standard runner that allows you to manually build a suite containing tests from many classes.
+- Parameterized is a standard runner that implements parameterized tests. When running a parameterized test class, instances are created for the cross-product of the test methods and the test data elements.
+- Categories is a standard runner enabling subsets of tests tagged with certain categories to execute/be excluded from a given test run.
+
+Third Party Runners
+- SpringJUnit4ClassRunner - SpringJUnit4ClassRunner is a custom extension of JUnit's BlockJUnit4ClassRunner which provides functionality of the Spring TestContext Framework to standard JUnit tests by means of the TestContextManager and associated support classes and annotations.
+- MockitoJUnitRunner
+- HierarchicalContextRunner
+- Avh4's Nested
+- NitorCreation's NestedRunner
+
+Suite:
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+  TestFeatureLogin.class,
+  TestFeatureLogout.class,
+  TestFeatureNavigate.class,
+  TestFeatureUpdate.class
+})
+
+Test Running Order: 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+
+Expected Exceptions:
+@Test(expected = IndexOutOfBoundsException.class) 
+public void empty() { 
+     new ArrayList<Object>().get(0); 
+}
+
+Matchers and assertthat:
+- assertThat([value], [matcher statement]);
+- More readable and typeable: this syntax allows you to think in terms of subject, verb, object (assert "x is 3") rather than assertEquals, which uses verb, object, subject (assert "equals 3 x")
+- assertThat(x, is(3));
+- assertThat(x, is(not(4)));
+- assertThat(responseString, either(containsString("color")).or(containsString("colour")));
+- assertThat(myList, hasItem("3"));
+- Combinations: any matcher statement s can be negated (not(s)), combined (either(s).or(t)), mapped to a collection (each(s)), or used in custom combinations (afterFiveSeconds(s))
+
+Test ignored:
+@Ignore("Test is ignored as a demonstration")
+you can add the @Ignore annotation in front or after @Test. Test runners will report the number of ignored tests, along with the number of tests that ran and the number of tests that failed.
+
+Timeout for tests:
+- 	@Test(timeout=1000)
+	public void testWithTimeout() {
+  		...
+	}
+
+- 	@Rule
+	public Timeout globalTimeout = Timeout.seconds(10); // 10 seconds max per method tested
+
+- 	The timeout specified in the Timeout rule applies to the entire test fixture, including any @Before or @After methods.
+
+Parameterized tests:
+-  @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][] {     
+                 { 0, 0 }, { 1, 1 }, { 2, 1 }, { 3, 2 }, { 4, 3 }, { 5, 5 }, { 6, 8 }  
+           });
+    }
+
+Assumptions:
+- assumeThat(File.separatorChar, is('/'));
+- assumeTrue(bugFixed("13356"));  // bugFixed is not included in JUnit
+
+Rules
+- Rules allow very flexible addition or redefinition of the behavior of each test method in a test class. Testers can reuse or extend one of the provided Rules below, or write their own.
+- @Rule
+  public final TemporaryFolder tempFolder = new TemporaryFolder();
+- @Rule
+  public final ExpectedException exception = ExpectedException.none();
+- The TemporaryFolder Rule allows creation of files and folders that are deleted when the test method finishes (whether it passes or fails). By default no exception is thrown if resources cannot be deleted:
+- ExternalResource is a base class for Rules (like TemporaryFolder) that set up an external resource before a test (a file, socket, server, database connection, etc.), and guarantee to tear it down afterward:
+- The ErrorCollector Rule allows execution of a test to continue after the first problem is found (for example, to collect all the incorrect rows in a table, and report them all at once):
+- Verifier is a base class for Rules like ErrorCollector, which can turn otherwise passing test methods into failing tests if a verification check is failed.
+- The Timeout Rule applies the same timeout to all test methods in a class:
+- The ExpectedException Rule allows in-test specification of expected exception types and messages:
+- The ClassRule annotation extends the idea of method-level Rules, adding static fields that can affect the operation of a whole class. Any subclass of ParentRunner, including the standard BlockJUnit4ClassRunner and Suite classes, will support ClassRules.
+- The RuleChain rule allows ordering of TestRules:
+
+Theories:
+@RunWith(Theories.class)
+public class UserTest {
+    @DataPoint
+    public static String GOOD_USERNAME = "optimus";
+    @DataPoint
+    public static String USERNAME_WITH_SLASH = "optimus/prime";
+
+    @Theory
+    public void filenameIncludesUsername(String username) {
+        assumeThat(username, not(containsString("/")));
+        assertThat(new User(username).configFileName(), containsString(username));
+    }
+}
+
+Test fixtures:
+- Preparation of input data and setup/creation of fake or mock objects
+- Loading a database with a specific, known set of data
+- Copying a specific known set of files creating a test fixture will create a set of objects initialized to certain states.
+@BeforeClass setUpClass
+@Before setUp
+@Test test2()
+@After tearDown
+@Before setUp
+@Test test1()
+@After tearDown
+@AfterClass tearDownClass
+
+Categories:
+- From a given set of test classes, the Categories runner runs only the classes and methods that are annotated with either the category given with the @IncludeCategory annotation, or a subtype of that category. 
+-  @Category(SlowTests.class)
+  @Test
+  public void b() {
+  }
+}
+
+Continuous testing:
+- Continuous Testing allows for immediate feedback on JUnit test results within an IDE. The tests are run automatically after every change, usually in an intelligent order so that newest tests or most recently failed tests are run first.
+
+Best pactices:
+1.测试方法上必须使用@Test进行修饰
+2.测试方法必须使用public void 进行修饰，不能待任何的参数
+3.新建一个源代码目录
+4.测试类的爆应该和被测试类保持一致
+5.测试单元中的每个方法必须可以独立测试，测试方法间不能有任何的依赖
+6.测试类使用Test作为类名的后缀(Optional)
+7.Failure 一般由单元测试使用的方法判断失败所引起的，这表示测试点发现了问题，就是说问题输出的结果和我们预期的不一样。	
+8.error是有代码异常引起的，它可以产生于测试代码本身的错误，也可以是测试代码中一个隐藏的bug
+9. @Test: 将一个 普通的方法修饰成为一个测试方法
+10. @BeforeClass: 他会在所有的方法运行前被执行，static修饰
+11. @AfterClass 他会在所有方法运行结束后被执行，static修饰
+12. @Before：会在每一个测试方法被运行前执行一次
+13. @After 会在每个测试方法被运行后执行一次
+14. @Ignore 所修饰的测试方法会被测试运行器忽略
+15. @RunWith: 可以修改测试运行器 org.junit.runner.Runner
+16. @Test(expected = IndexOutOfBoundsException.class) 
+17. @Test(timeout=1000)
+18. Suite Test: 测试套件就是组织测试类一起运行的; 写一个作为测试套件的入口类，这个类里不包含其他的方法; 更改测试运行器Suite.class; 将要测试的类作为数组传入到Suite.SuiteClasses({})
+19. @RunWith(Suite.class)  @Suite.SuiteClasses({TaskTest1.class,TaskTest2.class,TaskTest3.class})
+	public class SuiteTest{}
+20 	Parameterized Test: 1:更改默认的测试运行器为 Parameterized.class; 2：声明变量来存放预期值;3:在提供数据的方法上加上一个@Parameters注解，这个方法必须是静态static的，并且返回一个集合Collection;4:在测试类的构造方法中为各个参数赋值，（构造方法是由JUnit调用的），最后编写测试类，它会根据参数的组数来运行测试多次。
+21. Spring and Hibernate Integration:
+	@RunWith(SpringJUnit4ClassRunner.class)
+	@ContextConfiguration("classpath:applicationContext.xml") or @ContextConfiguration(locations={"file:src/main/webapp/WEB-INF/applicationContext.xml"}) 
+	本质上是Load了ApplicationContext，再Load Hibernate的Session Factory
+
+
+https://openhome.alipay.com/platform/appDaily.htm?tab=info

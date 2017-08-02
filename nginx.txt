@@ -1,0 +1,40 @@
+sudo vim /usr/local/nginx/conf/nginx.conf
+cd /usr/local/nginx/conf/vhost
+sudo vim img.atwjsw.com.conf
+
+server {
+    listen 80;
+    autoindex off;
+    server_name img.atwjsw.com;
+    access_log /usr/local/nginx/logs/access.log combined;
+    index index.html index.htm index.jsp index.php;
+    #error_page 404 /404.html;
+    if ( $query_string ~* ".*[\;'\<\>].*" ){
+        return 404;
+    }
+
+    location ~ /(mmall_fe|mmall_admin_fe)/dist/view/* {
+        deny all;
+    }
+
+    location / {
+        root /ftpfile/;
+        add_header Access-Control-Allow-Origin *;
+    }
+}
+
+startup: /usr/local/nginx/sbin/nginx
+restart: /usr/local/nginx/sbin/nginx -s reload
+test connectivity: http://192.168.246.150:80
+
+cd C:\Windows\System32\drivers\etc
+edit hosts
+192.168.246.150	img.atwjsw.com
+
+{
+"status": 0,
+"data": {
+"uri": "5e1ea3f3-e2f5-4c8c-80a7-5c1d1fdc8e55.pdf",
+"url": "http://img.atwjsw.com/5e1ea3f3-e2f5-4c8c-80a7-5c1d1fdc8e55.pdf"
+}
+}

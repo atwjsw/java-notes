@@ -1,0 +1,82 @@
+Java 8
+1. Default methods for interface (Extension methods)
+- add non-abstract method implementations to interfaces by utilizing the default keyword
+
+2. Lambda expressions
+
+List<String> names = Arrays.asList("peter", "anna", "mike", "xenia");
+
+Collections.sort(names, new Comparator<String>() {
+    @Override
+    public int compare(String a, String b) {
+        return b.compareTo(a);
+    }
+});
+
+Collections.sort(names, (a, b) -> b.compareTo(a));
+
+3. Functional Interfaces
+- functional interface must contain exactly one abstract method declaration
+- Each lambda expression of that type will be matched to this abstract method. 
+- Since default methods are not abstract you're free to add default methods to your functional interface.
+- @FunctionalInterface
+- e.g. Comparator or Runnable
+
+4. Method and Constructor References
+- Converter<String, Integer> converter = (from) -> Integer.valueOf(from);
+- Converter<String, Integer> converter = Integer::valueOf;
+- Java 8 enables you to pass references of methods or constructors via the :: keyword.
+- We can read final local variables from the outer scope of lambda expressions
+
+5. Predicates
+- Predicates are boolean-valued functions of one argument. The interface contains various default methods for composing predicates to complex logical terms (and, or, negate)
+
+6. Functions
+- Functions accept one argument and produce a result. Default methods can be used to chain multiple functions together (compose, andThen).
+
+7. Suppliers
+- Suppliers produce a result of a given generic type. Unlike Functions, Suppliers don't accept arguments.
+Supplier<Person> personSupplier = Person::new;
+personSupplier.get();   // new Person
+
+8. Consumers
+
+- Consumers represents operations to be performed on a single input argument.
+- Consumer<Person> greeter = (p) -> System.out.println("Hello, " + p.firstName);
+greeter.accept(new Person("Luke", "Skywalker"));
+
+9. Comparators
+
+Comparators are well known from older versions of Java. Java 8 adds various default methods to the interface.
+
+10. Optionals
+
+Optionals are not functional interfaces, instead it's a nifty utility to prevent NullPointerException. It's an important concept for the next section, so let's have a quick look at how Optionals work.
+
+11. Streams
+- A java.util.Stream represents a sequence of elements on which one or more operations can be performed. 
+
+- Filter
+Filter accepts a predicate to filter all elements of the stream. This operation is intermediate which enables us to call another stream operation (forEach) on the result. ForEach accepts a consumer to be executed for each element in the filtered stream. ForEach is a terminal operation.
+
+- Sorted
+Sorted is an intermediate operation which returns a sorted view of the stream. 
+
+- Map
+The intermediate operation map converts each element into another object via the given function. 
+
+- Match
+Various matching operations can be used to check whether a certain predicate matches the stream. 
+
+- Count
+Count is a terminal operation returning the number of elements in the stream as a long.
+
+- Reduce
+This terminal operation performs a reduction on the elements of the stream with the given function. The result is an Optional holding the reduced value.
+
+12. Parallel Streams
+As mentioned above streams can be either sequential or parallel. Operations on sequential streams are performed on a single thread while operations on parallel streams are performed concurrent on multiple threads.
+
+13. Map
+
+As already mentioned maps don't support streams. Instead maps now support various new and useful methods for doing common tasks.

@@ -1,0 +1,103 @@
+1. Stream
+collection.stream().filter(w -> w.length() > 12).count()
+collection.parallelStram()...
+
+- A stream seems superficially similar to a collection, allowing you to transform and retrieve data. But there are significant differences:
+1. A stream does not store its elements. They may be stored in an underlying collection or generated on demand.
+2. Stream operations don’t mutate their source. For example, the filter method does not remove elements from a new stream, but it yields a new stream in which they are not present.
+3. Stream operations are lazy when possible. This means they are not executed until their result is needed. For example, if you only ask for the first five long words instead of all,
+the filter method will stop filtering after the fifth match. As a consequence, you can even have infinite streams!
+
+You set up a pipeline of operations in three stages:
+1. Create a stream.
+2. Specify intermediate operations for transforming the initial stream into others, possibly in multiple steps.
+3. Apply a terminal operation to produce a result. This operation forces the execution of the lazy operations that precede it. Afterwards, the stream can no longer be used.
+
+2. Stream creation
+- Stream<String> words = Stream.of(contents.split("\\PL+"));
+- Stream<String> song = Stream.of("gently", "down", "the", "stream"); //varargs
+- Arrays.stream(array, from, to)
+- Stream<String> silence = Stream.empty();
+- Stream<String> echos = Stream.generate(()->"Echo"); //Supplier
+-  Stream<BigInteger> integers = Stream.iterate(BigInteger.ZERO, n -> n.add(BigInteger.ONE));
+- Stream<String> wordsAnotherWay = Pattern.compile("\\PL++").splitAsStream(contents);
+- Stream<String> lines = Files.lines(path, StandardCharsets.UTF_8);
+
+3. Stream transformation (intermediate operations)
+- Stream.filter(Predicate)
+- Stream.map(Function)
+- Stream.flatMap(Function<Stream, String>)
+- Stream.limit(int);
+- Stream.skip(int);
+- Stream.concat(stream1, stream2)
+- Stream.distinct();
+
+4. Stream reduction (terminal operations)
+- long Stream.count();
+- Optional Stream.max(Comparator);
+- Optaional Stream.min(Comparator);
+- Optaional Stream.findFirst();
+- Optaional Stream.findAny();
+- boolean anyMatch(Predicate);
+- boolean allMatch(Predicate);
+- boolean noneMatch(Predicate);
+
+5. Optional
+using optional
+- Optional.orElse("")
+- Optional.orElseGet(()->"echo") //supplier
+- Optional.orElseThrow(IllegalStateException);
+- Optional.ifPresent(Consumer);
+- Optional<Boolean> Optional.map(Function)
+- Optional.get() //Not safe to use
+- Optional.isPresent(); //doesn't make work easier
+
+creating optional
+- Optional Optional.of(x);
+- Optional Optional.empty();
+- Optional Optional.ofNullable();
+- Optional Optional.flatMap(Function)
+
+6. Collecting results
+- Stream.forEach(Consumer)
+- Stream.forEachOrdered(Consumer)
+- Object[] result = stream.toArray();
+- List<String> result = stream.collect(Collectors.toList());
+- Set<String> result = stream.collect(Collectors.toSet());
+-  TreeSet<String> resultTreeSet = stream().collect(Collectors.toCollection(TreeSet::new));
+- String resultStr2 = stream().collect(Collectors.joining(", "));
+- IntSummaryStatistics summary = stream().collect(Collectors.summarizingInt(String::length));
+- double averageWordLength = summary.getAverage();
+- double maxWordLength = summary.getMax();
+
+7. collecting into Maps
+- Stream.collect(Collectors.toMap(keyMapper, valueMapper));
+- ...
+
+8. grouping and partitioning
+- Stream.groupingBy(Collectors.toMap(Function classifier));
+- Stream.paritioningBy(Preicate<? super T> predicate)
+
+9. Downstream collectors
+- Collectors.counting()
+- summingInt
+- summingDouble
+- maxBy
+- minby
+
+10. Primitive Type Streams
+- IntStream range(0, 5);
+- IntStream rangeClosed(0, 10);
+- IntStream of(int... values)
+- int[] toArray()
+- int sum()
+- OptionalDouble average()
+- OptionalInt max()
+- OptionalInt min()
+- IntSummaryStatistics summaryStatistics
+- Stream<Integer> boxed()
+- LongStream, DoubleStream - same as above
+- IntStream CharSequence.codePoint
+- IntStream Random.ints()...
+- OptionalInt, OptionalLong, OptionalDouble
+- IntSummaryStatistics

@@ -1,0 +1,34 @@
+Spring Framework Reference
+
+2.2 Framework Modules
+
+#Core conatiner
+- spring-core/spring-beans: IOC/DI
+- spring-context: accessing object. 
+- spring-context-support: integrating 3rd party libs into a Spring application context for caching (EhCache, Guava, JCache), mailing (JavaMail), scheduling (CommonJ, Quartz) and template engines (FreeMarker, JasperReports, Velocity).
+- spring-expression: Expression language supports setting and getting property values, property assignment, method invocation, accessing the content of arrays, collections and indexers, logical and arithmetic operators, named variables, and retrieval of objects by name from Spring’s IoC container. 
+
+#AOP and Instrumentation
+- spring-aop: provides an AOP Alliance-compliant aspect-oriented programming implementation
+- spring-aspects: integration with AspectJ
+- spring-instrument: provides class instrumentation support and classloader implementations to be used in certain application servers
+
+#Messagging
+- spring-messaging: integration with messaging-based applications
+
+#Data Access/Integration
+- spring-jdbc: JDBC-layer abstraction
+- spring-tx: programmatic and declarative transaction
+- spring-orm: integration layers for popular object-relational mapping APIs, including JPA, JDO, and Hibernate
+- spring-oxm: Object/XML mapping implementations such as JAXB, Castor, XMLBeans, JiBX and XStream
+- spring-jms: producing and consuming messages
+
+#Web
+- spring-web: multipart file upload functionality, initialization of the IoC container using Servlet listeners and a web-oriented application context. HTTP client and the web-related parts of Spring’s remoting support.
+
+- spring-webmvc: Spring’s model-view-controller (MVC) and REST Web Services implementation for web application
+
+- spring-webmvc-portlet: MVC implementation to be used in a Portlet environment
+
+#Test
+spring-test: supports the unit testing and integration testing of Spring components with JUnit or TestNG. loading of Spring ApplicationContexts and caching of those contexts. It also provides mock objects that you can use to test your code in isolation

@@ -1,0 +1,220 @@
+1. What is Spring Framework?
+- lightweight enterprise application development framework in Java language
+
+2. What are some of the important features and advantages of Spring Framework?
+- DI
+- AOP
+- lightweight
+- spring MVC
+- ecosystems
+
+3. What do you understand by Dependency Injection?
+- loose coupling
+- enable component based development
+- injecting java objects during runtime
+
+4. How do we implement DI in Spring Framework?
+- Beans
+- bean wiring in container
+- application context
+
+5. What are the benefits of using Spring Tool Suite?
+
+
+6. Name some of the important Spring Modules?
+- Spring-core
+- spring-web
+- spring-jdbc
+- orm
+- oxm
+- aop
+- instrumentation
+
+7. What do you understand by Aspect Oriented Programming?
+- aspect
+- business logic vs. common services - logging, transaction, security, 
+
+8. What is Aspect, Advice, Pointcut, JointPoint and Advice Arguments in AOP?
+
+
+
+
+9. What is the difference between Spring AOP and AspectJ AOP?
+- aop only intercept at method level
+- constructor...
+
+
+10. What is Spring IoC Container?
+
+
+
+11. What is a Spring Bean?
+- component managed by the container, lifecycle managed by the container.
+- delivered certian funtionality
+- instantiated by configuration or annotation
+
+12. What is the importance of Spring bean configuration file?
+- bean can be discovered and wired by container.
+
+13. What are different ways to configure a class as Spring Bean?
+- xml <bean>
+- java @bean
+- java annotation
+
+14. What are different scopes of Spring Bean?
+- singleton
+- prototype
+- request
+- session
+- global session
+
+15. What is Spring Bean life cycle?
+- init @PostInit
+- destroy @PreDstroy
+
+16. How to get ServletContext and ServletConfig object in a Spring Bean?
+?
+
+17. What is Bean wiring and @Autowired annotation?
+- association by container
+- annotation enable auto wiring
+
+18. What are different types of Spring Bean autowiring?
+- constructor 
+- setter
+- method
+- field
+
+19. Does Spring Bean provide thread safety?
+- no. singleton, not synchronized
+- prototype
+
+20. What is a Controller in Spring MVC?
+- a bean that serve the http request
+
+21. What’s the difference between @Component, @Repository & @Service annotations in Spring?
+- @compenent general
+- @Service service tier
+- @Repository data tier. handle spring data exception
+
+22. What is DispatcherServlet and ContextLoaderListener?
+- entry point and front controller
+- load spring mvc configuration typically
+- ContextLoaderListener - loaded configuration xml
+
+23. What is ViewResolver in Spring?
+- component that maps the logical view name to physical view file/template
+
+24. What is a MultipartResolver and when its used?
+- component handles file upload in a form.
+
+25. How to handle exceptions in Spring MVC Framework?
+- at controller level defined exception handling method. @Exceptionhandler=xxxexception, route to cetain view
+- global handler
+
+26. How to create ApplicationContext in a Java Program?
+- XMLClasspathApplicationContex("spring.xml")
+- new FilePathApplicationContext("spring.xml")
+- WebXMLApplicationContext
+
+27 Can we have multiple Spring configuration files?
+Yes
+- ContextLoader-configFileLocation a.xml,b.xml
+- import 
+
+28. What is ContextLoaderListener?
+- a listener load configuration when servlet context initialzied
+
+29. What are the minimum configurations needed to create Spring MVC application?
+- DispatcherServlet
+- MVC annotation-driven
+
+30. How would you relate Spring MVC Framework to MVC architecture?
+- Model-view-controller, model is the domain onject, view is the JSP/freemarker template, controller is the controller class.
+- 
+
+31. How to achieve localization in Spring MVC applications?
+- ResourceBundle bean
+- filter/intercept request
+
+32. How can we use Spring to create Restful Web Service returning JSON response?
+- ResponseBody
+- messageConverter are registered by default
+- contentnegotiatingview
+
+33. What are some of the important Spring annotations you have used?
+- @Autowired
+- @Service
+- @Controller
+- @RequestMapping
+- @RequestParam
+- @PathVairable
+- @Valid
+- 
+
+
+34. Can we send an Object as the response of Controller handler method?
+- yes
+- ResponseBody
+- MessageConverter
+
+35. How to upload file in Spring MVC Application?
+- in html <form enctype/multpart>
+- in html input type=file
+- in pom.xml - common io, common fileupload
+- MutipartFile
+- write to a java.io.File
+
+36. How to validate form data in Spring Web MVC Framework?
+- JSR303
+- @Size, @Max, @Pattern...
+- @Valid
+- hasErrors
+- spring tag sf:error path=fieldName
+
+37. What is Spring MVC Interceptor and how to use it?
+- like filter
+- 
+
+38. What is Spring JdbcTemplate class and how to use it?
+- simplified jdbc operation
+- declare a bean
+- set dataSource
+- run method
+
+39. How to use Tomcat JNDI DataSource in Spring Web Application?
+- declare a bean
+- jndiDatasource, set JNDI name in property 
+
+40 .How would you achieve Transaction Management in Spring?
+- Declarative
+- transactional (require, requireNew)
+- programmatic
+
+41. What is Spring DAO?
+- Abstraction of data access tier
+- can be implemented in different technologies
+
+42. How to integrate Spring and Hibernate Frameworks?
+- Declare a Hibernate SessionFactory bean
+- set DataSource
+
+43. What is Spring Security?
+
+
+44. How to inject a java.util.Properties into a Spring Bean?
+
+<props>
+	<key> <value>
+</props>
+
+45. Name some of the design patterns used in Spring Framework?
+- front controller DispatcherServlet
+- Proxy AOP
+- View Helper Spring MVC model
+- Factory BeanFactory
+- 
+
+What are some of the best practices for Spring Framework?
+- loose coupling of components
+- component based development

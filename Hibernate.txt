@@ -1,0 +1,177 @@
+Hibernate
+
+1. Historically, HibernateTemplate was the way to work with Hibernate in a Spring application. 
+2. HibernateDaoSupport
+3. If you choose to define your object-to-database mapping in XML, you’ll need to configure LocalSessionFactoryBean in Spring :
+<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+	<property name="dataSource" ref="dataSource" />
+	<property name="mappingResources">
+		<list>
+			<value>Spitter.hbm.xml</value>
+		</list>
+	</property>
+	<property name="hibernateProperties">
+		<props>
+			<prop key="dialect">org.hibernate.dialect.HSQLDialect</prop>
+		</props>
+	</property>
+</bean>
+
+4. If annotation-oriented persistence is more your style, then you’ll need to use AnnotationSessionFactoryBean instead of LocalSessionFactoryBean:
+<bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+	<property name="dataSource" ref="dataSource"/>
+	<property name="packagesToScan" value="com.habuma.spitter.domain"/>
+	<property name="hibernateProperties">
+		<props>
+			<prop key="dialect">org.hibernate.dialect.HSQLDialect</prop>
+		</props>
+	</property>
+</bean>
+
+@Entity
+
+5. DAO class
+@Repository
+public class HibernateSpitterDao implements SpitterDao{
+	privateSessionFactory sessionFactory;
+	
+	@Autowired
+	public HibernateSpitterDao(SessionFactorysessionFactory){
+		this.sessionFactory=sessionFactory;
+	}
+	
+	private Session currentSession(){
+		return sessionFactory.getCurrentSession();
+	}
+	
+	public voidaddSpitter(Spitterspitter){
+		currentSession().save(spitter);
+	}
+	
+	public SpittergetSpitterById(longid) {
+		return(Spitter)currentSession().get(Spitter.class,id);
+	}
+
+	public voidsaveSpitter(Spitterspitter){
+		currentSession().update(spitter);
+	}
+	...
+}
+
+6. @Respository will also take care of database exception handling
+
+- PersistenceExceptionTranslationPostProcessor is a bean post processor which
+adds an advisor to any bean that’s annotated with @Repository so that any platform-
+specific exceptions are caught and then rethrown as one of Spring’s unchecked data
+access exceptions.
+
+<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
+
+
+Hibernate architecture:
+
+1. Configuration Object: This component creates the connection between the Java classes and database tables..
+- hibernate.properties and hibernate.cfg.xml. (database connections + debug configuration), in Spring, those configurations are inject as SessionFactoryBean's property values.
+- Class Mapping Setup
+Employee.hbm.xml
+Department.hbm.xml
+- Though many Hibernate users choose to write the XML by hand, a number of tools exist to generate the mapping document. These include XDoclet, Middlegen and AndroMDA for advanced Hibernate users.
+
+2. SessionFactory Object:
+- Apply the configuration files to Hibernate, In spring, sessionFacorty Object is managed by Spring as a singleton Bean.
+- instantiate sessions
+- thread safe
+- one database per sessionFactory
+
+3. Session Object:
+- A Session is used to get a physical connection with a database.
+- Persistent objects are saved and retrieved through a Session object.
+
+4. Transaction Object:
+- Transactions in Hibernate are handled by an underlying transaction manager and transaction (from JDBC or JTA).
+
+5. Query objects use SQL or Hibernate Query Language (HQL) string to retrieve data from the database and create objects. 
+String hql = "from Customer c where c.address like '%北京%'";
+		Query query = session.createQuery(hql);
+		List<Customer> list = query.list();
+
+6. Criteria Object:
+- Criteria object are used to create and execute object oriented criteria queries to retrieve objects.
+
+7. hibernate.dialect 
+This property makes Hibernate generate the appropriate SQL for the chosen database.
+
+8. Session Interface Methods:
+- Query createQuery(String queryString)
+- void delete(String entityName, Object object)
+- Session get(String entityName, Serializable id)
+- Serializable save(Object object)
+- void update(String entityName, Object object)
+- Transaction beginTransaction()
+...
+
+10. Hibernate Mapping Types:
+- The types declared and used in the mapping files are not Java data types; they are not SQL database types either. These types are called Hibernate mapping types, which can translate from Java to SQL data types and vice versa.
+integer	int or java.lang.Integer	INTEGER
+long	long or java.lang.Long	BIGINT
+short	short or java.lang.Short	SMALLINT
+float	float or java.lang.Float	FLOAT
+...
+
+11. Collections Mappings:
+- If an entity or class has collection of values for a particular variable, then we can map those values using any one of the collection interfaces available in java. Hibernate can persist instances of java.util.Map, java.util.Set, java.util.SortedMap, java.util.SortedSet, java.util.List, and any array of persistent entities or values.
+
+12. Association Mappings:
+The mapping of associations between entity classes and the relationships between tables is the soul of ORM. Following are the four ways in which the cardinality of the relationship between the objects can be expressed. An association mapping can be unidirectional as well as bidirectional.
+
+Mapping type	Description
+Many-to-One	Mapping many-to-one relationship using Hibernate
+One-to-One	Mapping one-to-one relationship using Hibernate
+One-to-Many	Mapping one-to-many relationship using Hibernate
+Many-to-Many	Mapping many-to-many relationship using Hibernate
+
+13. Component Mappings:
+It is very much possible that an Entity class can have a reference to another class as a member variable. If the referred class does not have it's own life cycle and completely depends on the life cycle of the owning entity class, then the referred class hence therefore is called as the Component class.
+
+14.  Annotation
+You can use annotations in addition to or as a replacement of XML mapping metadata.
+- @Entity: marks this class as an entity bean, so it must have a no-argument constructor that is visible with at least protected scope.
+- @Table: allows you to specify the details of the table that will be used to persist the entity in the database.
+- @Id and @GeneratedValue: primary key, which generator type to use
+- @Column: specify the details of the column to which a field or property will be mapped. name, length, nullable, unique
+
+15. HQL
+Hibernate Query Language (HQL) is an object-oriented query language, similar to SQL, but instead of operating on tables and columns, HQL works with persistent objects and their properties. HQL queries are translated by Hibernate into conventional SQL queries which in turns perform action on database.
+
+Hibernate Query Language (HQL) is an object-oriented query language, similar to SQL, but instead of operating on tables and columns, HQL works with persistent objects and their properties. HQL queries are translated by Hibernate into conventional SQL queries which in turns perform action on database.
+
+16. Pagination using Query
+Query setFirstResult(int startPosition)
+Query setMaxResults(int maxResult)
+Using above two methods together, we can construct a paging component in our web or Swing application. 
+
+17. Criteria
+The Hibernate Session interface provides createCriteria() method which can be used to create a Criteria object that returns instances of the persistence object's class when your application executes a criteria query.
+
+18. Native SQL
+Your application will create a native SQL query from the session with the createSQLQuery() method on the Session interface
+
+19. Caching 
+Caching is all about application performance optimization and it sits between your application and the database to avoid the number of database hits as many as possible to give a better performance for performance critical applications.
+
+First-level cache: 
+The first-level cache is the Session cache and is a mandatory cache through which all requests must pass. The Session object keeps an object under its own power before committing it to the database.
+
+If you issue multiple updates to an object, Hibernate tries to delay doing the update as long as possible to reduce the number of update SQL statements issued. If you close the session, all the objects being cached are lost and either persisted or updated in the database.
+
+Second-level cache: Any third-party cache can be used with Hibernate.
+
+20. Concurrency strategies:
+
+Transactional: Use this strategy for read-mostly data where it is critical to prevent stale data in concurrent transactions,in the rare case of an update.
+
+Read-write: Again use this strategy for read-mostly data where it is critical to prevent stale data in concurrent transactions,in the rare case of an update.
+
+Nonstrict-read-write: This strategy makes no guarantee of consistency between the cache and the database. Use this strategy if data hardly ever changes and a small likelihood of stale data is not of critical concern.
+
+Read-only: A concurrency strategy suitable for data which never changes. Use it for reference data only.

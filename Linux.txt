@@ -1,0 +1,13 @@
+- Linux直接生成多层目录： mkdir -p src/main/java/hello
+- Linux命令行执行HTTP请求： 
+- curl http://localhost:8080
+- curl -i -X POST -H "Content-Type:application/json" -d "{  \"firstName\" : \"Frodo\",  \"lastName\" : \"Baggins\" }" http://localhost:8080/people
+HTTP/1.1 201 Created
+-i ensures you can see the response message including the headers. The URI of the newly created Person is shown
+-X POST signals this a POST used to create a new entry
+-H "Content-Type:application/json" sets the content type so the application knows the payload contains a JSON object
+-d "{ \"firstName\" : \"Frodo\", \"lastName\" : \"Baggins\" }" is the data being sent. Double quotes inside the data need to be escaped as \".
+
+- curl -X PUT -H "Content-Type:application/json" -d "{ \"firstName\": \"Bilbo\", \"lastName\": \"Baggins\" }" http://localhost:8080/people/1
+- curl -X PATCH -H "Content-Type:application/json" -d "{ \"firstName\": \"Bilbo Jr.\" }" http://localhost:8080/people/1
+

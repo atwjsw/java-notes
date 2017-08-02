@@ -1,0 +1,204 @@
+1. The Java Persistence API (JPA) emerged out of the rubble of EJB 2’s entity beans as the next-generation Java persistence standard. JPA is a POJO-based persistence mechanism that draws ideas from both Hibernate and Java Data Objects (JDO), and mixes Java 5 annotations in for good measure.
+
+2. JPA uses EntityManagerFactory to get an instance of an EntityManager. 
+
+3. Application-managed—Entity managers are created when an application directly requests one from an entity manager factory. With application-managed entity
+managers, the application is responsible for opening or closing entity managers and involving the entity manager in transactions. This type of entity manager is most appropriate for use in standalone applications that don’t run within a JavaEE container.
+
+4. Container-managed—Entity managers are created and managed by a Java EE container. The application doesn’t interact with the entity manager factory at all.
+Instead, entity managers are obtained directly through injection or from JNDI. The container is responsible for configuring the entity manager factories. This
+type of entity manager is most appropriate for use by a Java EE container that wants to maintain some control over JPA configuration beyond what’s specified
+in persistence.xml.
+
+5. LocalEntityManagerFactoryBean produces an application-managed EntityManagerFactory.
+
+6. LocalContainerEntityManagerFactoryBean produces a container-managed EntityManagerFactory.
+
+7. JpaTemplate
+
+8. CONFIGURING APPLICATION-MANAGED JPA
+- Application-managed entity manager factories derive most of their configuration information from a configuration file called persistence.xml. This file must appear in the META-INF directory within the classpath.
+- persistence.xml enumerates one or more persis-tent classes along with any additional configuration such as data sources and XMLbased mapping files.
+<persistencexmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
+	<persistence-unitname="spitterPU">
+		<class>com.habuma.spitter.domain.Spitter</class>
+		<class>com.habuma.spitter.domain.Spittle</class>
+		<properties>
+			<propertyname="toplink.jdbc.driver" value="org.hsqldb.jdbcDriver"/>
+			<propertyname="toplink.jdbc.url" value= "jdbc:hsqldb:hsql://localhost/spitter/spitter"/>
+			<propertyname="toplink.jdbc.user" value="sa" />
+			<propertyname="toplink.jdbc.password" value="" />
+		</properties>
+	</persistence-unit>
+</persistence>
+
+-Spring-jap.xml
+<bean id="emf" class="org.springframework.orm.jpa.LocalEntityManagerFactoryBean">
+	<propertyname="persistenceUnitName"value="spitterPU"/>
+</bean>
+
+9. CONFIGURING CONTAINER-MANAGED JPA
+
+<bean id="emf" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+	<propertyname="dataSource" ref="dataSource"/>
+	<propertyname="jpaVendorAdapter" ref="jpaVendorAdapter"/>
+</bean>
+
+10 .HibernateJpaVendorAdapter
+<bean id="jpaVendorAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+	<propertyname="database"	value="HSQL"/>
+		<property name="showSql"value="true"/>
+		<property name="generateDdl"value="false"/>
+	<propertyname="databasePlatform" value="org.hibernate.dialect.HSQLDialect"/>
+</bean>
+
+11. <propertyname="database"value="HSQL"/>
+MYSQL, ORACLE, DB2...
+
+
+12. jpaVendorAdapter
+- EclipseLinkJpaVendorAdapter
+- HibernateJpaVendorAdapter
+- OpenJpaVendorAdapter
+- TopLinkJpaVendorAdapter
+
+13. Which entity manager factory bean you choose will depend primarily on how you’ll use it. For simple applications, LocalEntityManagerFactoryBean may be sufficient. But because LocalContainerEntityManagerFactoryBean enables us to configure more of JPA in Spring, it’s an attractive choice and likely the one that you’ll choose for production use.
+
+13 Writing a JPA-based DAO
+@Repository
+@Transactional
+public class JpaSpitterRepository implements SpitterRepository {
+	@PersistenceUnit
+	private EntityManagerFactory emf;
+	
+	public void addSpitter(Spitter spitter) {
+		emf.createEntityManager().persist(spitter);
+	}
+	
+	public Spitter getSpitterById(long id) {
+		return emf.createEntityManager().find(Spitter.class, id);
+	}
+
+	public void saveSpitter(Spitter spitter) {
+		emf.createEntityManager().merge(spitter);
+	}
+...
+}
+
+@Repository
+@Transactional
+public class JpaSpitterRepository implements SpitterRepository {
+	@PersistenceContext
+	private EntityManager em;
+
+	public void addSpitter(Spitter spitter) {
+		em.persist(spitter);
+	}
+
+	public Spitter getSpitterById(long id) {
+		return em.find(Spitter.class, id);
+	}
+
+	public void saveSpitter(Spitter spitter) {
+		em.merge(spitter);
+	}
+...
+}
+
+<bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor"/>
+
+<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
+
+14. Spring Data
+
+public interface SpitterRepository extends JpaRepository<Spitter, Long> {
+}
+
+The key to writing a Spring Data JPA repository is to extend one of a handful of interfaces. Here, SpitterRepository extends Spring Data JPA’s JpaRepository (I’ll mention a few of the other interfaces in a moment). In doing so, JpaRepository is parameterized such that it knows this is a repository for persisting Spitter objects and that Spitters have an ID of type Long. It also inherits 18 methods for performing common persistence operations, such as saving a Spitter, deleting a Spitter, and finding a Spitter by its ID.
+
+In spring.xml:
+<jpa:repositories base-package="com.habuma.spittr.db" />
+
+<jpa:repositories> scans its base package for any interfaces that extend Spring Data JPA’s Repository interface. When it finds any interface extending Repository, it automatically (at application startup time) generates an implementation of that interface.
+
+When Spring Data finds it, it creates an implementation of SpitterRepository, including an implementation of all 18 methods inherited
+from JpaRepository, PagingAndSortingRepository, and CrudRepository.
+
+15. Spring Data JPA provides a few ways to add custom methods to a repository.
+
+public interface SpitterRepository extends JpaRepository<Spitter, Long> {
+		Spitter findByUsername(String username);
+}
+
+Spring Data will examine any methods in the repository interface, parse the method name, and attempt to understand the method’s purpose in the context of the persisted object. In essence, Spring Data defines a sort of miniature domain-specific language (DSL) where persistence details are expressed in repository method signatures.
+
+readSpittersByFirstnameOrLastname() = readByFirstnameOrLastname()
+
+get, read, and find verbs are synonymous
+
+- IsAfter, After, IsGreaterThan, GreaterThan
+ IsGreaterThanEqual, GreaterThanEqual
+ IsBefore, Before, IsLessThan, LessThan
+ IsLessThanEqual, LessThanEqual
+ IsBetween, Between
+ IsNull, Null
+ IsNotNull, NotNull
+ IsIn, In
+ IsNotIn, NotIn
+ IsStartingWith, StartingWith, StartsWith
+ IsEndingWith, EndingWith, EndsWith
+ IsContaining, Containing, Contains
+ IsLike, Like
+ IsNotLike, NotLike
+ IsTrue, True
+ IsFalse, False
+ Is, Equals
+ IsNot, Not
+
+List<Spitter> readByFirstnameIgnoringCaseOrLastnameIgnoresCase(String first, String last);
+
+List<Spitter> readByFirstnameOrLastnameAllIgnoresCase(String first, String last);
+
+List<Spitter> readByFirstnameOrLastnameOrderByLastnameAsc(String first, String last);
+
+List<Pet> findPetsByBreedIn(List<String> breed)
+int countProductsByDiscontinuedTrue()
+List<Order> findByShippingDateBetween(Date start, Date end)
+
+by carefully constructing a repository
+method signature using a mix of property names and keywords, you can make
+Spring Data JPA generate an implementation method to query for almost anything you
+can imagine.
+
+16. Declaring custom queries
+
+@Query("select s from Spitter s where s.email like '%gmail.com'")
+List<Spitter> findAllGmailSpitters();
+
+17. Mixing in custom functionality
+When Spring Data JPA generates the implementation for a repository interface, it also looks for a class whose name is the same as the interface’s name postfixed with Automatic JPA repositories with Spring Data Impl. If the class exists, Spring Data JPA merges its methods with those generated by
+Spring Data JPA. For the SpitterRepository interface, the class it looks for is named SpitterRepositoryImpl.
+
+public class SpitterRepositoryImpl implements SpitterSweeper {
+@PersistenceContext
+private EntityManager em;
+public int eliteSweep() {
+String update =
+"UPDATE Spitter spitter " +
+"SET spitter.status = 'Elite' " +
+"WHERE spitter.status = 'Newbie' " +
+"AND spitter.id IN (" +
+"SELECT s FROM Spitter s WHERE (" +
+" SELECT COUNT(spittles) FROM s.spittles spittles) > 10000" +
+")";
+return em.createQuery(update).executeUpdate();
+}
+}
+
+public interface SpitterSweeper{
+int eliteSweep();
+}
+
+public interface SpitterSweeper{
+int eliteSweep();
+}

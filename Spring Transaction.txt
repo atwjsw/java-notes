@@ -1,0 +1,153 @@
+1. ACID
+
+- Atomic—Transactions are made up of one or more activities bundled together as a single unit of work. Atomicity ensures that all the operations in the transaction happen or that none of them happen. If all the activities succeed, the transaction is a success. If any of the activities fails, the entire transaction fails and is rolled back.
+
+- Consistent—Once a transaction ends (whether successful or not), the system is left in a state consistent with the business that it models. The data shouldn’t be corrupted with respect to reality.
+
+- Isolated—Transactions should allow multiple users to work with the same data, without each user’s work getting tangled up with the others. Therefore, transactions should be isolated from each other, preventing concurrent reads and writes to the same data from occurring. (Note that isolation typically involves locking rows and/or tables in a database.)
+
+- Durable—Once the transaction has completed, the results of the transaction should be made permanent so that they’ll survive any sort of system crash. This
+typically involves storing the results in a database or some other form of persistent storage.
+
+2. Choosing between programmatic and declarative transaction management is largely a decision of fine-grained control versus convenience. If you need more fine-grained control over transactional boundaries, programmatic transactions are the only way to go.
+
+3. Choosing a transaction manager: transaction managers acts as a facade to a platform-specific transaction implementation.
+jdbc.datasource.DataSourceTransactionManager:Working with Spring’s JDBC abstraction support. Also useful when using iBATIS for persistence
+jms.connection.JmsTransactionManager: Using JMS 1.1+.
+jms.connection.JmsTransactionManager102: Using JMS 1.0.2.
+orm.hibernate3.HibernateTransactionManager: Using Hibernate 3 for persistence.
+orm.jdo.JdoTransactionManager: Using JDO for persistence.
+orm.jpa.JpaTransactionManage:r Using the Java Persistence API (JPA) for persistence.transaction.jta.JtaTransactionManager. You need distributed transactions or when no other transaction manager fits the need
+
+4. JDBC transaction
+<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+	<property name="dataSource" ref="dataSource"/>
+</bean>
+
+5. Hibernate transactions
+<bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+	<property name="sessionFactory" ref="sessionFactory"/>
+</bean>
+
+6. Java Persistence API transactions
+<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+	<property name="entityManagerFactory" ref="entityManagerFactory"/>
+</bean>
+
+7. Java transaction API transactions
+transactions span multiple transaction sources (for example, two or more different databases), you’ll need to use JtaTransactionManager:
+
+<bean id="transactionManager"class="org.springframework.transaction.jta.JtaTransactionManager">
+	<propertyname="transactionManagerName" value="java:/TransactionManager"/>
+</bean>
+
+8. tx namespace and annotation-oriented declarative transactions 
+@Transactional
+
+9. Transaction attributes
+- propagation behavior
+- isolation level
+- read-only hints, 
+- timeout
+- rollback rules.
+
+10. propagation behavior: 
+- defines the boundaries of the transaction with respect to the client and to the method being called.
+- Propagation rules answer the question of whether a new transaction should be started or suspended, or if a method should even be executed within a transactional context at all.
+common ones are:
+- PROPAGATION_REQUIRES_NEW: Indicates that the current method must run within its own transaction. A new transaction is started and if an existing transaction
+is in progress, it’ll be suspended for the duration of the method. If using JTATransactionManager, access to TransactionManager is required.
+- PROPAGATION_REQUIRED: Indicates that the current method must run within a transaction. If an existing transaction is in progress, the method will run
+within that transaction. Otherwise, a new transaction will be started.
+
+- PROPAGATION_MANDATORY: Indicates that the method must run within a transaction. If no existing transaction is in progress, an exception will be thrown.
+- PROPAGATION_NESTED: Indicates that the method should be run within a nested transaction if an existing transaction is in progress. The nested transac-
+tion can be committed and rolled back individually from the enclosing transaction. If no enclosing transaction exists, behaves like PROPAGATION_REQUIRED. Vendor support for this propagation behavior is spotty at best. Consult the documentation for your resource manager to determine if nested transactions are
+supported.
+- PROPAGATION_NEVER: Indicates that the current method shouldn’t run within a transactional context. If an existing transaction is in progress, an excep-
+tion will be thrown.
+- PROPAGATION_NOT_SUPPORTED: Indicates that the method shouldn’t run within a transaction. If an existing transaction is in progress, it’ll be suspended for the duration of the method. If using JTATransactionManager, access to TransactionManager is required.
+- PROPAGATION_SUPPORTS: Indicates that the current method doesn’t require a transactional context, but may run within a transaction if one is already in
+progress.
+
+- PROPAGATION CONSTANTS - constants in the org.springframework.transaction.TransactionDefinition interface.
+
+11. ISOLATION LEVELS:
+- defines how much a transaction may be impacted by the activities of other concurrent transactions. Another way to look at a transaction’s isolation level is to think of it as how selfish the transaction is with the transactional data.
+
+Concurrency, while necessary, can lead to the following problems:
+- Dirty reads occur when one transaction reads data that has been written but not yet committed by another transaction. If the changes are later rolled back, the data obtained by the first transaction will be invalid.
+- Nonrepeatable reads happen when a transaction performs the same query two or more times and each time the data is different. This is usually due to another
+concurrent transaction updating the data between the queries.
+- Phantom reads are similar to nonrepeatable reads. These occur when a transaction (T1) reads several rows, and then a concurrent transaction (T2) inserts
+rows. Upon subsequent queries, the first transaction (T1) finds additional rows that weren’t there before.
+
+- In an ideal situation, transactions would be completely isolated from each other, thus avoiding these problems. But perfect isolation can affect performance because it often involves locking rows (and sometimes complete tables) in the data store. Aggressive locking can hinder concurrency, requiring transactions to wait on each other to do their work.
+
+- Realizing that perfect isolation can impact performance and because not all applications will require perfect isolation, sometimes it’s desirable to be flexible with regard to transaction isolation. Therefore, several levels of isolation are possible.
+
+ISOLATION_DEFAULT: Use the default isolation level of the underlying data store.
+ISOLATION_READ_UNCOMMITTED: Allows you to read changes that haven’t yet been committed. May result in dirty reads, phantom reads, and nonrepeatable
+reads.
+ISOLATION_READ_COMMITTED Allows reads from concurrent transactions that have been committed. Dirty reads are prevented, but phantom and nonrepeat-
+able reads may still occur.
+ISOLATION_REPEATABLE_READ Multiple reads of the same field will yield the same results, unless changed by the transaction itself. Dirty reads and nonre-
+peatable reads are prevented, but phantom reads may still occur. 
+ISOLATION_SERIALIZABLE This fully ACID-compliant isolation level ensures that dirty reads, nonrepeatable reads, and phantom reads are all prevented. This is the slowest of all isolation levels because it’s typically accomplished by doing full table locks on the tables involved in the transaction.
+
+ISOLATION LEVEL CONSTANTS: constants in the org.springframework.transaction.TransactionDefinition interface.
+
+12. READ-ONLY
+- By declaring a transaction as read-only, you give
+the underlying data store the opportunity to apply those optimizations as it sees fit.
+
+13. TRANSACTION TIMEOUT
+For an application to perform well, its transactions can’t carry on for a long time, you can declare a transaction to automatically roll back after a certain number of seconds.
+
+14. ROLLBACK RULES
+- a set of rules that define which exceptions prompt a rollback and which ones don’t. By default, transactions are rolled back only on runtime exceptions and not on checked exceptions.
+
+15. XML configuration
+<beans 	xmlns="http://www.springframework.org/schema/beans"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:aop="http://www.springframework.org/schema/aop"
+		xmlns:tx="http://www.springframework.org/schema/tx"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/aop
+		http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx-3.0.xsd">
+
+16. tx:advice
+<tx:adviceid="txAdvice" transaction-manager="txManager">>
+	<tx:attributes>
+		<tx:method name="add*" propagation="REQUIRED"/>
+		<tx:method name="*" propagation="SUPPORTS" read-only="true"/>
+	</tx:attributes>
+</tx:advice>
+
+<aop:config>
+	<aop:advisor pointcut="execution(**..SpitterService.*(..))" advice-ref="txAdvice"/>
+</aop:config>
+
+16. annotation configuration
+<tx:annotation-driven transaction-manager="txManager"/>
+
+@Transactional(propagation=Propagation.SUPPORTS,readOnly=true)
+public classSpitterServiceImplimplementsSpitterService{
+	...
+	@Transactional(propagation=Propagation.REQUIRED,readOnly=false)
+	public voidaddSpitter(Spitterspitter){
+	...
+	}
+	...
+}
+
+17. Database and isolation levels
+
+Apart from MySQL (which uses REPEATABLE_READ), the default isolation level of most relational database systems is READ_COMMITTED. All databases allow you to set the default transaction isolation level.
+
+Typically, the database is shared among multiple applications and each one has its own specific transaction requirements. For most transactions the READ_COMMITTED isolation level is the best choice and we should only override it for specific business cases.
+
+This strategy proves to be the very efficient, allowing us to have stricter isolation levels for just a subset of all SQL transactions.

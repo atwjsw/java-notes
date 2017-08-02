@@ -1,0 +1,72 @@
+Annotation
+
+1. annotaion - Author, element - name, value = "Benjamin Franklin"
+@Author(
+   name = "Benjamin Franklin",
+   date = "3/27/2003"
+)
+
+2. predefined annotations
+- @Override 
+- @SuppressWarnings
+- @SuppressWarnings({"unchecked", "deprecation"})
+- @Deprecated
+- @SafeVarargs
+- @FunctionalInterface
+
+3. Custom annotations
+- @Authur
+- @Ebook
+
+4. Where Annotations Can Be Used
+- Annotations can be applied to declarations: declarations of classes, fields, methods, and other program elements. When used on a declaration, each annotation often appears, by convention, on its own line.
+- As of the Java SE 8 release, annotations can also be applied to the use of types. 
+- This form of annotation is called a type annotation.
+
+5. Declaring an Annotation Type
+@interface ClassPreamble {
+   String author();
+   String date();
+   int currentRevision() default 1;
+   String lastModified() default "N/A";
+   String lastModifiedBy() default "N/A";
+   // Note use of array
+   String[] reviewers();
+}
+
+- The annotation type definition looks similar to an interface definition 
+- contains annotation type element declarations, which look a lot like methods.
+- use annotations of that type
+@ClassPreamble (
+   author = "John Doe",
+   date = "3/17/2002",
+   currentRevision = 6,
+   lastModified = "4/12/2004",
+   lastModifiedBy = "Jane Doe",
+   // Note array notation
+   reviewers = {"Alice", "Bob", "Cindy"}
+)
+public class Generation3List extends Generation2List {}
+
+6. meta-annotations
+- @Retention
+RetentionPolicy.SOURCE – The marked annotation is retained only in the source level and is ignored by the compiler.
+RetentionPolicy.CLASS – The marked annotation is retained by the compiler at compile time, but is ignored by the Java Virtual Machine (JVM).
+RetentionPolicy.RUNTIME – The marked annotation is retained by the JVM so it can be used by the runtime environment.
+- @Documented
+- @Target
+ElementType.ANNOTATION_TYPE can be applied to an annotation type.
+ElementType.CONSTRUCTOR can be applied to a constructor.
+ElementType.FIELD can be applied to a field or property.
+ElementType.LOCAL_VARIABLE can be applied to a local variable.
+ElementType.METHOD can be applied to a method-level annotation.
+ElementType.PACKAGE can be applied to a package declaration.
+ElementType.PARAMETER can be applied to the parameters of a method.
+ElementType.TYPE can be applied to any element of a class.
+- @Inherited
+- @Repeatable
+
+7. What’s the use of Annotations?
+- Compile-time instructors: Annotations can provide compile-time instructions to the compiler that can be further used by sofware build tools for generating code, XML files etc.
+
+- Runtime instructions: We can define annotations to be available at runtime which we can access using java reflection and can be used to give instructions to the program at runtime. We will discuss this with the help of an example, later in this same post.

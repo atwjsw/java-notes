@@ -1,0 +1,4 @@
+1. semantic versioning: When it comes to choosing a versioning scheme, Spring recommends the [semantic versioning](http://semver.org) approach.
+
+2. 执行jar文件: java -jar gs-maven-0.1.0.jar HelloWorld
+
