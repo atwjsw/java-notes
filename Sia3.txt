@@ -53,7 +53,7 @@ Sia3.txt
 - prototype: once per use
 - request: Scopes a bean definition to an HTTP request. Only valid when used with a web-capable Spring context (such as with Spring MVC).
 - session: Scopes a bean definition to an HTTP session. Only valid when used with a web-capable Spring context (such as with Spring MVC).
-- global-session: Scopes a bean definition to a global HTTP session. Only valid when used in a portlet context. (no longer supprt in Spring4)
+- global-session: Scopes a bean definition to a global HTTP session. Only valid when used in a portlet context. (no longer support in Spring4)
 - inner beans are beans that are defined within the scope of another bean.
 
 #Collection mapping
@@ -871,57 +871,34 @@ verify(spitterService).getRecentSpittles(DEFAULT_SPITTLES_PER_PAGE);
 	<property name="defaultContentType" value="text/html"/>
 </bean>
 
-- inspect whether url has a file extension (.json, .xml, .htm), if yes then lookup the mediaTypes property map and find the media type the client prefer, if no check Accept header. if the request header doesn’t have an Accept header, then fall back defaultContentType property.
-
 #content-negotiation two-step:
 1) Determine the requested media types
+- inspect whether url has a file extension (.json, .xml, .htm), if yes then lookup the mediaTypes property map and find the media type the client prefer, if no check Accept header. if the request header doesn’t have an Accept header, then fall back defaultContentType property. 
+
 2) Find the best view for the requested media types
-
-#DETERMINING THE REQUESTED MEDIA TYPES
-- ContentNegotiatingViewResolver will consider the Accept header and use whatever media types it asks for; but only after it first looks at the URL’s file extension.
-- If the URL has a file extension on the end, it’ll match that extension against the entries in the mediaTypes property. mediaTypes is a Map whose keys are file extensions and whose values are media types. If a match is found, then the media type will be used. In this way, the file extension can override any media types in the Accept header.
-- If the file extension doesn’t produce any media types to work with, then the Accept header in the request will be considered. But if the request header doesn’t have an Accept header, then it’ll fall back to the media type set in the defaultContentType property.
-
-#FINDING A VIEW
-- Unlike other view resolvers, ContentNegotiatingViewResolver doesn’t directly resolve views. Instead, it delegates to other view resolvers to find a view that best suits the client.
-- Unless otherwise specified, it’ll use any view resolver in the application context. But you can explicitly list the view resolvers it should delegate to by setting the viewResolvers property.
+- ContentNegotiatingViewResolver delegates to other view resolvers to find a view that best suits the client.
+- Unless otherwise specified, it’ll use any view resolver in the application context. But you can explicitly list the view resolvers it should delegate to by setting the viewResolvers property as following:
+<bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+	<property name="viewResolvers">
+		<list>
+			<bean id="viewResolver" class="org.springframework.web.servlet.view.freemarker.FreeMarkerViewResolver">
+				<property name="cache" value="true" />
+				<property name="prefix" value="" />
+				<property name="suffix" value=".ftl" />
+				<property name="contentType" value="text/html; charset=utf-8" />
+			</bean>
+		</list>
+	</property>
+	<property name="defaultViews">
+		<list>
+			<bean class="org.springframework.web.servlet.view.json.MappingJackson2JsonView" />
+		</list>
+	</property>
+</bean>
 - ContentNegotiatingViewResolver asks all of its view resolvers to resolve the logical view name into a view. Every view that’s resolved is added to a list of candidate views. In addition, if a view is specified in the defaultView property, it’ll be added to the end of the candidate view list.
 - With the candidate view list assembled, ContentNegotiatingViewResolver cycles through all of the requested media types, trying to find a view from among the candidate views that produces a matching content type. The first match found is the one that’s used.
 - In the end, if ContentNegotiatingViewResolver fails to find a suitable view, then it returns a null view. Or, if useNotAcceptableStatusCode is set to true, then a view with an HTTP status code of 406 (Not Acceptable) will be returned.
 - Content negotiation is perfect for adding additional representations on top of the HTML representations that a Spring MVC web application already provides.
-#ContentNegotiatingViewResolver
-	<bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
-		<property name="viewResolvers">
-			<list>
-				<bean id="viewResolver" class="org.springframework.web.servlet.view.freemarker.FreeMarkerViewResolver">
-					<property name="cache" value="true" />
-					<property name="prefix" value="" />
-					<property name="suffix" value=".ftl" />
-					<property name="contentType" value="text/html; charset=utf-8" />
-				</bean>
-			</list>
-		</property>
-		<property name="defaultViews">
-			<list>
-				<bean class="org.springframework.web.servlet.view.json.MappingJackson2JsonView" />
-			</list>
-		</property>
-	</bean>
-
-<bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
-	<property name="mediaTypes">
-		<map>
-			<entry key="json" value="application/json"/>
-			<entry key="xml" value="text/xml"/>
-			<entry key="htm" value="text/html"/>
-		</map>
-	</property>
-	<property name="defaultContentType" value="text/html"/>
-</bean>
-
-#content-negotiation two-step:
-1) Determine the requested media types
-2) Find the best view for the requested media types
 
 #Handling controller input
 - Controllers are often asked to perform some logic against one or more pieces of information that are passed in as URL parameters or as form data.
@@ -940,10 +917,8 @@ public class SpitterController{
 	...
 }
 - it’s probably best to always use @RequestParam and not rely too heavily on the convention.
-- As a matter of convention, any parameters of a handler method that aren’t annotated otherwise will be bound to the query parameter of the same name.
-In the case of listSpittlesForSpitter(), if the parameter were named spitter or if the query parameter were called username, then we could leave the
-@RequestParam annotation off.
-- the object passed in as a Model likely is a Map<String, Object> under the covers. But Model provides a few convenient methods for populating the model, such as addAttribute(). The addAttribute() method does pretty much the same thing as Map’s put() method, except that it figures out the key portion of the map on its own.
+- As a matter of convention, any parameters of a handler method not annotated will be bound to the query parameter of the same name. In the case of listSpittlesForSpitter(), if the parameter were named spitter or if the query parameter were called username, then we could leave the @RequestParam annotation off.
+- the object passed in as a Model is a Map<String, Object> under the covers. But Model provides a few convenient methods for populating the model, such as addAttribute(). The addAttribute() method does pretty much the same thing as Map’s put() method, except that it figures out the key portion of the map on its own.
 - When adding a Spitter object to the model, addAttribute() gives it the name spitter, a name it arrives at by applying JavaBeans property naming rules to the
 object’s class name. When adding a List of Spittles, it tacks List to the end the member type of the List, naming the attribute spittleList.
 
@@ -952,15 +927,14 @@ object’s class name. When adding a List of Spittles, it tacks List to the end 
 
 #Displaying the registration form
 - When the form is displayed, it’ll need a Spitter object to bind to the form fields. Since this is a new Spitter that we’re creating, a newly constructed, uninitialized Spitter object will be perfect.
-
+- http://localhost:8080/spitter/spitters?new; process GET request to controller root path i.e. /spitters and includes query parameter "new":
 @RequestMapping(method=RequestMethod.GET,params="new") 
-
 public StringcreateSpitterProfile(Modelmodel){
 	model.addAttribute(new Spitter());
 	return "spitters/edit";
 }
 
-- http://localhost:8080/spitter/spitters?new; process GET request to controller root path i.e. /spitters and includes query parameter "new": 
+- Tiles definition maps to logical name "spitters/edit":
 <definition name="spitters/edit" extends="template">
 	<put-attribute name="content" value="/WEB-INF/views/spitters/edit.jsp"/>
 </definition>
@@ -975,7 +949,7 @@ public StringcreateSpitterProfile(Modelmodel){
 </sf:form>
 - this JSP file uses Spring’s form binding library. The <sf:form> tag binds the Spitter object (identified by the modelAttribute attribute) that createSpitterProfile() placed into the model to the various fields in the form.
 - The <sf:input>, <sf:password>, and <sf:checkbox> tags each have a path attribute that references the property of the Spitter object that the form is bound to.
-- Note that the <sf:form> specifies that it’ll be submitted as an HTTP POST request. What it doesn’t specify is the URL. With no URL specified, it’ll be submitted back to /spitters, the same URL path that displayed the form.
+- Note that the <sf:form> specifies that it’ll be submitted as an HTTP POST request, but it doesn’t specify the URL. With no URL specified, it’ll be submitted back to /spitters, the same URL path that displayed the form.
 
 #Processing form input
 @RequestMapping(method=RequestMethod.POST) //handle POST requests for /spitters
@@ -988,7 +962,7 @@ public String addSpitterFromForm(@Valid Spitter spitter, BindingResult bindingRe
 }
 - the Spitter parameter is annotated with @Valid. This indicates that the Spitter should pass validation before being passed in. 
 - The redirect: prefix signals that the request should be redirected to the path that it precedes. By redirecting to another page, we can avoid duplicate submission of the form if the user clicks the Refresh button in their browser.
-- ?? spitter does not need to be added to model attribute again?
+- ?? spitter does not need to be added to model attribute again? because spitter is bind to model
 
 #HANDLING REQUESTS WITH PATH VARIABLES
 @RequestMapping(value="/{username}",method=RequestMethod.GET) //handle GET requests for /spitters/xxx
@@ -1019,33 +993,33 @@ private String fullName;
 private String email;
 
 #DISPLAYING VALIDATION ERRORS
-- access those field errors through BindingResult’s getFieldError() method. But a much better way is to use Spring’s form binding JSP tag library to display the errors. More specifically, the <sf:errors> tag can render field validation errors.
-- The <sf:errors> tag’s path attribute specifies the form field for which errors should be displayed. For example, the following <sf:errors> displays errorsfor the field whose name is fullName: 
-<sf:errors path="fullName" cssClass="error"/>
+- access those field errors through BindingResult’s getFieldError() method. But a much better way is to use Spring’s form binding JSP tag library to display the errors. 
+- The <sf:errors> tag’s path attribute specifies the form field for which errors should be displayed:
+<sf:errors path="fullName" cssClass="error"/> //errors for the field whose name is fullName: 
 - If there are multiple errors for a single field, they’ll all be displayed, separated by an HTML <br/> tag. 
-- If you’d rather have them separated some other way, then you can use the delimiter attribute. The following <sf:errors> snippet uses delimiter to
-separate errors with a comma and a space:
-<sf:errorspath="fullName" delimiter="," cssClass="error"/>
-- if you’d prefer to display all of the errors in one place (perhaps at the top of the form), you’ll only need a single <sf:errors> tag, with its path attribute set to *: 
-<sf:errors path="*" cssClass="error"/>
+- If you’d rather have them separated some other way, then you can use the delimiter attribute:
+<sf:errorspath="fullName" delimiter="," cssClass="error"/> //separate errors with a comma and a space
+- if you’d prefer to display all of the errors in one place (perhaps at the top of the form): 
+<sf:errors path="*" cssClass="error"/> //a single <sf:errors> tag with its path attribute set to *
 
 #Handling file uploads
 To enable file uploads in the Spitter application, we’ll need to do three things:
-- Add a file upload field to the registration form
-- Tweak SpitterController’s addSpitterFromForm() to receive the uploaded file
-- Configure a multipart file resolver in Spring
+1) Add a file upload field to the registration form -> 1. enctype="multipart/form-data, 2. <input type="file"...> 
+2) Tweak SpitterController’s addSpitterFromForm() to receive the uploaded file -> MutipartFile image
+3) Configure a multipart file resolver in Spring -> <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"/> 
 
 #Adding a file upload field to the form
-- Most form fields are textual and can easily be submitted to the server as a set of name-value pairs. In fact, a typical form submission has a content type of application/x-www-form-urlencoded and takes the form of name-value pairs separated by ampersands.
+<sf:form method="POST" modelAttribute="spitter" enctype="multipart/form-data"> //1. enctype="multipart/form-data
+	<input type="file" name="image" /> //2. type="file"
+</sf:form>
+
+- Most form fields are textual and can easily be submitted to the server as a set of name-value pairs. 
+- a typical form submission has a content type of application/x-www-form-urlencoded and takes the form of name-value pairs separated by ampersands.
 - Uploaded files are typically binary files, multipart/form-data is the content type of choice.
 - With enctype set to multipart/form-data, each field will be submitted as a distinct part of the POST request and not as just another name-value pair. This makes it possible for one of those parts to contain uploaded image file data.
 - A standard HTML <input> field with type set to file. This bit of HTML will render a basic file selection field on the form. Most browsers display
 this as a text field with a button to the side.
 - When the form is submitted, it’ll be posted as a multipart form where one of the parts contains the image file’s binary data.
-
-<sf:form method="POST" modelAttribute="spitter" enctype="multipart/form-data">
-	<input type="file" name="image" />
-</sf:form>
 
 #Receiving uploaded files
 @RequestMapping(method=RequestMethod.POST)
@@ -1061,16 +1035,15 @@ public String addSpitterFromForm(@Valid Spitter spitter, BindingResult bindingRe
 private void saveImage(String filename,MultipartFile image) {
 	...
 	File file=newFile(webRootPath+"/resources/"+filename); 
-	FileUtils.writeByteArrayToFile(file,image.getBytes());
+	FileUtils.writeByteArrayToFile(file,image.getBytes()); //use FileUtils from Apache Commons IO to write the image data to a file.
 	...
 }
 - webRootPath depends on the server where the application is hosted. it could be configured by value injection, either through a setWebRootPath() method or perhaps using SpEL and an @Value annotation to read the value from a configuration file. e.g.
 @Value("${webRootPath}")
 private String webRootPath;
-In context xml： <context:property-placeholder location="classpath:s3.properties"/>
-- use FileUtils from Apache Commons IO to write the image data to a file.
+- In context xml： <context:property-placeholder location="classpath:s3.properties"/>
 
-#SAVING FILES TO AMAZON S3
+#SAVING FILES TO AMAZON S3 (TBD)
 -  saving a file to the local file system like this works great, but leaves the management of the file system up to you. You’ll be responsible for ensuring that there’s plenty of space. It’ll be up to you to make sure that it’s backed up in case of a hardware failure. And it’s your job to deal with synchronizing the image files across multiple servers in a cluster.
 - Another option is to let someone else take that hassle away from you. With a bit more code, we can save our images out on the cloud. Let’s free ourselves from the burden of managing our own files by rewriting the saveFile() method to write to an Amazon S3 bucket.
 - Amazon’s Simple Storage Service, or S3 as it’s commonly referred to, is an inexpensive way to offload storage of files to Amazon’s infrastructure. With S3, we can just write the files and let Amazon’s system administrators do all of the grunt work.
@@ -1099,611 +1072,13 @@ private void saveImage(String filename, Multipart Fileimage) {
 - DispatcherServlet itself doesn’t know how to deal with multipart form data. We need a multipart resolver to extract the multipart data out of the POST request
 <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver" p:maxUploadSize="500000"/>
 
-6. Chapter 5 Spring Data Access
-#Spring’s data access philosophy
-- coding to interfaces. DAO should expose this functionality through an interface by which the rest of the application will access them. service objects access DAOs through interfaces. 
-- First, it makes your service objects easily testable, since they’re not coupled to a specific data access implementation. In fact, you could create mock implementations of these data access interfaces. That would allow you to test your service object without ever having to connect to the database, which would significantly speed up your unit tests and rule out the chance of a test failure due to inconsistent data.
-- The data access tier is accessed in a persistence technology-agnostic manner. allows the chosen persistence framework to be swapped out with minimal impact
-- interfaces are key to writing loosely coupled code and that they should be used at all layers of an application
-
-#exception hierarchy
-- Spring helps you insulate your data access tier from the rest of your application is by providing a consistent exception hierarchy that’s used across all of its DAO frameworks.
-- JDBC forces you to catch SQLException. SQLException means that something went wrong while trying to access a database. But there’s little about that exception that tells you what went wrong or how to deal with it.
-- As it turns out, many of the problems that trigger an SQLException can’t be remedied within a catch block. Most SQLExceptions that are thrown indicate a fatal condition. 
-- Rather than have a different exception type for each possible problem, SQLException is the exception that’s thrown for all data access problems.
-- Some persistence frameworks offer a richer hierarchy of exceptions. Hibernate, for example, offers almost two dozen different exceptions, each targeting a specific data access problem. This makes it possible to write catch blocks for the exceptions that you want to deal with.
-
-#PERSISTENCE PLATFORM-AGNOSTIC EXCEPTIONS
-- you can count on Spring to throw a consistent set of exceptions, regardless of which persistence provider you choose.
-- Spring has an exception for virtually anything that could go wrong when reading or writing to a database.
-- all of spring data access exceptions are rooted with DataAccessException. DataAccessException is an unchecked exception. In other words, you don’t have to catch any of the data access exceptions thrown from Spring, this leaves the decision of whether to catch an exception in the developer’s hands.
-
-#Templating data access
-- Spring separates the fixed and variable parts of the data access process into two distinct classes: templates and callbacks. Templates manage the fixed part of the process, whereas your custom data access code is handled in the callbacks.
-- Spring’s DAO template classes take responsibility for the common data access duties. For the application-specific tasks, it calls back into a custom DAO callback object.
-
-- Spring comes with several templates to choose from, depending on your persistence platform choice. Template class (org.springframework.*)
-jdbc.core.JdbcTemplate 				JDBC connections													JdbcDaoSupport
-jdbc.core.simple.SimpleJdbcTemplate JDBC connections, simplified with Java 5 constructors               SimpleJdbcDaoSupport 
-jdbc.core.namedparam.NamedParameterJdbcTemplate	JdbcTemplate JDBC connections with support for named parameters NamedParameterJdbcDaoSupport	
-jca.cci.core.CciTemplate 			JCA CCI connections									jca.cci.support.CciDaoSupport
-orm.hibernate.HibernateTemplate 	Hibernate 2.x sessions								orm.hibernate2.support.HibernateDaoSupport
-orm.hibernate3.HibernateTemplate 	Hibernate 3.x sessions								orm.hibernate3.support.HibernateDaoSupport
-orm.ibatis.SqlMapClientTemplate 	iBATIS SqlMap 										orm.ibatis.support.SqlMapClientDaoSupport
-orm.jdo.JdoTemplate 				Java Data Object implementations					orm.jdo.support.JdoDaoSupport
-orm.jpa.JpaTemplate 				Java Persistence API entity managers				orm.jpa.support.JpaDaoSupport
-
-#Using DAO support classes
-- using a data access template simply involves configuring it as a bean and then wiring it into your DAO. Or you can use DAO support classes to further simplify configuration of your application DAOs. Direct wiring of the templates is fine, but Spring also provides a set of convenient DAO base classes that can manage templates for you.
-- DAO support classes provide convenient access to the template class that they support. When writing your application DAO implementation, you can subclass a DAO support class and call a template retrieval method to have direct access to the underlying data access template.
-
-#Configuring a data source
-- Data sources that are defined by a JDBC driver
-- Data sources that are looked up by JNDI
-- Data sources that pool connections
-
-#Using JNDI data sources
-- Application server such as tomcat allow you to configure data sources to be retrieved via JNDI. The benefit of configuring data sources in this way is that they can be managed completely external to the application, allowing the application to ask for a data source when it’s ready to access the database. Moreover, data sources managed in an application server are often pooled for greater performance and can be hot-swapped by system administrators.
-<jee:jndi-lookup id="dataSource" jndi-name="/jdbc/SpitterDS" resource-ref="true"/>
-- The <jee:jndi-lookup> element from Spring’s jee namespace makes it possible to retrieve any object, including data sources, from JNDI and make it available as a Spring bean.
-- set the resource-ref property to true so that the value given in jndi-name will be prepended with java:comp/env/.
-
-#Using a pooled data source
-- Jakarta Commons Database Connection Pooling (DBCP) includes several data sources that provide pooling, but the BasicDataSource is one that’s often used because it’s simple to configure in Spring and because it resembles Spring’s own DriverManagerDataSource.
-<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
-	<property name="driverClassName" value="org.hsqldb.jdbcDriver"/>
-	<property name="url" value="jdbc:hsqldb:hsql://localhost/spitter/spitter"/>
-	<property name="username" value="sa"/>
-	<property name="password" value=""/>
-	<property name="initialSize" value="5"/>
-	<property name="maxActive" value="10"/>
-</bean>
-
-#JDBC driver-based data source
-- The simplest data source you can configure in Spring is one that’s defined through a JDBC driver. in org.springframework.jdbc.datasource package:
-- DriverManagerDataSource: Returns a new connection every time that a connection is requested. Unlike DBCP’s BasicDataSource, the connections provided
-by DriverManagerDataSource aren’t pooled.
-- SingleConnectionDataSource: Returns the same connection every time a connection is requested. Although SingleConnectionDataSource isn’t exactly
-a pooled data source, you can think of it as a data source with a pool of exactly one connection.
-<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-	<property name="driverClassName" value="org.hsqldb.jdbcDriver"/>
-	<property name="url" value="jdbc:hsqldb:hsql://localhost/spitter/spitter"/>
-	<property name="username" value="sa"/>
-	<property name="password" value=""/>
-</bean>
-
-#Using JDBC with Spring
-- JDBC doesn’t require mastering another framework’s query language. 
-- It’s built on top of SQL, which is the data access language.
-- Plus, you can more finely tune the performance of your data access when you use JDBC than with practically any other technology. 
-- And JDBC allows you to take advantage of your database’s proprietary features, where other frameworks may discourage or prohibit this.
-- reporting applications, where it doesn’t make sense to organize the data into objects, just to then unwind it back into raw data.
-- Cleaning up resources and handling errors is what makes data access robust. So not only do we need this code, we also need to make sure that it’s correct.
-This is all the more reason to let a framework deal with the boilerplate code so that we know that it’s written once and written right.
-
-#Working with JDBC templates
-- 3 Spring JDBC template classes to choose from:
-- JdbcTemplate(obselete): basic Spring’s JDBC template class provides simple access to a database through JDBC and simple indexed-parameter queries.
-- NamedParameterJdbcTemplate(obselete): JDBC template class perform queries where values are bound to named parameters in SQL, rather than indexed parameters.
-- ***SimpleJdbcTemplate: JDBC template takes advantage of Java 5 features such as autoboxing, generics, and variable parameter lists to simplify how a JDBC template is used. should be used for future development.
-
-#ACCESSING DATA USING SimpleJdbcTemplate
-public class JdbcSpitterDAO implements SpitterDAO {
-	...
-	private SimpleJdbcTemplate jdbcTemplate;
-	public void setJdbcTemplate(SimpleJdbcTemplate jdbcTemplate){
-		this.jdbcTemplate=jdbcTemplate;
-	}
-}
-
-<bean id="jdbcTemplate" class="org.springframework.jdbc.core.simple.SimpleJdbcTemplate">
-	<constructor-arg ref="dataSource"/>
-</bean> 
-
-<bean id="spitterDao" class="com.habuma.spitter.persistence.SimpleJdbcTemplateSpitterDao">
-	<property name="jdbcTemplate" ref="jdbcTemplate"/>
-</bean>
-
-#Updating using SimpleJdbcTemplate
-private static final String SQL_INSERT_SPITTER= "insert into spitter(username, password, fullname, email, isUpdateByEmail) values(?,?,?,?,?)";
-public void addSpitter(Spitter spitter){
-	jdbcTemplate.update(SQL_INSERT_SPITTER,
-						spitter.getUsername(),
-						spitter.getPassword(),
-						spitter.getFullName(),
-						spitter.getEmail(),
-						spitter.isUpdateByEmail());
-						spitter.setId(queryForIdentity());
-}
-- Just because you don’t see a lot of boilerplate code, that doesn’t mean it’s not there. It’s cleverly hidden inside of the JDBC template class. When the update() method is called, SimpleJdbcTemplate will get a connection, create a statement, and execute the insert SQL.
-- Internally, SimpleJdbcTemplate will catch any SQLExceptions that are thrown. It’ll then translate the generic SQLException into one of the more specific data access exceptions rethrow it. Because Spring’s data access exceptions are all runtime exceptions, we didn’t have to catch it in the addSpitter() method.
-
-#Querying using SimpleJdbcTemplate
-private static final String SQL_SELECT_SPITTER="select id,username,fullname from spitter where id = ?";
-public Spitter getSpitterById (long id) {
-	return jdbcTemplate.queryForObject( //Queries for Spitter
-			SQL_SELECT_SPITTER_BY_ID,
-			new ParameterizedRowMapper<Spitter>(){ //Maps results to object 
-					public Spitter mapRow(ResultSet rs, int rowNum) throws SQLException {
-									Spitter spitter=new Spitter();
-									spitter.setId(rs.getLong(1));
-									spitter.setUsername(rs.getString(2));
-									spitter.setPassword(rs.getString(3));
-									spitter.setFullName(rs.getString(4));
-									return spitter;
-					}
-			},
-			id //Binds parameters
-	);
-}
-
-The queryForObject() method takes three parameters:
-- sql
-- A ParameterizedRowMapper object that extracts values from a ResultSet and constructs a domain object (in this case a Spitter)
-- A variable argument list of values to be bound to indexed parameters of the query
-- The real magic happens in the ParameterizedRowMapper object. For every row that results from the query, JdbcTemplate will call the mapRow() method of the RowMapper. Within ParameterizedRowMapper, we’ve written the code that creates a Spitter object and populates it with values from the ResultSet.
-- used indexed parameters. This meant that we had to take notice of the order of the parameters in the query and list the values in the correct order when passing them to the update() method.
-
-#USING NAMED PARAMETERS
-- Optionally, we could use named parameters. Named parameters let us give each parameter in the SQL an explicit name and to refer to the parameter by that name when binding values to the statement. For example, suppose that:
-private static final String SQL_INSERT_SPITTER= "insert into spitter(username,password,fullname) values(:username,:password,:fullname)";
-
-public void addSpitter(Spitter spitter) {
-	Map<String,Object> params = new HashMap<String,Object>(); //Bind parameters, named parameters are bound through a java.util.Map
-	params.put("username",spitter.getUsername());
-	params.put("password",spitter.getPassword());
-	params.put("fullname",spitter.getFullName());
-	
-	jdbcTemplate.update(SQL_INSERT_SPITTER, params);
-	spitter.setId(queryForIdentity());
-}
-
-#USING DAO SUPPORT CLASSES FOR JDBC
-- Spring’s DAO support classes define a placeholder for the DBC template objects so that subclasses won’t have to manage their own JDBC templates.
-public class JdbcSpitterDao extends SimpleJdbcDaoSupport implements SpitterDao {
-	...
-}
-
-- The SimpleJdbcDaoSupport provides convenient access to the SimpleJdbcTemplate through the getSimpleJdbcTemplate() method.
-public void addSpitter(Spitter spitter) {
-	getSimpleJdbcTemplate().update(SQL_INSERT_SPITTER,
-	spitter.getUsername(),
-	spitter.getPassword(),
-	spitter.getFullName(),
-	spitter.getEmail(),
-	spitter.isUpdateByEmail());
-	spitter.setId(queryForIdentity());
-}
-
-- you can skip the middleman (or middle bean, as the case may be) and wire a data source directly into the dataSource property that JdbcSpitterDao inherits from SimpleJdbcDaoSupport:
-<bean id="spitterDao" class="com.habuma.spitter.persistence.JdbcSpitterDao">
-	<property name="dataSource" ref="dataSource"/>
-</bean>
-- When JdbcSpitterDao has its dataSource property configured, it’ll internally create a SimpleJdbcTemplate instance for you. This eliminates the need to explicitly declare a SimpleJdbcTemplate bean in Spring.
-
-#Integrating Hibernate with Spring
-features over JDBC:
-- be able to map object properties to database columns and have our statements and queries created for us, freeing us from typing an endless
-string of question marks. 
-- Lazy loading: As our object graphs become more complex, we sometimes don’t want to fetch entire relationships immediately. To use a typical example, sup-
-pose we’re selecting a collection of PurchaseOrder objects, and each of these objects contains a collection of LineItem objects. If we’re only interested in
-PurchaseOrder attributes, it makes no sense to grab the LineItem data. This could be expensive. Lazy loading allows us to grab data only as it’s needed.
-- Eager fetching: This is the opposite of lazy loading. Eager fetching allows you to grab an entire object graph in one query. In the cases where we know that we need a PurchaseOrder object and its associated LineItems, eager fetching lets us get this from the database in one operation, saving us from costly round-trips.
-- Cascading: Sometimes changes to a database table should result in changes to other tables as well. Going back to our purchase order example, when an
-Order object is deleted, we also want to delete the associated LineItems from the database.
-
-#persistence frameworks: 
-- Hibernate, iBATIS, Java Data Objects (JDO), and the Java Persistence API (JPA).
-- Integrated support for Spring declarative transactions
-- Transparent exception handling
-- Thread-safe, lightweight template classes
-- DAO support classes
-- Resource management
-
-#HibernateTemplate(obselete)
-- Spring’s support for Hibernate offers a similar template class to abstract Hibernate persistence
-- Like its JDBC counterpart, HibernateTemplate took care of the intricacies of working with Hibernate by catching Hibernate-specific exceptions and rethrowing them as one of Spring’s unchecked data access exceptions.
-- HibernateTemplate manages Hibernate Sessions. This involves opening and closing sessions as well as ensuring one session per transaction. Without HibernateTemplate, you’d have no choice but to clutter your DAOs with boilerplate session management code.
-- Even though HibernateTemplate is still around, it’s no longer considered the best way of working with Hibernate.
-- Contextual sessions, introduced in Hibernate 3, are a way in which Hibernate itself manages one Session per transaction. There’s no need
-for HibernateTemplate to ensure this behavior. This keeps your DAO classes free of Spring-specific code.
-
-#Declaring a Hibernate session factory
-- org.hibernate.Session interface provides basic data access functionality such as the ability to save, update, delete, and load objects from the database. Through the Hibernate Session, an application’s DAO will perform all of its persistence needs.
-- The standard way to get a reference to a Hibernate Session object is through an implementation of Hibernate’s SessionFactory interface. SessionFactory is responsible for opening, closing, and managing Hibernate Sessions.
-- 2 ways of configuring a Hibernate session factory bean:
-#1 if object-to-database mapping defined in XML
-<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
-	<property name="dataSource" ref="dataSource" /> //ref to datasource
-	<property name="mappingResources">				
-		<list>
-			<value>Spitter.hbm.xml </value>			//hibernate mapping xml
-		</list>
-	</property>
-	<property name="hibernateProperties">			//hibernate configuration
-		<props>
-			<prop key="dialect">org.hibernate.dialect.HSQLDialect</prop>
-		</props>
-	</property>
-</bean>
-
-#2 If persistence using annotation:
-<bean id="sessionFactory"class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
-	<property name="dataSource" ref="dataSource"/>	//ref to datasource, same as above
-	<property name="packagesToScan" value="com.habuma.spitter.domain"/>	//obtaining hibernate mapping info by scanning annotaions in package  
-	<property name="hibernateProperties">	//hibernate configuration, same as above
-		<props>
-			<prop key="dialect">org.hibernate.dialect.HSQLDialect</prop>
-		</props>
-	</property>
-</bean>
-
-- the packagesToScan property to tell Spring to scan one or more packages looking for domain classes that are annotated for persistence with Hibernate. This includes classes that are annotated with JPA’s @Entity or @MappedSuperclass and Hibernate’s own @Entity annotation.
-- AnnotationSessionFactoryBean’s packagesToScan property takes an array of Strings specifying the packages to look for persistent classes in.
-<property name="packagesToScan">
-	<list>
-		<value>com.habuma.spitter.domain</value>
-	</list>
-</property>
-
-- you may also explicitly list out all of your application's persistent classes by specifying a list of fully qualified class names in the annotatedClasses property <propertyname="annotatedClasses">
-	<list>
-		<value>com.habuma.spitter.domain.Spitter</value>
-		<value>com.habuma.spitter.domain.Spittle</value>
-	</list>
-</property>
-
-#Building Spring-free Hibernate
-- you can wire a Hibernate session directly into your DAO classes.
-@Repository
-public class HibernateSpitterDaoimplements SpitterDao {
-	private SessionFactory sessionFactory;
-	
-	@Autowired
-	public Hibernate SpitterDao(SessionFactory sessionFactory){ //inject a SessionFactory
-		this.sessionFactory=sessionFactory;
-	}
-	private Session currentSession(){
-		return sessionFactory.getCurrentSession();	//Retrieve current Session from SessionFactory
-	}
-	public void addSpitter(Spitter spitter){
-		currentSession().save(spitter);
-	}
-	public Spitterget SpitterById(longid){
-		return(Spitter)currentSession().get(Spitter.class,id);
-	}
-	public void saveSpitter(Spitter spitter){
-		currentSession().update(spitter);
-	}
-	...
-}
-
-- In addition to helping to reduce XML-based configuration, @Repository+PersistenceExceptionTranslationPostProcessor also enable catching platform-specific exceptions and rethrow them as one of Spring’s unified unchecked exceptions.
-<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
-- PersistenceExceptionTranslationPostProcessor is a bean post processor which adds an advisor to any bean that’s annotated with @Repository so that any platform-specific exceptions are caught and then rethrown as one of Spring’s unchecked data access exceptions.
-- <prop key="hibernate.current_session_context_class">thread</prop> ?? In standalone Java application
-- "get is not valid without active transaction;"  Hibernate session needs transaction enabled. why?
-- 因为getCurrentSession()本意就是获取当前事务中的session,如果没有事务，你从哪里获取session
-- getCurrentSession() 线程绑定session必须开启事务，此时的session已经加载了拦截器，在执行数据操作时必须在活动的事务范围中。此时的数据库连接是在准备开启事务的时获得，事务提交的时候释放连接。
-
-#Spring and the Java Persistence API
-- JPA is a POJO-based persistence mechanism that draws ideas from both Hibernate and Java Data Objects (JDO), and mixes Java 5 annotations in for good measure.
-
-#Configuring an entity manager factory
-- The first step toward using JPA with Spring is to configure an entity manager factory as a bean in the Spring application context.
-- JPA-based applications use an implementation of EntityManagerFactory to get an instance of an EntityManager. The JPA specification defines two kinds of entity managers:
-- Application-managed: Entity managers are created when an application directly requests one from an entity manager factory. With application-managed entity
-managers, the application is responsible for opening or closing entity managers and involving the entity manager in transactions. This type of entity manager is most appropriate for use in standalone applications that don’t run within a JavaEE container.
-- Container-managed: Entity managers are created and managed by a Java EE container. The application doesn’t interact with the entity manager factory at all.
-Instead, entity managers are obtained directly through injection or from JNDI. The container is responsible for configuring the entity manager factories. This
-type of entity manager is most appropriate for use by a Java EE container that wants to maintain some control over JPA configuration beyond what’s specified
-in persistence.xml.
-- Application-managed EntityManagers are created by an EntityManagerFactory obtained by calling the createEntityManagerFactory() method of the PersistenceProvider. 
-- container-managed EntityManagerFactorys are obtained through PersistenceProvider’s createContainerEntityManagerFactory() method.
-- LocalEntityManagerFactoryBean produces an application-managed EntityManagerFactory.
-- LocalContainerEntityManagerFactoryBean produces a container-managed EntityManagerFactory.
-
-#CONFIGURING APPLICATION-MANAGED JPA
-- Application-managed entity manager factories derive most of their configuration information from a configuration file called persistence.xml. This file must appear in the META-INF directory within the classpath.
-- The purpose of the persistence.xml file is to define one or more persistence units. A persistence unit is a grouping of one or more persistent classes that correspond to a single data source. In simple terms, persistence.xml enumerates one or more persistent classes along with any additional configuration such as data sources and XML-based mapping files.
-<persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
-	<persistence-unit name="spitterPU">
-		<class>com.habuma.spitter.domain.Spitter</class>
-		<class>com.habuma.spitter.domain.Spittle</class>
-		<properties>
-			<property name="toplink.jdbc.driver" value="org.hsqldb.jdbcDriver"/>
-			<property name="toplink.jdbc.url" value= "jdbc:hsqldb:hsql://localhost/spitter/spitter"/>
-			<property name="toplink.jdbc.user" value="sa" />
-			<property name="toplink.jdbc.password" value="" />
-		</properties>
-	</persistence-unit>
-</persistence>
-
-- The following <bean> declares a LocalEntityManagerFactoryBean in Spring, the value given to the persistenceUnitName property refers to the persistence unit
-name as it appears in persistence.xml.
-<bean id="emf" class="org.springframework.orm.jpa.LocalEntityManagerFactoryBean">
-	<property name="persistenceUnitName" value="spitterPU"/>
-</bean>
-
-#CONFIGURING CONTAINER-MANAGED JPA
-- Instead of configuring data source details in persistence.xml, you can configure this information in the Spring application context.
-<bean id="emf" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
-	<property name="dataSource" ref="dataSource"/>
-	<property name="jpaVendorAdapter" ref="jpaVendorAdapter"/>
-</bean>
-- The jpaVendorAdapter property can be used to specify the JPA implementation:
-- EclipseLinkJpaVendorAdapter
-- HibernateJpaVendorAdapter
-- OpenJpaVendorAdapter
-- TopLinkJpaVendorAdapter
-
-- if using Hibernate as a JPA implementation, so we’ve configured it with a HibernateJpaVendorAdapter:
-<bean id="jpaVendorAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
-	<property name="database" value="HSQL"/>
-	<property name="showSql" value="true"/>
-	<property name="generateDdl" value="false"/>
-	<property name="databasePlatform" value="org.hibernate.dialect.HSQLDialect"/>
-</bean>
-
-- The Hibernate JPA vendor adapter supports several databases. You can specify which database to use by setting its property.
-IBM DB2/DB2, Apache Derby/DERBY, H2/H2, Hypersonic/HSQL, Informix/INFORMIX, MySQL/MYSQL, Oracle/ORACLE, PostgresQL/POSTGRESQL, Microsoft SQL Server/SQLSERVER,
-Sybase/SYBASE
-
-#PULLING AN ENTITYMANAGERFACTORY FROM JNDI
-<jee:jndi-lookup id="emf" jndi-name="persistence/spitterPU"/>
-- It’s also worth noting that if you’re deploying your Spring application in some application servers, an EntityManagerFactory may have already been created for you and may be waiting in JNDI to be retrieved.
-
-#Writing a JPA-based DAO
-- Spring-JPA integration comes in template form with JpaTemplate and a corresponding JpaDaoSupport class. Nevertheless, template-based JPA has been set aside in favor of a pure JPA approach. This is analogous to the Hibernate contextual sessions.
-
-@Repository("spitterDao")
-@Transactional
-public class JpaSpitterDao implements SpitterDao{
-	private static final String RECENT_SPITTLES= "SELECT s FROMS pittles";
-	private static final String ALL_SPITTERS= "SELECT s FROM Spitters";
-	private static final String SPITTER_FOR_USERNAME = "SELECT s FROM Spitters WHERE s.username=:username";
-	private static final String SPITTLES_BY_USERNAME = "SELECT s FROM Spittles WHERE s.spitter.username=:username";
-	
-	@PersistenceContext
-	private EntityManager em;			//Inject EntityManager
-	
-	public void addSpitter(Spitterspitter) {	//Use EntityManager
-		em.persist(spitter);
-	}
-	public Spitter getSpitterById(longid){
-		return em.find(Spitter.class,id);
-	}
-	public void saveSpitter(Spitter spitter){
-		em.merge(spitter);
-	}
-	...
-}
-
-- the em property is annotated with @PersistentContext. that annotation indicates that an instance of EntityManager should be injected into em. To
-enable EntityManager injection in Spring, we’ll need to configure a PersistenceAnnotationBeanPostProcessor in Spring’s application context:
-<bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor"/>
-
-- we need to annotate our DAO with @Repository so that PersistenceExceptionTranslationPostProcessor will know that this is one of those
-beans for whom exceptions should be translated into one of Spring’s unified data access exceptions.
-<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
-
-- exception translation, whether it be with JPA or Hibernate, isn’t mandatory. If you’d prefer that your DAO throw JPA-specific or Hibernate-specific exceptions, then you’re welcome to forgo PersistenceExceptionTranslationPostProcessor and let the native exceptions flow freely.
-
-- One way that Spring simplifies data access is by managing the lifecycle of database connections and ORM framework sessions, ensuring that they’re opened and closed as necessary. In this way, management of persistence mechanisms is virtually transparent to your application code.
-
-6. Chapter 6 Managing Transactions
-- In software, all-or-nothing operations are called transactions.
-
-#ACID - an acronym has been created to describe transactions
-- Atomic: all or nothing
-- Consistent: Once a transaction ends (whether successful or not), the system is left in a state consistent with the business that it models. The data shouldn’t be corrupted with respect to reality. Atomicity supports consistency by ensuring that the system’s data is never left in an inconsistent, partially done state.
-- Isolated: Transactions should allow multiple users to work with the same data, without each user’s work getting tangled up with the others. Therefore, transactions should be isolated from each other, preventing concurrent reads and writes to the same data from occurring. (Note that isolation typically involves locking rows and/or tables in a database.); Isolation also supports consistency by preventing another concurrent transaction from stealing seats
-out from under you while you’re still in the process of purchasing them.
-- Durable: Once the transaction has completed, the results of the transaction should be made permanent so that they’ll survive any sort of system crash. This
-typically involves storing the results in a database or some other form of persistent storage. In the event of a system crash or other catastrophic event, you shouldn’t have to worry about results of the transaction being lost.
-
-#Spring’s transaction management support
-- provides support for both programmatic and declarative transaction management.
-- If your application uses only a single persistent resource, Spring can use the transactional support offered by the persistence mechanism.
-- if your application has transaction requirements that span multiple resources, Spring can support distributed (XA) transactions using a third-
-party JTA implementation.
-- Spring’s declarative transactions allow you to define transaction boundaries declaratively, allow you to declare additional attributes such as isolation level and timeouts.
-- Choosing between programmatic and declarative transaction management is largely a decision of fine-grained control versus convenience. When you program
-transactions into your code, you gain precise control over transaction boundaries, beginning and ending them precisely where you want. Typically, you won’t require the fine-grained control offered by programmatic transactions and will choose to declare your transactions in the context definition file.
-
-#transaction manager
-- Regardless of whether you choose to program transactions into your beans or to declare them as aspects, you’ll be using a Spring transaction manager to interface with a platform-specific transaction implementation. Let’s see how Spring’s transaction managers free you from dealing directly with platform-specific transaction implementations.
-
-- Spring’s transaction managers delegate transaction-management responsibility to platform-specific transaction implementations.
-- Spring doesn’t directly manage transactions. Instead, it comes with a selection of transaction managers that delegate responsibility for transaction management to a platform-specific transaction implementation provided by either JTA or the persistence mechanism.
-- Each of these transaction managers acts as a facade to a platform-specific transaction implementation. Transaction manager (org.springframework.*): 
-- DataSourceTransactionManager: Working with Spring’s JDBC abstraction support. Also useful when using iBATIS for persistence.
-- orm.hibernate3.HibernateTransactionManager: Using Hibernate 3 for persistence.
-- orm.jdo.JdoTransactionManager: Using JDO for persistence.
-- orm.jpa.JpaTransactionManager: Using the Java Persistence API (JPA) for persistence.
-
-- jca.cci.connection.CciLocalTransactionManager: Using Spring’s support for Java EE Connector Architecture (JCA) and the Common Client Interface (CCI).
-jdbc.datasource.
-- jms.connection.JmsTransactionManager: Using JMS 1.1+.
-- jms.connection.JmsTransactionManager102: Using JMS 1.0.2.
-- transaction.jta.JtaTransactionManager: You need distributed transactions or when no other transaction manager fits the need.
-- transaction.jta.OC4JJtaTransactionManager: Using Oracle’s OC4J JEE container.
-- transaction.jta.WebLogicJtaTransactionManager: You need distributed transactions and your application is running within WebLogic.
-- transaction.jta.WebSphereUowTransactionManager: You need transactions managed by a UOWManager in WebSphere.
-
-#JDBC transactions
-- To use a transaction manager, you’ll need to declare it in your application context.
-- If you’re using straight JDBC for your application’s persistence, DataSourceTransactionManager will handle transactional boundaries for you.
-<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-	<property name="dataSource" ref="dataSource"/>
-</bean>
-- Behind the scenes, DataSourceTransactionManager manages transactions by making calls on the java.sql.Connection object retrieved from the DataSource. For
-instance, a successful transaction is committed by calling the commit() method on the connection. Likewise, a failed transaction is rolled back by calling the rollback() method.
-
-#Hibernate transactions
-<bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
-	<property name="sessionFactory" ref="sessionFactory"/>
-</bean>
-- HibernateTransactionManager delegates responsibility for transaction management to an org.hibernate.Transaction object that it retrieves from the Hibernate session. When a transaction successfully completes, HibernateTransactionManager will call the commit() method on the Transaction object. Similarly, when a transaction fails, the rollback() method will be called on the Transaction object.
-
-#Java Persistence API transactions
-<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
-	<property name="entityManagerFactory" ref="entityManagerFactory"/>
-</bean>
-
-#Java transaction API transactions
-- If none of the aforementioned transaction managers meet your needs or if your transactions span multiple transaction sources (for example, two or more different databases), you’ll need to use JtaTransactionManager:
-<bean id="transactionManager" class="org.springframework.transaction.jta.JtaTransactionManager">
-	<property name="transactionManagerName" value="java:/TransactionManager"/>
-</bean>
-
--The transactionManagerName property specifies a JTA transaction manager to be looked up via JNDI.
-
-#Programming transactions
-- you’re limited to declaring transaction boundaries at the method level. If you need more fine-grained control over transactional boundaries, programmatic transactions are the only way to go.
-- One approach to adding transactions is to programmatically add transactional boundaries directly within the saveSpittle() method using Spring’s TransactionTemplate. Like other template classes in Spring (such as JdbcTemplate, discussed in the previous chapter), TransactionTemplate utilizes a callback mechanism.
-
-public void saveSpittle(final Spittle spittle){
-	txTemplate.execute(new TransactionCallback<Void>() { //implementing the TransactionCallback interface
-	public Void doInTransaction(TransactionStatus txStatus){
-		try {
-			spitterDao.saveSpittle(spittle); //As for the code that needs to be transactional, place it within the doInTransaction() method.
-		} catch(RuntimeExceptione){
-			txStatus.setRollbackOnly();
-			throw e;
-		}
-	return null;
-	}
-	});
-}
-
-- To use the TransactionTemplate, you start by implementing the TransactionCallback interface. Because TransactionCallback has only one method to imple-
-ment, it’s often easiest to implement it as an anonymous inner class. As for the code that needs to be transactional, place it within the doInTransaction() method. Calling the execute() method on the TransactionTemplate instance will execute the code contained within the TransactionCallback instance. If your code encounters a problem, calling setRollbackOnly() on the TransactionStatus object will roll back the transaction. Otherwise, if the doInTransaction() method returns successfully, the transaction will be committed.
-
-- TransactionTemplate should be injected into SpitterServiceImpl, 
-<bean id="spitterService" class="com.habuma.spitter.service.SpitterServiceImpl">
-...
-	<property name="transactionTemplate">
-		<bean class="org.springframework.transaction.support.TransactionTemplate">
-				<property name="transactionManager" ref="transactionManager" />
-		</bean>
-	</property>
-</bean>
-
-- Under the hood, TransactionTemplate uses an implementation of PlatformTransactionManager to handle the platform-specific details of transaction management.
-- Programmatic transactions are good when you want complete control over transactional boundaries. But, as you can see from the code in listing 6.1, they’re intrusive. 
-
-#Declaring transactions
-- You can think of a Spring transaction as an aspect that “wraps” a method with transactional boundaries.
-
-#Defining transaction attributes
-#PROPAGATION BEHAVIOR
-- A transaction attribute is a description of how transaction policies should be applied to a method.
-- PROPAGATION BEHAVIOR: Propagation behavior defines the boundaries of the transaction with respect to the client and to the method being called. Spring defines seven distinct propagation behaviors: PROPAGATION_MANDATORY/PROPAGATION_NESTED/PROPAGATION_NEVER/PROPAGATION_NOT_SUPPORTED/PROPAGATION_REQUIRED/PROPAGATION_REQUIRES_NEW/PROPAGATION_SUPPORTS 
-- The propagation behaviors are defined as constants in the org.springframework.transaction.TransactionDefinition interface.
-- Propagation rules answer the question of whether a new transaction should be started or suspended, or if a method should even be executed within a transactional context at all.
-- if a method is declared to be transactional with PROPAGATION_REQUIRES_NEW behavior, it means that the transactional boundaries are the same as the method’s own boundaries
-- If the method has PROPAGATION_REQUIRED behavior, the transactional boundaries depend on whether a transaction is already under way. 
-
-
-#ISOLATION LEVELS
-- defines how much a transaction may be impacted by the activities of other concurrent transactions. Another way to look at a transaction’s isolation level is to think of it as how selfish the transaction is with the transactional data.
-- In a typical application, multiple transactions run concurrently, often working with the same data to get their jobs done. Concurrency, while necessary, can lead to the following problems:
-- Dirty reads: occur when one transaction reads data that has been written but not yet committed by another transaction. If the changes are later rolled back, the data obtained by the first transaction will be invalid.
-- Nonrepeatable reads: happen when a transaction performs the same query two or more times and each time the data is different. This is usually due to another
-concurrent transaction updating the data between the queries.
-- Phantom reads: are similar to nonrepeatable reads. These occur when a transaction (T1) reads several rows, and then a concurrent transaction (T2) inserts
-rows. Upon subsequent queries, the first transaction (T1) finds additional rows that weren’t there before.
-- in terms of impact on users, Dirty reads > Nonrepeatable reads > Phantom reads
-
-- In an ideal situation, transactions would be completely isolated from each other, thus avoiding these problems. But perfect isolation can affect performance because it often involves locking rows (and sometimes complete tables) in the data store. Aggressive locking can hinder concurrency, requiring transactions to wait on each other to do their work.
-
-- Realizing that perfect isolation can impact performance and because not all applications will require perfect isolation, sometimes it’s desirable to be flexible with regard to transaction isolation. Therefore, several levels of isolation are possible:
-- ISOLATION_DEFAULT: Use the default isolation level of the underlying data store. 
-- ISOLATION_READ_UNCOMMITTED: Allows you to read changes that haven’t yet been committed. May result in dirty reads, phantom reads, and nonrepeatable
-reads.
-- ISOLATION_READ_COMMITTED: Allows reads from concurrent transactions that have been committed. Dirty reads are prevented, but phantom and nonrepeatable reads may still occur.
-- ISOLATION_REPEATABLE_READ: Multiple reads of the same field will yield the same results, unless changed by the transaction itself. Dirty reads and nonrepeatable reads are prevented, but phantom reads may still occur. 
-- ISOLATION_SERIALIZABLE This fully ACID-compliant isolation level ensures that dirty reads, nonrepeatable reads, and phantom reads are all prevented. This is the slowest of all isolation levels because it’s typically accomplished by doing full table locks on the tables involved in the transaction.
-
-- The isolation levels described are defined as constants in the org.springframework.transaction.TransactionDefinition interface.
-- ISOLATION_READ_UNCOMMITTED is the most efficient isolation level, but isolates the transaction the least, leaving the transaction open to dirty, nonrepeatable, and phantom reads. At the other extreme, ISOLATION_SERIALIZABLE prevents all forms of isolation problems but is the least efficient.
-
-
-#READ-ONLY
-- If a transaction performs only read operations against the underlying data store, the data store may be able to apply certain optimizations that take advantage of the read-only nature of the transaction.
-- if you’re using Hibernate as your persistence mechanism, declaring a transaction as read-only will result in Hibernate’s flush mode being set to
-FLUSH_NEVER. This tells Hibernate to avoid unnecessary synchronization of objects with the database, thus delaying all updates until the end of the transaction.
-
-#TRANSACTION TIMEOUT
-- Because transactions may involve locks on the underlying data store, long-running transactions can tie up database resources unnecessarily. Instead of waiting it out, you can declare a transaction to automatically roll back after a certain number of seconds.
-
-ROLLBACK RULES
-- The final facet of the transaction pentagon is a set of rules that define which exceptions prompt a rollback and which ones don’t. By default, transactions are rolled back only on runtime exceptions and not on checked exceptions 
-- you can declare that a transaction be rolled back on specific checked exceptions as well as runtime exceptions. Likewise, you can declare that a transaction not roll back on specified exceptions, even if those exceptions are runtime exceptions.
-
-#Declaring transactions in XML
-- Using the tx namespace involves adding it to your Spring configuration XML file, the aop namespace should also be included. 
-<beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:aop="http://www.springframework.org/schema/aop"
-	xmlns:tx="http://www.springframework.org/schema/tx"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans
-						http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-						http://www.springframework.org/schema/aop
-						http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
-						http://www.springframework.org/schema/tx
-						http://www.springframework.org/schema/tx/spring-tx-3.0.xsd">
-
-<tx:advice id="txAdvice" transaction-manager="txManager"> //assumes transaction manager bean id is transactionManager, otherwise need to explicitly defined
-	<tx:attributes>
-		<tx:method name="add*" propagation="REQUIRED"/>
-		<tx:method name="*" propagation="SUPPORTS" read-only="true"/>
-	</tx:attributes>
-</tx:advice>
-
-- With <tx:advice>, the transaction attributes are defined in a <tx:attributes> element, which contains one or more <tx:method> elements. The <tx:method> element defines the transaction attributes for a given method (or methods) as defined by the name attribute (using wildcards).
-- <tx:method> has several attributes that help define the transaction policies for the method(s):
-- isolation: Specifies the transaction isolation level.
-- propagation: Defines the transaction’s propagation rule.
-- read-only: Specifies that a transaction be read-only. Rollback rules: 
-- rollback-for: specifies checked exceptions for which a transaction should be rolled back and not committed.
-- no-rollback-for: specifies exceptions for which the transaction
-- timeout: Defines a timeout for a long-running transaction.
-- <tx:advice> assumes that the transaction manager will be declared as a bean whose id is transactionManager. If you happen to give your
-transaction manager a different id (txManager, for instance), you’ll need to specify the id of the transaction manager in the transactionmanager attribute.
-- On its own, <tx:advice> only defines an AOP advice for advising methods with transaction boundaries. But this is only transaction advice, not a complete transactional aspect. Nowhere in <tx:advice> did we indicate which beans should be advised—we need a pointcut for that.
-<aop:config>
-	<aop:advisor pointcut="execution(**..SpitterService.*(..))" advice-ref="txAdvice"/>
-</aop:config>
-- The pointcut attribute uses an AspectJ pointcut expression to indicate that this advisor should advise all methods of the SpitterService interface. The transaction advice, which is referenced with the advice-ref attribute to be the advice named txAdvice, defines which methods are actually run within a transaction as well as the transactional attributes for those methods
-
-#Defining annotation-driven transactions
-<tx:annotation-driven/>
-<tx:annotation-driven transaction-manager="txManager"/>
-- That single line of XML lets you define transaction rules where they make the most sense: on the methods that are to be transactional.
-- Annotations are one of the biggest and most debated new features of Java 5. Annotations let you define metadata directly in your code rather than in external configuration files.
-- The <tx:annotation-driven> configuration element tells Spring to examine all beans in the application context and to look for beans that are annotated with
-@Transactional, either at the class level or at the method level. For every bean that is @Transactional, <tx:annotation-driven> will automatically advise it with transaction advice. The transaction attributes of the advice will be defined by parameters of the @Transactional annotation.
-
-#@Transactional annotations
-@Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
-public class SpitterServiceImpl implements SpitterService{
-	...
-	@Transactional(propagation=Propagation.REQUIRED, readOnly=false)
-	public void addSpitter(Spitter spitter) {
-		...
-	}
-	...
-}
-
-7. Chapter 11 - Spring rest support
+5. Chapter 11 - Spring rest support
 - Despite the importance of data, typically, remote services were centered on actions and processes, not information and resources.
 - Representational State Transfer (REST) has emerged as a popular information-centric alternative to traditional SOAP-based web services.
 - Spring’s REST support builds upon Spring MVC
 
 #The fundamentals of Representational State Transfer (REST)
-- REST is not “web services with URLs” — to think of REST as another remote procedure call (RPC) mechanism, like SOAP, but invoked through plain HTTP URLs and without SOAP’s hefty XML namespaces.
+- REST is not “web services with URLs” — not right to think of REST as another remote procedure call (RPC) mechanism, like SOAP, but invoked through plain HTTP URLs and without SOAP’s hefty XML namespaces.
 - Whereas RPC is service-oriented and focused on actions and verbs, REST is resource-oriented, emphasizing the things and nouns that describe an application.
 - Representational: REST resources can be represented in virtually any form, including XML, JavaScript Object Notation (JSON), or even HTML—whatever form best suits the consumer of those resources.
 - State: When working with REST, we’re more concerned with the state of a resource than with the actions we can take against resources.
@@ -1715,16 +1090,38 @@ public class SpitterServiceImpl implements SpitterService{
 - The new @PathVariable annotation enables controllers to handle requests for parameterized URLs (URLs that have variable input as part of their path).
 - Resources can be represented in a variety of ways using Spring’s view and view resolvers, including new view implementations for rendering model data as XML, JSON, Atom, and RSS.
 - View-based rendering can be bypassed altogether using the new @ResponseBody annotation and various HttpMethodConverter implementations.
-- Similarly, the new @RequestBody annotation, along with HttpMethodConverter implementations, can convert inbound HTTP data into Java objects passed into a controller’s handler methods.
+- the new @RequestBody annotation, along with HttpMethodConverter implementations, can convert inbound HTTP data into Java objects passed into a controller’s handler methods.
 - The representation best suited for the client can be chosen using the new ContentNegotiatingViewResolver.
 - The <form:form> JSP tag from Spring’s form-binding JSP tag library, along with the new HiddenHttpMethodFilter, make it possible to submit PUT and DELETE requests from HTML forms, even in browsers that don’t support those HTTP methods.
 - RestTemplate simplifies client-side consumption of REST resources.
 
 #Revisit of Spring MVC mechnism in a RESTful environment
-TBD
+Spring MVC components
+1) DispatcherServlet: Spring MVC's front controller delegates responsibility for a request to other components. responsible dispatch the job to controller.
+2) Handler mapping: map request to controller using different mapping, e.g. DefaultAnnotationHandlerMapping
+- map request base on RequestMethod GET, PUT, DELETE, and POST in addition to url
+3) Controller: process request data and delegate to service tier, package model data
+- use @PathVariable annotation to obtain input from url path
+- use message convetter to convert @RequestBody annotated input, select message converter based on request content-type 
+4) Model and logical view name: Data needs to return to browser to display and the logical name of the view and identify logical view name
+- either use ContentNegotiationViewResolver or bypass View-based rendering using @ResponseBody, no need to put object into model and render the view
+5) ViewResolver: map logical view name to physical view template (jsp, freemarker), InternalViewResolver, ContentNegotiatingViewResolver
+6) View: use the model data to render output that will be carried back to the client by the response object.
+
+Processing steps:
+1. When the request leaves the browser, it carries information about what the user is asking for. At least, the request will be carrying the requested URL. But it may also carry additional data such as the information submitted in a form by the user.
+2. The first stop in the request’s travels is at Spring’s DispatcherServlet.
+3. DispatcherServlet consults handler mappings to figure out where the request’s next stop will be. DispatcherServlet sends the request to the chosen controller.
+4. At the controller, the request's data will be received by @RequestParam, @PathVariable, @RequestBody, domain object, and the controller processes or delegates to service tier to process the information. Controller also validate the input using @Valid annotation.
+- @RequestBody indicated the controller should use message converter based on request content-type. 
+5. controller packages up the model data and identify the name of a view that should render the output. sends the request, along with the model and view name, back to the DispatcherServlet. So that the controller doesn’t get coupled to a particular view, the view name passed back to DispatcherServlet doesn’t directly identify a specific JSP.
+- new view implementations for rendering model data as XML, JSON, Atom, and RSS can be used.
+- if @ResponseBody is used to annotated return type, then controller will invoke proper message converter based on request Accept header.
+6. The DispatcherServlet will consult a view resolver to map the logical view name to a specific view implementation, which may or may not be a JSP.
+7. The view will use the model data to render output that will be carried back to the client by the response object.
 
 #Writing resource-oriented controllers
-- RESTless controller
+- eample of a RESTless controller
 @Controller
 @RequestMapping("/displaySpittle.htm") 
 public class DisplaySpittleController {
@@ -1733,7 +1130,8 @@ public class DisplaySpittleController {
 - /displaySpittle.htm is RESTless URL mapping, action-oriented, not resource-oriented. What’s more, the extension implies that it’s only capable of displaying that list in HTML form.
 
 #RESTful URLs
-- URL is an acronym that stands for "uniform resource locator". URL is intended to locate a resource. What’s more, all URLs are also URIs, or "uniform resource identifiers". we should expect that any given URL would not only locate a resource, but should also serve to identify a resource.
+- URL is an acronym that stands for "uniform resource locator". URL is intended to locate a resource. 
+- all URLs are also URIs, or "uniform resource identifiers". we should expect that any given URL would not only locate a resource, but should also serve to identify a resource.
 - Restless URL: Many URLs don’t locate or identify anything—they make demands. Rather than identify a thing, they insist that some action be taken. For instance:
 http://localhost:8080/Spitter/displaySpittle.htm?id=123
 - Restful URL: A RESTful URL is resource-oriented, both identifying and locating a resource. 
@@ -1768,6 +1166,17 @@ public class SpittleController{
 - OPTIONS: Requests available options for communication with the server; Yes; Yes
 - HEAD: Like GET, except that only the headers should be returned—no content should be returned in the response body; Yes; Yes
 - TRACE: Echoes the request body back to the client; Yes; Yes
+
+#RESTful vs. RESTless
+- REST通常使用url+method来map a handler. 因此同一个url叠加不同的method对应不同的handler method。
+@RequestMapping(value="/{id}", method=RequestMethod.GET)
+@RequestMapping(value="/{id}", method=RequestMethod.DELETE)
+@RequestMapping(value="/{id}", method=RequestMethod.PUT)
+
+- REST通常使用action-oriented url来map a handler. 较少使用method=RequestMethod.XXX
+@RequestMapping("/displaySpittle.htm") 
+@RequestMapping("/deleteSpittle.htm") 
+@RequestMapping("/updateSpittle.htm") 
 
 CRUD mapping of http method
 - GET:read; 
@@ -1808,7 +1217,6 @@ public @ResponseBody Spittle createSpittle(@Valid Spittle spittle, BindingResult
 	response.setHeader("Location","/spittles/"+spittle.getId()); //Set resource location
 	return spittle; //Return Spittle resource
 }
-
 - Typically, the server determines a resource’s identity. Since we’re creating a new resource here, there’s no way that we could know the URL for that resource.
 
 #Representing resources
@@ -1817,21 +1225,19 @@ public @ResponseBody Spittle createSpittle(@Valid Spittle spittle, BindingResult
 - controllers usually don’t concern themselves with how resources will be represented. Controllers will deal with resources in the forms of Java
 objects. after the controller has finished its works that the resource will be transformed into a form that best suits the client.
 
-- two ways to transform a resource’s Java representation into the representation that will be shipped to the client:
-- Negotiated view-based rendering
+#two ways to transform a resource’s Java representation into the representation that will be shipped to the client:
+- Negotiated view-based rendering (see #ContentNegotiationViewResolver)
 - HTTP message converters
-
-
 
 #Working with HTTP message converters
 - When defining machine-consumed RESTful resources, it may make more sense to develop the controller in a way that acknowledges that the data it produces will be represented as a resource consumed by another application. That’s where Spring’s HTTP message converters and the @ResponseBody annotation come into play.
-- when a controller’s job is to produce a representation of some resource, another more direct option is available that bypasses the model and view. In this style of handler method, the object returned from the controller is automatically converted into a representation appropriate for the client.
+- when a controller’s job is to produce a representation of some resource, more direct option is to bypass the model and view. In this style of handler method, the object returned from the controller is automatically converted into a representation appropriate for the client.
 
 #RETURNING RESOURCE STATE IN THE RESPONSE BODY
 - Normally when a handler method returns a Java object (anything other than String), that object ends up in the model for rendering in the view.
 - But if that handler method is annotated with @ResponseBody, then it indicates that the HTTP message converter mechanism should take over and transform the returned object into whatever form the client needs.
 
-@RequestMapping(value="/{username}",method=RequestMethod.GET, headers ={"Accept=text/xml,application/json"})
+@RequestMapping(value="/{username}", method=RequestMethod.GET, headers ={"Accept=text/xml,application/json"})
 public @ResponseBody Spitter getSpitter(@PathVariable String username) {
 	return spitterService.getSpitter(username);
 }
@@ -1865,8 +1271,8 @@ JAXB2, JIBX, XMLBeans, and XStream.
 - It’d be inconvenient for our controller’s handler methods (handler mapping==RequestMapping) to receive those objects in their raw form and convert them our-
 selves.
 - @RequestBody annotation does the same thing for objects sent from the client as @ResponseBody does for objects returned to the client.
-
-@RequestMapping(value="/{username}",method=RequestMethod.PUT, headers ="Content-Type=application/json")
+//用headers="Content-Type=application/json"限制handler mapping， 只对Content-Type=application/json的request进行处理，其他的返回404.
+@RequestMapping(value="/{username}", method=RequestMethod.PUT, headers="Content-Type=application/json") 
 @ResponseStatus(HttpStatus.NO_CONTENT)
 public void updateSpitter(@PathVariable String username, @RequestBody Spitter spitter){
 	spitterService.saveSpitter(spitter);
@@ -1874,7 +1280,7 @@ public void updateSpitter(@PathVariable String username, @RequestBody Spitter sp
 - If the request’s Content-Type header is application/json. and Jackson JSON library is available on the application’s classpath.
 
 #Writing REST clients
-- REST clients can involve boilerplate code and exception handling
+- REST clients can involve boilerplate code and exception handling as following:
 public Spittle[] retrieveSpittlesForSpitter(String username){
 	try {
 		HttpClient httpClient = new DefaultHttpClient(); //Create HttpClient
@@ -1889,7 +1295,7 @@ public Spittle[] retrieveSpittlesForSpitter(String username){
 		throw new SpitterClientException("Unable to retrieve Spittles",e);
 	}
 }
-- even using Jakarta Commons HTTP Client to make the request and the Jackson JSON processor to parse the response.
+- even using "Jakarta Commons HTTP Client" to make the request and the "Jackson JSON processor" to parse the response.
 
 #RestTemplate’s operations
 - RestTemplate frees us from the tedium of consuming RESTful resources.
@@ -1906,7 +1312,7 @@ public Spittle[] retrieveSpittlesForSpitter(String username){
 - put(): PUTs a resource to the specified URL.
 
 - With the exception of TRACE, RestTemplate covers all of the HTTP verbs. In addition, execute() and exchange() offer lower-level general-purpose methods for using any of the HTTP methods.
-- Each of the operations in table 11.3 is overloaded into three method forms:
+- Each of the operations above is overloaded into three method forms:
 - One that takes a java.net.URI as the URL specification with no support for parameterized URLs
 - One that takes a String URL specification with URL parameters specified as a Map
 - One that takes a String URL specification with URL parameters specified as a variable argument list
@@ -1915,7 +1321,7 @@ public Spittle[] retrieveSpittlesForSpitter(String username){
 - getForObject()
 <T> T getForObject(URI url, Class<T> responseType) throws RestClientException;
 <T> T getForObject(String url, Class<T> responseType, Object... uriVariables) throws RestClientException;
-<T> T getForObject(String url, Class<T> responseType, Map<String, ?> uriVariables)throwsRestClientException;
+<T> T getForObject(String url, Class<T> responseType, Map<String, ?> uriVariables) throws RestClientException;
 
 - getForEntity()
 <T> ResponseEntity<T> getForEntity(URI url, Class<T> responseType) throws RestClientException;
@@ -1963,7 +1369,6 @@ public Spittle[] retrieveSpittlesForSpitter(String username){
 	}
 	return response.getBody();
 }
-
 - if the server responds with a status of 304, it indicates that the content on the server hasn’t been modified since the client previously requested it. In that event, a custom NotModifiedException is thrown to indicate that the client should check its cache for the resource data.
 
 #PUTting resources
@@ -2083,7 +1488,8 @@ Hidden field rendering with the <sf:form> JSP tag
 ...
 </form>
 
-<sf:form method="delete" modelAttribute="spitter">
+// You set the method attribute to the desired HTTP method and <sf:form> will take care of the hidden field for you:
+<sf:form method="delete" modelAttribute="spitter"> 
 	...
 </sf:form>
 
@@ -2104,16 +1510,724 @@ Hidden field rendering with the <sf:form> JSP tag
 
 - When a POST request arrives at the server, HiddenHttpMethodFilter sees that the _hidden field prescribes a different request type and rewrites it in its destined HTTP method type.
 
+6. Chapter 5 Spring Data Access
+#Spring’s data access philosophy
+- 总而言之，coding to interfaces should be applied to all tiers not only data access.
+<<<<<<<
+- coding to interfaces. DAO should expose this functionality through an interface by which the rest of the application will access them. service objects access DAOs through interfaces. 
+- First, it makes your service objects easily testable, since they’re not coupled to a specific data access implementation. In fact, you could create mock implementations of these data access interfaces. That would allow you to test your service object without ever having to connect to the database, which would significantly speed up your unit tests and rule out the chance of a test failure due to inconsistent data.
+- The data access tier is accessed in a persistence technology-agnostic manner. allows the chosen persistence framework to be swapped out with minimal impact
+- interfaces are key to writing loosely coupled code and that they should be used at all layers of an application
+>>>>>>>
 
+#exception hierarchy
+- 总而言之，1)SQLExceptioin is checked exception, there is only one SQLException; 2) persistence framework like Hibernate offer different exceptions for differenct situation. 3)Spring offer different data access exceptions rooted in DataAccessException, an unchecked exception. developer decides wether to catch it or not.
+<<<<<<
+- Spring helps you insulate your data access tier from the rest of your application by providing a consistent exception hierarchy that’s used across all of its DAO frameworks.
+- JDBC forces you to catch SQLException. SQLException means that something went wrong while trying to access a database. But there’s little about that exception that tells you what went wrong or how to deal with it.
+- As it turns out, many of the problems that trigger an SQLException can’t be remedied within a catch block. Most SQLExceptions that are thrown indicate a fatal condition. 
+- Rather than have a different exception type for each possible problem, SQLException is the exception that’s thrown for all data access problems.
+- Some persistence frameworks offer a richer hierarchy of exceptions. Hibernate, for example, offers almost two dozen different exceptions, each targeting a specific data access problem. This makes it possible to write catch blocks for the exceptions that you want to deal with.
 
+#PERSISTENCE PLATFORM-AGNOSTIC EXCEPTIONS
+- you can count on Spring to throw a consistent set of exceptions, regardless of which persistence provider you choose.
+- Spring has an exception for virtually anything that could go wrong when reading or writing to a database.
+- all of spring data access exceptions are rooted with DataAccessException. DataAccessException is an unchecked exception. In other words, you don’t have to catch any of the data access exceptions thrown from Spring, this leaves the decision of whether to catch an exception in the developer’s hands.
+>>>>>>
 
+#Templating data access
+- 总而言之, 1)Template + callback; 2)Spring’s DAO template classes tesponsible for the common tasks (open/close connection, tx begin/commit/rollback, exception handling); 3)callback object (Mapper) handle the application logic.
+<<<<<<<<
+- Spring separates the fixed and variable parts of the data access process into two distinct classes: templates and callbacks. Templates manage the fixed part of the process, whereas your custom data access code is handled in the callbacks.
+- Spring’s DAO template classes take responsibility for the common data access duties. For the application-specific tasks, it calls back into a custom DAO callback object.
+>>>>>>
 
+- 总而言之， 1)JDBC uses SimpleJdbcDaoSupport+SimpleJdbcTemplate;  2)Hibernate no longer uses HibernateTemplate and HibernateDaoSupport, it uses SessionFactory and Session. 3) JPA no longer uses JpaTemplate and JpaDaoSupport, it uses EntityManagerFactory and EntityManager.
+<<<<<<<<
+- Spring comes with several templates to choose from, depending on your persistence platform choice. Template class (org.springframework.*)
+jdbc.core.JdbcTemplate 				JDBC connections													JdbcDaoSupport
+jdbc.core.simple.SimpleJdbcTemplate JDBC connections, simplified with Java 5 constructors               SimpleJdbcDaoSupport 
+jdbc.core.namedparam.NamedParameterJdbcTemplate	JdbcTemplate JDBC connections with support for named parameters NamedParameterJdbcDaoSupport	
+jca.cci.core.CciTemplate 			JCA CCI connections									jca.cci.support.CciDaoSupport
+orm.hibernate.HibernateTemplate 	Hibernate 2.x sessions								orm.hibernate2.support.HibernateDaoSupport
+orm.hibernate3.HibernateTemplate 	Hibernate 3.x sessions								orm.hibernate3.support.HibernateDaoSupport
+orm.ibatis.SqlMapClientTemplate 	iBATIS SqlMap 										orm.ibatis.support.SqlMapClientDaoSupport
+orm.jdo.JdoTemplate 				Java Data Object implementations					orm.jdo.support.JdoDaoSupport
+orm.jpa.JpaTemplate 				Java Persistence API entity managers				orm.jpa.support.JpaDaoSupport
+>>>>>>
 
+#Using DAO support classes
+- using a data access template simply involves configuring it as a bean and then wiring it into your DAO. Or you can use DAO support classes to further simplify configuration of your application DAOs. Direct wiring of the templates is fine, but Spring also provides a set of convenient DAO base classes that can manage templates for you.
+- DAO support classes provide convenient access to the template class that they support. When writing your application DAO implementation, you can subclass a DAO support class and call a template retrieval method to have direct access to the underlying data access template.
 
+#Configuring a data source
+- 总而言之，1)all persistence frameworks needs to refer to a dataSource that is already defined. 2) different dataSources are for different enviroments(dev/qa/prod) 3)typically, dataSource obtains its properties, connection url, id, password... from properties files.
+- Embedded Datasource for testing (dev)
+- Data sources that are defined by a JDBC driver (dev??)
+- Data sources that are looked up by JNDI (prod)
+- Data sources that pool connections (qa/prod)
 
+<<<<<<<<<<<<<<<<
+#Embedded Datasource for testing
+<jdbc:embedded-database id="dataSource" type="H2">
+    <jdbc:script location="classpath:schema.sql"/>
+    <jdbc:script location="classpath:data.sql"/>
+</jdbc:embedded-database>
+- schema.sql is ddl for testdb, data.sql creates test data. Schema and data no longer exists as JVM process exits.
 
+#Using JNDI data sources
+- Application server such as tomcat allow you to configure data sources to be retrieved via JNDI. The benefit of configuring data sources in this way is that they can be managed completely external to the application, allowing the application to ask for a data source when it’s ready to access the database. Moreover, data sources managed in an application server are often pooled for greater performance and can be hot-swapped by system administrators.
+<jee:jndi-lookup id="dataSource" jndi-name="/jdbc/SpitterDS" resource-ref="true"/>
+- The <jee:jndi-lookup> element from Spring’s jee namespace makes it possible to retrieve any object, including data sources, from JNDI and make it available as a Spring bean.
+- set the resource-ref property to true so that the value given in jndi-name will be prepended with java:comp/env/.
 
+#Using a pooled data source
+- Jakarta Commons Database Connection Pooling (DBCP) includes several data sources that provide pooling, but the BasicDataSource is one that’s often used because it’s simple to configure in Spring and because it resembles Spring’s own DriverManagerDataSource.
+- C3pO
+<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+	<property name="driverClassName" value="org.hsqldb.jdbcDriver"/>
+	<property name="url" value="jdbc:hsqldb:hsql://localhost/spitter/spitter"/>
+	<property name="username" value="sa"/>
+	<property name="password" value=""/>
+	<property name="initialSize" value="5"/>
+	<property name="maxActive" value="10"/>
+</bean>
 
+#JDBC driver-based data source
+- The simplest data source you can configure in Spring is one that’s defined through a JDBC driver. in org.springframework.jdbc.datasource package:
+- DriverManagerDataSource: Returns a new connection every time that a connection is requested. Unlike DBCP’s BasicDataSource, the connections provided
+by DriverManagerDataSource aren’t pooled.
+- SingleConnectionDataSource: Returns the same connection every time a connection is requested. Although SingleConnectionDataSource isn’t exactly
+a pooled data source, you can think of it as a data source with a pool of exactly one connection.
+<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+	<property name="driverClassName" value="org.hsqldb.jdbcDriver"/>
+	<property name="url" value="jdbc:hsqldb:hsql://localhost/spitter/spitter"/>
+	<property name="username" value="sa"/>
+	<property name="password" value=""/>
+</bean>
+>>>>>>>>>>>>>>>>>>>
 
+#Using JDBC with Spring
+- 总而言之，JDBC的优势在于1)sql skills are common 2)not need to learn another framework 3)fine tune performance 4)use database's proprietary features 
+<<<<<<<
+- JDBC doesn’t require mastering another framework’s query language. 
+- It’s built on top of SQL, which is the data access language.
+- Plus, you can more finely tune the performance of your data access when you use JDBC than with practically any other technology. 
+- And JDBC allows you to take advantage of your database’s proprietary features, where other frameworks may discourage or prohibit this.
+- reporting applications, where it doesn’t make sense to organize the data into objects, just to then unwind it back into raw data.
+- Cleaning up resources and handling errors is what makes data access robust. So not only do we need this code, we also need to make sure that it’s correct.
+This is why we want framework to deal with the boilerplate code so that we know that it’s written once and written right.
+>>>>>>
+
+#Working with JDBC templates
+- 总而言之，1)就用SimpleJdbcTemplate. 2)Declare SimpleJdbcTemplate as a bean with ref to dataSource bean 3)Wiring SimpleJdbcTemplate to Dao bean
+- Or 1)Dao extends SimpleJdbcDaoSupport, 2) SimpleJdbcDaoSupport ref database 3) SimpleJdbcDaoSupport.getSimpleJdbcTemplate() return SimpleJdbcTemplate
+<<<<<<
+- 3 Spring JDBC template classes to choose from:
+- JdbcTemplate(obselete): basic Spring’s JDBC template class provides simple access to a database through JDBC and simple indexed-parameter queries.
+- NamedParameterJdbcTemplate(obselete): JDBC template class perform queries where values are bound to named parameters in SQL, rather than indexed parameters.
+- ***SimpleJdbcTemplate: JDBC template takes advantage of Java 5 features such as autoboxing, generics, and variable parameter lists to simplify how a JDBC template is used. should be used for future development.
+
+#ACCESSING DATA USING SimpleJdbcTemplate
+public class JdbcSpitterDAO implements SpitterDAO {
+	...
+	private SimpleJdbcTemplate jdbcTemplate;
+	public void setJdbcTemplate(SimpleJdbcTemplate jdbcTemplate){
+		this.jdbcTemplate=jdbcTemplate;
+	}
+}
+
+<bean id="jdbcTemplate" class="org.springframework.jdbc.core.simple.SimpleJdbcTemplate">
+	<constructor-arg ref="dataSource"/>
+</bean> 
+
+<bean id="spitterDao" class="com.habuma.spitter.persistence.SimpleJdbcTemplateSpitterDao">
+	<property name="jdbcTemplate" ref="jdbcTemplate"/>
+</bean>
+
+#USING DAO SUPPORT CLASSES FOR JDBC
+- Spring’s DAO support classes define a placeholder for the DBC template objects so that subclasses won’t have to manage their own JDBC templates.
+public class JdbcSpitterDao extends SimpleJdbcDaoSupport implements SpitterDao {
+	...
+}
+
+The SimpleJdbcDaoSupport provides convenient access to the SimpleJdbcTemplate through the getSimpleJdbcTemplate() method.
+public void addSpitter(Spitter spitter) {
+	getSimpleJdbcTemplate().update(SQL_INSERT_SPITTER,
+	spitter.getUsername(),
+	spitter.getPassword(),
+	spitter.getFullName(),
+	spitter.getEmail(),
+	spitter.isUpdateByEmail());
+	spitter.setId(queryForIdentity());
+}
+
+- you can skip the middleman (or middle bean, as the case may be) and wire a data source directly into the dataSource property that JdbcSpitterDao inherits from SimpleJdbcDaoSupport:
+<bean id="spitterDao" class="com.habuma.spitter.persistence.JdbcSpitterDao">
+	<property name="dataSource" ref="dataSource"/>
+</bean>
+- When JdbcSpitterDao has its dataSource property configured, it’ll internally create a SimpleJdbcTemplate instance for you. This eliminates the need to explicitly declare a SimpleJdbcTemplate bean in Spring.
+>>>>>>>>>
+
+- 总而言之, SimpleJdbcTemplate的CRUD方法需要的参数有三类： 1）sql 2）sql params 3) Result Mapper.
+- if ? is used as placeholder，then indexed parameters need to provided in order. If :username,:password,:fullname are used as placeholder, then as HashMap can be provided.
+- Map the ResultSet to domain object: For every row that results from the query, JdbcTemplate will call the mapRow() method of the RowMapper. Within ParameterizedRowMapper
+
+<<<<<<<<<<
+#Updating using SimpleJdbcTemplate
+private static final String SQL_INSERT_SPITTER= "insert into spitter(username, password, fullname, email, isUpdateByEmail) values(?,?,?,?,?)";
+public void addSpitter(Spitter spitter){
+	jdbcTemplate.update(SQL_INSERT_SPITTER,
+						spitter.getUsername(),
+						spitter.getPassword(),
+						spitter.getFullName(),
+						spitter.getEmail(),
+						spitter.isUpdateByEmail());
+						spitter.setId(queryForIdentity());
+}
+- Just because you don’t see a lot of boilerplate code, that doesn’t mean it’s not there. It’s cleverly hidden inside of the JDBC template class. When the update() method is called, SimpleJdbcTemplate will get a connection, create a statement, and execute the insert SQL.
+- Internally, SimpleJdbcTemplate will catch any SQLExceptions that are thrown. It’ll then translate the generic SQLException into one of the more specific data access exceptions rethrow it. Because Spring’s data access exceptions are all runtime exceptions, we didn’t have to catch it in the addSpitter() method.
+
+#Querying using SimpleJdbcTemplate
+private static final String SQL_SELECT_SPITTER="select id,username,fullname from spitter where id = ?";
+public Spitter getSpitterById (long id) {
+	return jdbcTemplate.queryForObject( //Queries for Spitter
+			SQL_SELECT_SPITTER_BY_ID,
+			new ParameterizedRowMapper<Spitter>(){ //Maps results to object, this is the callbacks
+					public Spitter mapRow(ResultSet rs, int rowNum) throws SQLException {
+									Spitter spitter=new Spitter();
+									spitter.setId(rs.getLong(1));
+									spitter.setUsername(rs.getString(2));
+									spitter.setPassword(rs.getString(3));
+									spitter.setFullName(rs.getString(4));
+									return spitter;
+					}
+			},
+			id //Binds parameters
+	);
+}
+
+The queryForObject() method takes three parameters:
+- sql
+- A ParameterizedRowMapper object that extracts values from a ResultSet and constructs a domain object (in this case a Spitter)
+- A variable argument list of values to be bound to indexed parameters of the query
+- The real magic happens in the ParameterizedRowMapper object. For every row that results from the query, JdbcTemplate will call the mapRow() method of the RowMapper. Within ParameterizedRowMapper, we’ve written the code that creates a Spitter object and populates it with values from the ResultSet.
+- used indexed parameters. This meant that we had to take notice of the order of the parameters in the query and list the values in the correct order when passing them to the update() method.
+
+#USING NAMED PARAMETERS
+- Optionally, we could use named parameters. Named parameters let us give each parameter in the SQL an explicit name and to refer to the parameter by that name when binding values to the statement. For example, suppose that:
+
+private static final String SQL_INSERT_SPITTER= "insert into spitter(username,password,fullname) values(:username,:password,:fullname)";
+public void addSpitter(Spitter spitter) {
+	Map<String,Object> params = new HashMap<String,Object>(); //Bind parameters, named parameters are bound through a java.util.Map
+	params.put("username",spitter.getUsername());
+	params.put("password",spitter.getPassword());
+	params.put("fullname",spitter.getFullName());
+	jdbcTemplate.update(SQL_INSERT_SPITTER, params);
+	spitter.setId(queryForIdentity());
+}
+>>>>>>>>>>>
+
+#Integrating Hibernate with Spring
+features over JDBC:
+- 总而言之，Hibernate优势在于 1)auto generating of sql, 2)lazy loading for saving memory,  3)eager fetching for performance, 4) Cascading for less coding
+<<<<<<<<
+- be able to map object properties to database columns and have our statements and queries created for us, freeing us from typing an endless string of question marks. 
+- Lazy loading: As our object graphs become more complex, we sometimes don’t want to fetch entire relationships immediately. To use a typical example, sup-
+pose we’re selecting a collection of PurchaseOrder objects, and each of these objects contains a collection of LineItem objects. If we’re only interested in
+PurchaseOrder attributes, it makes no sense to grab the LineItem data. This could be expensive. Lazy loading allows us to grab data only as it’s needed.
+- Eager fetching: This is the opposite of lazy loading. Eager fetching allows you to grab an entire object graph in one query. In the cases where we know that we need a PurchaseOrder object and its associated LineItems, eager fetching lets us get this from the database in one operation, saving us from costly round-trips.
+- Cascading: Sometimes changes to a database table should result in changes to other tables as well. Going back to our purchase order example, when an
+Order object is deleted, we also want to delete the associated LineItems from the database.
+>>>>>>>
+
+#persistence frameworks: 
+- Hibernate, iBATIS, Java Data Objects (JDO), and the Java Persistence API (JPA).
+- Integrated support for Spring declarative transactions
+- Transparent exception handling
+- Thread-safe, lightweight template classes
+- DAO support classes
+- Resource management
+
+#HibernateTemplate(obselete)
+- 总而言之，1) HibernateTemplate is not recommended, 2)Contextual sessions, introduced in Hibernate 3, is prefer because it can manager one Session per tx.
+<<<<<<<<
+- Spring’s support for Hibernate offers a similar template class to abstract Hibernate persistence
+- Like its JDBC counterpart, HibernateTemplate took care of the intricacies of working with Hibernate by catching Hibernate-specific exceptions and rethrowing them as one of Spring’s unchecked data access exceptions.
+- HibernateTemplate manages Hibernate Sessions. This involves opening and closing sessions as well as ensuring one session per transaction. Without HibernateTemplate, you’d have no choice but to clutter your DAOs with boilerplate session management code.
+- Even though HibernateTemplate is still around, it’s no longer considered the best way of working with Hibernate.
+- Contextual sessions, introduced in Hibernate 3, are a way in which Hibernate itself manages one Session per transaction. There’s no need
+for HibernateTemplate to ensure this behavior. This keeps your DAO classes free of Spring-specific code.
+>>>>>>>>>
+
+#Declaring a Hibernate session factory
+- 总而言之, 1) Declare a SessionFactory bean with ref to dataSource, injected into Dao, 2) use SessionFactory.currentSession() for opening, closing, and managing Hibernate Sessions 3) use Session to save, update, delete, and load objects from the database. 
+- 4)when using use object-to-database xml mapping (e.g. Spitter.hbm.xml), use LocalSessionFactoryBean, specify the mapping file location; 
+- 5) when using annotation, use AnnotationSessionFactoryBean, specify the "packagesToScan" property. the propertycan take a list as input
+- 6) AnnotationSessionFactoryBean scans above packages for JPA’s @Entity or @MappedSuperclass and Hibernate’s own @Entity annotation. Other annotations are @Table at class level, @Column, @Join_Column, @ManyToOne, @OneToMany, @ManyToMany, @Id,	@GeneratedValue, @GenericGenerator...
+- 7) specify hibernate configuration in property "hibernateProperties"
+- 8) @Repository+PersistenceExceptionTranslationPostProcessor also enable catching platform-specific exceptions and rethrow them as one of Spring’s unified unchecked exceptions.
+
+<<<<<<<<<<<<<<<
+- org.hibernate.Session interface provides basic data access functionality such as the ability to save, update, delete, and load objects from the database. Through the Hibernate Session, an application’s DAO will perform all of its persistence needs.
+- The standard way to get a reference to a Hibernate Session object is through an implementation of Hibernate’s SessionFactory interface. SessionFactory is responsible for opening, closing, and managing Hibernate Sessions.
+- 2 ways of configuring a Hibernate session factory bean:
+#1 if object-to-database mapping defined in XML
+<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+	<property name="dataSource" ref="dataSource" /> //ref to datasource
+	<property name="mappingResources">				
+		<list>
+			<value>Spitter.hbm.xml </value>			//hibernate mapping xml
+		</list>
+	</property>
+	<property name="hibernateProperties">			//hibernate configuration
+		<props>
+			<prop key="dialect">org.hibernate.dialect.HSQLDialect</prop>
+		</props>
+	</property>
+</bean>
+
+#2 If persistence using annotation:
+<bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+	<property name="dataSource" ref="dataSource"/>	//ref to datasource, same as above
+	<property name="packagesToScan" value="com.habuma.spitter.domain"/>	//obtaining hibernate mapping info by scanning annotaions in package  
+	<property name="hibernateProperties">	//hibernate configuration, same as above
+		<props>
+			<prop key="dialect">org.hibernate.dialect.HSQLDialect</prop>
+		</props>
+	</property>
+</bean>
+
+- the packagesToScan property to tell Spring to scan one or more packages looking for domain classes that are annotated for persistence with Hibernate. This includes classes that are annotated with JPA’s @Entity or @MappedSuperclass and Hibernate’s own @Entity annotation.
+- AnnotationSessionFactoryBean’s packagesToScan property takes an array of Strings specifying the packages to look for persistent classes in.
+<property name="packagesToScan">
+	<list>
+		<value>com.habuma.spitter.domain</value>
+	</list>
+</property>
+
+- you may also explicitly list out all of your application's persistent classes by specifying a list of fully qualified class names in the annotatedClasses property <propertyname="annotatedClasses">
+	<list>
+		<value>com.habuma.spitter.domain.Spitter</value>
+		<value>com.habuma.spitter.domain.Spittle</value>
+	</list>
+</property>
+>>>>>>>>>>>>>>>>>>
+
+#Building Spring-free Hibernate
+- you can wire a Hibernate session directly into your DAO classes.
+@Repository
+public class HibernateSpitterDao implements SpitterDao {
+	
+	private SessionFactory sessionFactory;	
+	@Autowired
+	public HibernateSpitterDao(SessionFactory sessionFactory){ //inject a SessionFactory
+		this.sessionFactory=sessionFactory;
+	}
+	
+	private Session currentSession(){
+		return sessionFactory.getCurrentSession();	//Retrieve current Session from SessionFactory
+	}
+	public void addSpitter(Spitter spitter){
+		currentSession().save(spitter);
+	}
+	public Spitterget SpitterById(longid){
+		return(Spitter)currentSession().get(Spitter.class,id);
+	}
+	public void saveSpitter(Spitter spitter){
+		currentSession().update(spitter);
+	}
+	...
+}
+
+- In addition to helping to reduce XML-based configuration, @Repository+PersistenceExceptionTranslationPostProcessor also enable catching platform-specific exceptions and rethrow them as one of Spring’s unified unchecked exceptions.
+<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
+- PersistenceExceptionTranslationPostProcessor is a bean post processor which adds an advisor to any bean that’s annotated with @Repository so that any platform-specific exceptions are caught and then rethrown as one of Spring’s unchecked data access exceptions.
+- <prop key="hibernate.current_session_context_class">thread</prop> ?? In standalone Java application
+- "get is not valid without active transaction;"  Hibernate session needs transaction enabled. why?
+- 因为getCurrentSession()本意就是获取当前事务中的session,如果没有事务，你从哪里获取session
+- getCurrentSession() 线程绑定session必须开启事务，此时的session已经加载了拦截器，在执行数据操作时必须在活动的事务范围中。此时的数据库连接是在准备开启事务的时获得，事务提交的时候释放连接。
+>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#Spring and the Java Persistence API
+
+#总而言之, JPA is a Java standard. It needs an implementation under the cover.
+1) configure an EntityManagerFactory(emf) bean
+2) use emf to get EntityManager(em), use @PersistenceContext to inject em, PersistenceAnnotationBeanPostProcessor bean is required to enable @PersistenceContext 
+3) APPLICATION-MANAGED JPA: use LocalEntityManagerFactoryBean, use persistence.xml in the META-INF directory within the classpath for JPA configuration (, datasource, db properties) and persistence unit configuration.
+4) CONTAINER-MANAGED JPA: use LocalContainerEntityManagerFactoryBean and confiugure JPA in spring context(not in persistence.xml), but it seems persistence.xml is still necessary in CONTAINER-MANAGED JPA?
+5) A persistence unit is a grouping of one or more persistent classes (with mapping annotation) that correspond to a single data source. JPA relies on persistence units to locate classes with mapping annotation.
+6) The jpaVendorAdapter property can be used to specify the JPA implementation. only in CONTAINER-MANAGED JPA?? how does APPLICATION-MANAGED JPA specify implementation?
+7）CONTAINER-MANAGED JPA is more appropriate for Spring, because datasource are already defined and ready to be referened and JPA implementation can be plugged into JpaAdapter property 
+
+<<<<<<<<<<<<<<<<<<<<<<<<<
+- JPA is a POJO-based persistence mechanism that draws ideas from both Hibernate and Java Data Objects (JDO), and mixes Java 5 annotations in for good measure.
+
+#Configuring an entity manager factory
+- The first step toward using JPA with Spring is to configure an entity manager factory as a bean in the Spring application context.
+- JPA-based applications use an implementation of EntityManagerFactory to get an instance of an EntityManager. The JPA specification defines two kinds of entity managers:
+- Application-managed: Entity managers are created when an application directly requests one from an entity manager factory. With application-managed entity
+managers, the application is responsible for opening or closing entity managers and involving the entity manager in transactions. This type of entity manager is most appropriate for use in standalone applications that don’t run within a JavaEE container.
+- Container-managed: Entity managers are created and managed by a Java EE container. The application doesn’t interact with the entity manager factory at all.
+Instead, entity managers are obtained directly through injection or from JNDI. The container is responsible for configuring the entity manager factories. This
+type of entity manager is most appropriate for use by a Java EE container that wants to maintain some control over JPA configuration beyond what’s specified
+in persistence.xml.
+- Application-managed EntityManagers are created by an EntityManagerFactory obtained by calling the createEntityManagerFactory() method of the PersistenceProvider. 
+- container-managed EntityManagerFactorys are obtained through PersistenceProvider’s createContainerEntityManagerFactory() method.
+- LocalEntityManagerFactoryBean produces an application-managed EntityManagerFactory.
+- LocalContainerEntityManagerFactoryBean produces a container-managed EntityManagerFactory.
+
+#CONFIGURING APPLICATION-MANAGED JPA
+- Application-managed entity manager factories derive most of their configuration information from a configuration file called persistence.xml. This file must appear in the META-INF directory within the classpath.
+- The purpose of the persistence.xml file is to define one or more persistence units. A persistence unit is a grouping of one or more persistent classes that correspond to a single data source. In simple terms, persistence.xml enumerates one or more persistent classes along with any additional configuration such as data sources and XML-based mapping files.
+<persistence xmlns="http://java.sun.com/xml/ns/persistence" version="1.0">
+	<persistence-unit name="spitterPU">
+		<class>com.habuma.spitter.domain.Spitter</class>
+		<class>com.habuma.spitter.domain.Spittle</class>
+		<properties>
+			<property name="toplink.jdbc.driver" value="org.hsqldb.jdbcDriver"/>
+			<property name="toplink.jdbc.url" value= "jdbc:hsqldb:hsql://localhost/spitter/spitter"/>
+			<property name="toplink.jdbc.user" value="sa" />
+			<property name="toplink.jdbc.password" value="" />
+		</properties>
+	</persistence-unit>
+</persistence>
+
+- The following <bean> declares a LocalEntityManagerFactoryBean in Spring, the value given to the persistenceUnitName property refers to the persistence unit
+name as it appears in persistence.xml.
+<bean id="emf" class="org.springframework.orm.jpa.LocalEntityManagerFactoryBean">
+	<property name="persistenceUnitName" value="spitterPU"/>
+</bean>
+
+#CONFIGURING CONTAINER-MANAGED JPA
+- Instead of configuring data source details in persistence.xml, you can configure this information in the Spring application context.
+<bean id="emf" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+	<property name="dataSource" ref="dataSource"/>
+	<property name="jpaVendorAdapter" ref="jpaVendorAdapter"/>
+</bean>
+- The jpaVendorAdapter property can be used to specify the JPA implementation:
+- EclipseLinkJpaVendorAdapter
+- HibernateJpaVendorAdapter
+- OpenJpaVendorAdapter
+- TopLinkJpaVendorAdapter
+
+- if using Hibernate as a JPA implementation, so we’ve configured it with a HibernateJpaVendorAdapter:
+<bean id="jpaVendorAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+	<property name="database" value="HSQL"/>
+	<property name="showSql" value="true"/>
+	<property name="generateDdl" value="false"/>
+	<property name="databasePlatform" value="org.hibernate.dialect.HSQLDialect"/>
+</bean>
+
+- The Hibernate JPA vendor adapter supports several databases. You can specify which database to use by setting its property.
+IBM DB2/DB2, Apache Derby/DERBY, H2/H2, Hypersonic/HSQL, Informix/INFORMIX, MySQL/MYSQL, Oracle/ORACLE, PostgresQL/POSTGRESQL, Microsoft SQL Server/SQLSERVER,
+Sybase/SYBASE
+
+#PULLING AN ENTITYMANAGERFACTORY FROM JNDI
+<jee:jndi-lookup id="emf" jndi-name="persistence/spitterPU"/>
+- It’s also worth noting that if you’re deploying your Spring application in some application servers, an EntityManagerFactory may have already been created for you and may be waiting in JNDI to be retrieved.
+
+#Writing a JPA-based DAO
+- Spring-JPA integration comes in template form with JpaTemplate and a corresponding JpaDaoSupport class. Nevertheless, template-based JPA has been set aside in favor of a pure JPA approach. This is analogous to the Hibernate contextual sessions.
+
+@Repository("spitterDao")
+@Transactional
+public class JpaSpitterDao implements SpitterDao{
+	private static final String RECENT_SPITTLES= "SELECT s FROMS pittles";
+	private static final String ALL_SPITTERS= "SELECT s FROM Spitters";
+	private static final String SPITTER_FOR_USERNAME = "SELECT s FROM Spitters WHERE s.username=:username";
+	private static final String SPITTLES_BY_USERNAME = "SELECT s FROM Spittles WHERE s.spitter.username=:username";
+	
+	@PersistenceContext
+	private EntityManager em;			//Inject EntityManager
+	
+	public void addSpitter(Spitterspitter) {	//Use EntityManager
+		em.persist(spitter);
+	}
+	public Spitter getSpitterById(longid){
+		return em.find(Spitter.class,id);
+	}
+	public void saveSpitter(Spitter spitter){
+		em.merge(spitter);
+	}
+	...
+}
+
+- the em property is annotated with @PersistentContext. that annotation indicates that an instance of EntityManager should be injected into em. To
+enable EntityManager injection in Spring, we’ll need to configure a PersistenceAnnotationBeanPostProcessor in Spring’s application context:
+<bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor"/>
+
+- we need to annotate our DAO with @Repository so that PersistenceExceptionTranslationPostProcessor will know that this is one of those
+beans for whom exceptions should be translated into one of Spring’s unified data access exceptions.
+<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
+
+- exception translation, whether it be with JPA or Hibernate, isn’t mandatory. If you’d prefer that your DAO throw JPA-specific or Hibernate-specific exceptions, then you’re welcome to forgo PersistenceExceptionTranslationPostProcessor and let the native exceptions flow freely.
+
+- One way that Spring simplifies data access is by managing the lifecycle of database connections and ORM framework sessions, ensuring that they’re opened and closed as necessary. In this way, management of persistence mechanisms is virtually transparent to your application code.
+>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+TO BE SUMMARIZE:
+6. Chapter 6 Managing Transactions
+- In software, all-or-nothing operations are called transactions.
+
+#ACID - an acronym has been created to describe transactions
+- 总而言之，1）Atomic: all or nothing. commit or rollback. 2) Consistent: tx ends, data not corrupted, system state follows business rules. atomic of each tx ensures consistency. 3) Isolated: tx does not affect each other. using table/row locking. 4) Durable: tx completes, results are permanent. Using db systems.
+- 5) programmatic vs. declarative tx, choice depending on granularity of control.
+- 6) single ds tx vs. JTA distributed tx
+- 7) spring declarative tx define tx boundaries and tx attributes(propagation, isolation level, ??, readonly, timeout). Does programatic offer the samething?
+- 8) define a tx manager bean. using tx managers to delegate transaction-management responsibility to platform-specific transaction implementations.
+- 9) DataSourceTransactionManager is for JDBC/iBATIS; HibernateTransactionManager for Hibernate 3; JpaTransactionManager for JPA; JtaTransactionManager for distributed tx or others; JmsTransactionManager for JMS1.1+
+- 10) DataSourceTransactionManager bean ref ds; HibernateTransactionManager bean ref sessionFactory, sf ref ds; JpaTransactionManager ref entityManagerFactory, emf ref ds; JtaTransactionManager ref a specific txManager
+- 11) Programming transaction uses TransactionTemplate and TransactionCallback, txTemplate.execute(txCallback.doInTransaction(txStatus)), wraps business logic in doInTransaction method, wire TransactionTemplate to Service bean. 
+
+<<<<<<<<<<<<<< 
+- Atomic: all or nothing
+- Consistent: Once a transaction ends (whether successful or not), the system is left in a state consistent with the business that it models. The data shouldn’t be corrupted with respect to reality. Atomicity supports consistency by ensuring that the system’s data is never left in an inconsistent, partially done state.
+- Isolated: Transactions should allow multiple users to work with the same data, without each user’s work getting tangled up with the others. Therefore, transactions should be isolated from each other, preventing concurrent reads and writes to the same data from occurring. (Note that isolation typically involves locking rows and/or tables in a database.); Isolation also supports consistency by preventing another concurrent transaction from stealing seats
+out from under you while you’re still in the process of purchasing them.
+- Durable: Once the transaction has completed, the results of the transaction should be made permanent so that they’ll survive any sort of system crash. This
+typically involves storing the results in a database or some other form of persistent storage. In the event of a system crash or other catastrophic event, you shouldn’t have to worry about results of the transaction being lost.
+
+#Spring’s transaction management support
+- provides support for both programmatic and declarative transaction management.
+- If your application uses only a single persistent resource, Spring can use the transactional support offered by the persistence mechanism.
+- if your application has transaction requirements that span multiple resources, Spring can support distributed (XA) transactions using a third-
+party JTA implementation.
+- Spring’s declarative transactions allow you to define transaction boundaries declaratively, allow you to declare additional attributes such as isolation level and timeouts.
+- Choosing between programmatic and declarative transaction management is largely a decision of fine-grained control versus convenience. When you program
+transactions into your code, you gain precise control over transaction boundaries, beginning and ending them precisely where you want. Typically, you won’t require the fine-grained control offered by programmatic transactions and will choose to declare your transactions in the context definition file.
+
+#transaction manager
+
+- Regardless of whether you choose to program transactions into your beans or to declare them as aspects, you’ll be using a Spring transaction manager to interface with a platform-specific transaction implementation. Let’s see how Spring’s transaction managers free you from dealing directly with platform-specific transaction implementations.
+
+- Spring’s transaction managers delegate transaction-management responsibility to platform-specific transaction implementations.
+- Spring doesn’t directly manage transactions. Instead, it comes with a selection of transaction managers that delegate responsibility for transaction management to a platform-specific transaction implementation provided by either JTA or the persistence mechanism.
+- Each of these transaction managers acts as a facade to a platform-specific transaction implementation. Transaction manager (org.springframework.*): 
+- DataSourceTransactionManager: Working with Spring’s JDBC abstraction support. Also useful when using iBATIS for persistence.
+- orm.hibernate3.HibernateTransactionManager: Using Hibernate 3 for persistence.
+- orm.jdo.JdoTransactionManager: Using JDO for persistence.
+- orm.jpa.JpaTransactionManager: Using the Java Persistence API (JPA) for persistence.
+
+- jca.cci.connection.CciLocalTransactionManager: Using Spring’s support for Java EE Connector Architecture (JCA) and the Common Client Interface (CCI).
+jdbc.datasource.
+- jms.connection.JmsTransactionManager: Using JMS 1.1+.
+- jms.connection.JmsTransactionManager102: Using JMS 1.0.2.
+- transaction.jta.JtaTransactionManager: You need distributed transactions or when no other transaction manager fits the need.
+- transaction.jta.OC4JJtaTransactionManager: Using Oracle’s OC4J JEE container.
+- transaction.jta.WebLogicJtaTransactionManager: You need distributed transactions and your application is running within WebLogic.
+- transaction.jta.WebSphereUowTransactionManager: You need transactions managed by a UOWManager in WebSphere.
+
+#JDBC transactions
+- To use a transaction manager, you’ll need to declare it in your application context.
+- If you’re using straight JDBC for your application’s persistence, DataSourceTransactionManager will handle transactional boundaries for you.
+<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+	<property name="dataSource" ref="dataSource"/>
+</bean>
+- Behind the scenes, DataSourceTransactionManager manages transactions by making calls on the java.sql.Connection object retrieved from the DataSource. For
+instance, a successful transaction is committed by calling the commit() method on the connection. Likewise, a failed transaction is rolled back by calling the rollback() method.
+
+#Hibernate transactions
+<bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+	<property name="sessionFactory" ref="sessionFactory"/>
+</bean>
+- HibernateTransactionManager delegates responsibility for transaction management to an org.hibernate.Transaction object that it retrieves from the Hibernate session. When a transaction successfully completes, HibernateTransactionManager will call the commit() method on the Transaction object. Similarly, when a transaction fails, the rollback() method will be called on the Transaction object.
+
+#Java Persistence API transactions
+<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+	<property name="entityManagerFactory" ref="entityManagerFactory"/>
+</bean>
+
+#Java transaction API transactions
+- If none of the aforementioned transaction managers meet your needs or if your transactions span multiple transaction sources (for example, two or more different databases), you’ll need to use JtaTransactionManager:
+<bean id="transactionManager" class="org.springframework.transaction.jta.JtaTransactionManager">
+	<property name="transactionManagerName" value="java:/TransactionManager"/>
+</bean>
+
+-The transactionManagerName property specifies a JTA transaction manager to be looked up via JNDI.
+
+#Programming transactions
+
+- you’re limited to declaring transaction boundaries at the method level. If you need more fine-grained control over transactional boundaries, programmatic transactions are the only way to go.
+- One approach to adding transactions is to programmatically add transactional boundaries directly within the saveSpittle() method using Spring’s TransactionTemplate. Like other template classes in Spring (such as JdbcTemplate, discussed in the previous chapter), TransactionTemplate utilizes a callback mechanism.
+
+public void saveSpittle(final Spittle spittle){
+	txTemplate.execute(new TransactionCallback<Void>() { //implementing the TransactionCallback interface
+	public Void doInTransaction(TransactionStatus txStatus){
+		try {
+			spitterDao.saveSpittle(spittle); //As for the code that needs to be transactional, place it within the doInTransaction() method.
+		} catch(RuntimeExceptione){
+			txStatus.setRollbackOnly();
+			throw e;
+		}
+	return null;
+	}
+	});
+}
+
+- To use the TransactionTemplate, you start by implementing the TransactionCallback interface. Because TransactionCallback has only one method to imple-
+ment, it’s often easiest to implement it as an anonymous inner class. As for the code that needs to be transactional, place it within the doInTransaction() method. Calling the execute() method on the TransactionTemplate instance will execute the code contained within the TransactionCallback instance. If your code encounters a problem, calling setRollbackOnly() on the TransactionStatus object will roll back the transaction. Otherwise, if the doInTransaction() method returns successfully, the transaction will be committed.
+
+- TransactionTemplate should be injected into SpitterServiceImpl, 
+<bean id="spitterService" class="com.habuma.spitter.service.SpitterServiceImpl">
+...
+	<property name="transactionTemplate">
+		<bean class="org.springframework.transaction.support.TransactionTemplate">
+				<property name="transactionManager" ref="transactionManager" />
+		</bean>
+	</property>
+</bean>
+
+- Under the hood, TransactionTemplate uses an implementation of PlatformTransactionManager to handle the platform-specific details of transaction management.
+- Programmatic transactions are good when you want complete control over transactional boundaries. But they’re intrusive. 
+>>>>>>>>>>>
+
+#Declaring transactions
+- 总而言之，
+1) declarative tx can defined 5 tx attributes: propogration behavior, isolation level, readonly, timeout, rollback rules.
+2) propogation behavior affects tx boundaries and whether a new transaction should be started, suspended or aborted. 
+3) PROPOGATION_REQUIRES is used for save/update/delete methods, PROPOGATION_SUPPORTS for query, PROPAGATION_REQUIRES_NEW guranteeds its own tx boundary.
+4) Tx concurrency leads to data integrity problems such as dirty/nonrepeatable/phantom reads.
+5) Different db isolation level (Serializable/Read_repeatble/Read_commited/read_uncommited) use different locks to prevent dirty/nonrepeatable/phantom reads
+6) READ-ONLY allows optimizations
+7) TIMEOUT enables automatically roll back after a certain time to release db resources.
+8) ROLLBACK RULES define which exceptions prompt a rollback and which ones don’t. By default, transactions are rolled back only on runtime exceptions and not on checked exceptions 
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- You can think of a Spring transaction as an aspect that “wraps” a method with transactional boundaries.
+
+#Defining transaction attributes
+#PROPAGATION BEHAVIOR
+- A transaction attribute is a description of how transaction policies should be applied to a method.
+- PROPAGATION BEHAVIOR: Propagation behavior defines the boundaries of the transaction with respect to the client and to the method being called. Spring defines seven distinct propagation behaviors: PROPAGATION_MANDATORY/PROPAGATION_NESTED/PROPAGATION_NEVER/PROPAGATION_NOT_SUPPORTED/PROPAGATION_REQUIRED/PROPAGATION_REQUIRES_NEW/PROPAGATION_SUPPORTS 
+- The propagation behaviors are defined as constants in the org.springframework.transaction.TransactionDefinition interface.
+- Propagation rules answer the question of whether a new transaction should be started or suspended, or if a method should even be executed within a transactional context at all.
+- if a method is declared to be transactional with PROPAGATION_REQUIRES_NEW behavior, it means that the transactional boundaries are the same as the method’s own boundaries
+- If the method has PROPAGATION_REQUIRED behavior, the transactional boundaries depend on whether a transaction is already under way. 
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#ISOLATION LEVELS
+- 总而言之，
+1）Tx concurrency leads to dirty reads, nonrepeatble reads, phantom reads. Isolation prevents dirty reads, nonrepeatble reads, phantom reads. 
+2) 数据库提供了四种事务隔离级别, Serializable -> repeatable_read -> read_commited -> read_uncommited. Higher isolation leads to lower performance. Need a balance. 不同的隔离级别采用不同的锁类开来实现. 
+3) ISOLATION_SERIALIZABLE: uses full table-level lock, table involed in tx is locked, no read/write access available to other users until lock released, prevent dirty/nonrepeatble/phantom reads.
+4) ISOLATION_REPEATABLE_READ: uses row-level read/write lock, row involved in tx is locked, no read/write access available, but other rows in  the tables can be operated by other users, prevent dirty/nonrepeatble reads. But phantom reads can occur.
+5) ISOLATION_READ_COMMITTED: use row-level write lock, row involved in tx is locked for write, but can be read by other users, prevent dirty reads, but nonrepeatble/phantom reads can happen.
+6) ISOLATION_READ_UNCOMMITTED: no lock. other users can read table/row involved in tx, dirty/nonrepeatble/phantom reads can happen.
+7) 大多数数据库的默认隔离级别为: Read Commited,如Sql Server , Oracle. 少数数据库默认的隔离级别为Repeatable Read, 如MySQL InnoDB存储引擎 . use table level lock
+
+<<<<<<<<<<<<<<<<<<<<<<<<<
+- defines how much a transaction may be impacted by the activities of other concurrent transactions. Another way to look at a transaction’s isolation level is to think of it as how selfish the transaction is with the transactional data.
+- In a typical application, multiple transactions run concurrently, often working with the same data to get their jobs done. Concurrency, while necessary, can lead to the following problems:
+- Dirty reads: occur when one transaction reads data that has been written but not yet committed by another transaction. If the changes are later rolled back, the data obtained by the first transaction will be invalid.
+- Nonrepeatable reads: happen when a transaction performs the same query two or more times and each time the data is different. This is usually due to another
+concurrent transaction updating the data between the queries.
+- Phantom reads: are similar to nonrepeatable reads. These occur when a transaction (T1) reads several rows, and then a concurrent transaction (T2) inserts
+rows. Upon subsequent queries, the first transaction (T1) finds additional rows that weren’t there before.
+- in terms of impact on users, Dirty reads > Nonrepeatable reads > Phantom reads
+3) 脏读(事务没提交，提前读取) :脏读就是指当一个事务正在访问数据，并且对数据进行了修改，而这种修改还没有提交到数据库中，这时，另外一个事务也访问这个数据，然后使用了这个数据。
+4) 不可重复读(两次读的不一致, 中间被修改Commit了) :是指在一个事务内，多次读同一数据。在这个事务还没有结束时，另外一个事务也访问该同一数据。那么，在第一个事务中的两次读数据之间，由于第二个事务的修改，那么第一个事务两次读到的的数据可能是不一样的。这样就发生了在一个事务内两次读到的数据是不一样的，因此称为是不可重复读。例如，一个编辑人员两次读取同一文档，但在两次读取之间，作者重写了该文档。当编辑人员第二次读取文档时，文档已更改。原始读取不可重复。如果只有在作者全部完成编写后编辑人员才可以读取文档，则可以避免该问题。
+5）幻读 : 是指当事务不是独立执行时发生的一种现象，例如第一个事务对一个表中的数据进行了修改，这种修改涉及到表中的全部数据行。同时，第二个事务也修改这个表中的数据，这种修改是向表中插入一行新数据。那么，以后就会发生操作第一个事务的用户发现表中还有没有修改的数据行，就好象发生了幻觉一样。例如，一个编辑人员更改作者提交的文档，但当生产部门将其更改内容合并到该文档的主复本时，发现作者已将未编辑的新材料添加到该文档中。如果在编辑人员和生产部门完成对原始文档的处理之前，任何人都不能将新材料添加到文档中，则可以避免该问题。 
+2）prevent all including phantom read needs tx full table lock(no access to table involved in tx), prevent nonrepeatble reads, phantom reads needs tx row read lock(no read/write to row involved in tx), prevent dirty reads needs tx row update lock(no write to row involved in tx, read is ok).
+- In an ideal situation, transactions would be completely isolated from each other, thus avoiding these problems. But perfect isolation can affect performance because it often involves locking rows (and sometimes complete tables) in the data store. Aggressive locking can hinder concurrency, requiring transactions to wait on each other to do their work.
+
+- Realizing that perfect isolation can impact performance and because not all applications will require perfect isolation, sometimes it’s desirable to be flexible with regard to transaction isolation. Therefore, several levels of isolation are possible:
+- ISOLATION_DEFAULT: Use the default isolation level of the underlying data store. 
+- ISOLATION_READ_UNCOMMITTED: Allows you to read changes that haven’t yet been committed. May result in dirty reads, phantom reads, and nonrepeatable
+reads.
+- ISOLATION_READ_COMMITTED: Allows reads from concurrent transactions that have been committed. Dirty reads are prevented, but phantom and nonrepeatable reads may still occur.
+- ISOLATION_REPEATABLE_READ: Multiple reads of the same field will yield the same results, unless changed by the transaction itself. Dirty reads and nonrepeatable reads are prevented, but phantom reads may still occur. 
+- ISOLATION_SERIALIZABLE This fully ACID-compliant isolation level ensures that dirty reads, nonrepeatable reads, and phantom reads are all prevented. This is the slowest of all isolation levels because it’s typically accomplished by doing full table locks on the tables involved in the transaction.
+
+- The isolation levels described are defined as constants in the org.springframework.transaction.TransactionDefinition interface.
+- ISOLATION_READ_UNCOMMITTED is the most efficient isolation level, but isolates the transaction the least, leaving the transaction open to dirty, nonrepeatable, and phantom reads. At the other extreme, ISOLATION_SERIALIZABLE prevents all forms of isolation problems but is the least efficient.
+
+二、Isolation Level(事务隔离等级):
+1、Serializable：最严格的级别，事务串行执行，资源消耗最大；
+2、REPEATABLE READ：保证了一个事务不会修改已经由另一个事务读取但未提交（回滚）的数据。避免了“脏读取”和“不可重复读取”的情况，但是带来了更多的性能损失。
+3、READ COMMITTED:大多数主流数据库的默认事务等级，保证了一个事务不会读到另一个并行事务已修改但未提交的数据，避免了“脏读取”。该级别适用于大多数系统。
+4、Read Uncommitted：保证了读取过程中不会读取到非法数据。隔离级别在于处理多事务的并发问题。
+我们知道并行可以提高数据库的吞吐量和效率，但是并不是所有的并发事务都可以并发运行，这需要查看数据库教材的可串行化条件判断了。
+这里就不阐述。
+我们首先说并发中可能发生的3中不讨人喜欢的事情
+1： Dirty reads--读脏数据。也就是说，比如事务A的未提交（还依然缓存）的数据被事务B读走，如果事务A失败回滚，会导致事务B所读取的的数据是错误的。
+2： non-repeatable reads--数据不可重复读。比如事务A中两处读取数据-total-的值。在第一读的时候，total是100，然后事务B就把total的数据改成 200，事务A再读一次，结果就发现，total竟然就变成200了，造成事务A数据混乱。
+3： phantom reads--幻象读数据，这个和non-repeatable reads相似，也是同一个事务中多次读不一致的问题。但是non-repeatable reads的不一致是因为他所要取的数据集被改变了（比如total的数据），但是phantom reads所要读的数据的不一致却不是他所要读的数据集改变，而是他的条件数据集改变。比如Select account.id where account.name="ppgogo*",第一次读去了6个符合条件的id，第二次读取的时候，由于事务b把一个帐号的名字由"dd"改成"ppgogo1"，结果取出来了7个数据。
+
+#READ-ONLY
+- If a transaction performs only read operations against the underlying data store, the data store may be able to apply certain optimizations that take advantage of the read-only nature of the transaction.
+- if you’re using Hibernate as your persistence mechanism, declaring a transaction as read-only will result in Hibernate’s flush mode being set to
+FLUSH_NEVER. This tells Hibernate to avoid unnecessary synchronization of objects with the database, thus delaying all updates until the end of the transaction.
+
+#TRANSACTION TIMEOUT
+- Because transactions may involve locks on the underlying data store, long-running transactions can tie up database resources unnecessarily. Instead of waiting it out, you can declare a transaction to automatically roll back after a certain number of seconds.
+
+ROLLBACK RULES
+- The final facet of the transaction pentagon is a set of rules that define which exceptions prompt a rollback and which ones don’t. By default, transactions are rolled back only on runtime exceptions and not on checked exceptions 
+- you can declare that a transaction be rolled back on specific checked exceptions as well as runtime exceptions. Likewise, you can declare that a transaction not roll back on specified exceptions, even if those exceptions are runtime exceptions.
+>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#Declaring transactions in XML
+- 总而言之
+1）either xml or annotation can be used to declare tx
+2) if using xml, define a <tx:advice> ref to txManager, in <tx:advice>, defines method level <tx attributes> such as <tx:method name="*" propagation="SUPPORTS" read-only="true"/>
+3) define pointcut: <aop:advisor pointcut="execution(**..SpitterService.*(..))" advice-ref="txAdvice"/> in <aop:config>, with ref to <tx:advice>
+4) if using annotation-driven, enable annotation-driven in xml by <tx:annotation-driven transaction-manager="txManager"/>
+5) <tx:annotation-driven> look for all beans in application context that are annotated with @Transactional, advise it with transaction advice. The transaction attributes defined by parameters of the @Transactional annotation.
+
+<<<<<<<<<<<<<<<<<<
+- Using the tx namespace involves adding it to your Spring configuration XML file, the aop namespace should also be included. 
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+						http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+						http://www.springframework.org/schema/aop
+						http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+						http://www.springframework.org/schema/tx
+						http://www.springframework.org/schema/tx/spring-tx-3.0.xsd">
+
+<tx:advice id="txAdvice" transaction-manager="txManager"> //assumes transaction manager bean id is transactionManager, otherwise need to explicitly defined
+	<tx:attributes>
+		<tx:method name="add*" propagation="REQUIRED"/>
+		<tx:method name="*" propagation="SUPPORTS" read-only="true"/>
+	</tx:attributes>
+</tx:advice>
+
+- With <tx:advice>, the transaction attributes are defined in a <tx:attributes> element, which contains one or more <tx:method> elements. The <tx:method> element defines the transaction attributes for a given method (or methods) as defined by the name attribute (using wildcards).
+- <tx:method> has several attributes that help define the transaction policies for the method(s):
+- isolation: Specifies the transaction isolation level.
+- propagation: Defines the transaction’s propagation rule.
+- read-only: Specifies that a transaction be read-only. Rollback rules: 
+- rollback-for: specifies checked exceptions for which a transaction should be rolled back and not committed.
+- no-rollback-for: specifies exceptions for which the transaction
+- timeout: Defines a timeout for a long-running transaction.
+- <tx:advice> assumes that the transaction manager will be declared as a bean whose id is transactionManager. If you happen to give your
+transaction manager a different id (txManager, for instance), you’ll need to specify the id of the transaction manager in the transactionmanager attribute.
+- On its own, <tx:advice> only defines an AOP advice for advising methods with transaction boundaries. But this is only transaction advice, not a complete transactional aspect. Nowhere in <tx:advice> did we indicate which beans should be advised—we need a pointcut for that.
+<aop:config>
+	<aop:advisor pointcut="execution(**..SpitterService.*(..))" advice-ref="txAdvice"/>
+</aop:config>
+- The pointcut attribute uses an AspectJ pointcut expression to indicate that this advisor should advise all methods of the SpitterService interface. The transaction advice, which is referenced with the advice-ref attribute to be the advice named txAdvice, defines which methods are actually run within a transaction as well as the transactional attributes for those methods
+
+#Defining annotation-driven transactions
+<tx:annotation-driven/>
+<tx:annotation-driven transaction-manager="txManager"/>
+- That single line of XML lets you define transaction rules where they make the most sense: on the methods that are to be transactional.
+- Annotations are one of the biggest and most debated new features of Java 5. Annotations let you define metadata directly in your code rather than in external configuration files.
+- The <tx:annotation-driven> configuration element tells Spring to examine all beans in the application context and to look for beans that are annotated with
+@Transactional, either at the class level or at the method level. For every bean that is @Transactional, <tx:annotation-driven> will automatically advise it with transaction advice. The transaction attributes of the advice will be defined by parameters of the @Transactional annotation.
+
+#@Transactional annotations
+@Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
+public class SpitterServiceImpl implements SpitterService{
+	...
+	@Transactional(propagation=Propagation.REQUIRED, readOnly=false)
+	public void addSpitter(Spitter spitter) {
+		...
+	}
+	...
+}
+>>>>>>>>>>>>>>>>>>>
 
 

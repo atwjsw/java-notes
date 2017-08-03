@@ -1,9 +1,23 @@
 1. Chapter 1 Spring Basics
-- Injecting object with xml
+- 总而言之 (ch1 and ch2)
+1) 5 typles of application Context： AnnotationConfigApplicationContext/AnnotationConfigWebApplicationContext are for loading Java config class. ClassPathXmlApplicationContext/FileSystemXmlApplicationContext/XmlWebApplicationContext are for loading xml config files.
+2) 3 ways of wiring beans: perfer autodiscovery > java config > xml
+3) @Configuration == applicationContext.xml
+4) @Bean == <bean id="knight" class="com.springinaction.knights.BraveKnight">
+5) @Bean method operation == <property>, <constructor-arg>, <p:>...
+6) @ComponentScan(basePackages={"soundsystem", "video"}) == <conext:component-scan base-packages="soundsystem, video"/>
+7) @EnableAspectJAutoProxy == <aop:aspectj-autoproxy />
+7) In test class: @ContextConfiguration(classes=KnightConfig.class) == @ContextConfiguration(locations="classpath:knight.xml")
+8) Java config imports other config: @Configuration @Import(CDPlayerConfig.class) @ImportResource("classpath:cd-config.xml")
+9) xml config imports other config: <import resource="cd-config.xml" /> <bean id="cdPlayer" class="soundsystem.CDPlayer" c:cd-ref="compactDisc" />
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#Injecting object with xml
 <bean id="knight" class="com.springinaction.knights.BraveKnight">
 	<constructor-arg ref="quest" />
 </bean>
-- Injecting static class
+
+#Injecting static class
 <bean id="quest" class="com.springinaction.knights.SlayDragonQuest">
 	<constructor-arg value="#{T(System).out}" />
 </bean>
@@ -51,6 +65,12 @@ ApplicationContext context = new AnnotationConfigApplicationContext(KnightConfig
 @Configuration
 @ComponentScan
 public class CDPlayerConfig {
+}
+
+@Configuration
+@ComponentScan(excludeFilters={@Filter(type=FilterType.ANNOTATION, value=Configuration.class)})
+public class ComponentScannedConfig {
+
 }
 
 @Component
@@ -167,8 +187,16 @@ public class ImportXmlConfigTest {
 @ContextConfiguration("classpath:cdplayer-config.xml")
 public class ImportJavaConfigTest {
 }
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 3. Chapter3 - Advanced wiring
+- 总而言之，
+1） @Profile("dev/prod") specifies different configuration for different environment. only beans inactive profile will be created.
+2) values of spring.profiles.active and spring.profiles.default defines the active profiles. spring.profiles.active has higher priority.
+3) values of spring.profiles.active and spring.profiles.default can be retrieved from 1) initialization parameters of DispatcherServlet,2)context parameters of a web application, 3)JNDI entries, 4)environment variables 5)JVM system properties 6)@ActiveProfiles annotation on test class
+4) Usually, spring.profiles.default is set to dev in DispatcherServlet so that development can download and use dev config, in qa/prod, qa/operation team can use env variables or JNDI entry to configure spring.profiles.active to qa/prod.
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<
 #Environments and profiles
 - the beans in this configuration class should be created only if the dev profile is active. If the dev profile isn’t active, then the @Bean methods will be ignored.
 @Configuration
@@ -250,6 +278,7 @@ Using the @ActiveProfiles annotation on an integration test class
 public class PersistenceTest {
 ...
 }
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 #Conditional Bean
 @Bean
@@ -362,6 +391,17 @@ if ShoppingCart is a concrete class, there’s no way Spring can create an inter
 - by SpEL
 
 #Injecting external values
+- 总而言之，there are 4 ways to inject external values:
+1) declare a property source and retrieve the properties via the Spring Environment. @PropertySource("classpath:app.properties"), @Autowired
+Environment env, env.getProperty("disc.title").
+2) RESOLVING PROPERTY PLACEHOLDERS from external properties files. 
+2.1) Config properties files: in xml: <context:property-placeholder location="com/soundsystem/app.properties" />;  in java config: @PropertySource("classpath:/com/soundsystem/app.properties"), same as #1.
+2.2) Access property value: in xml: c:_title="${disc.title}"; in java: @Value("${disc.title}") String title
+3) retrieves value from systemProperties or systemEnvironment: @Value("#{systemProperties.myFavoriteSong}")
+4) retrieve value from properties file using SpEL, In context xml: <util:properties id="s3Properties" location="classpath:s3.properties"/>
+@Value("#{s3Properties['webRootPath']}") 
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 - The simplest way to resolve external values in Spring is to declare a property source and retrieve the properties via the Spring Environment.
 @Configuration
 @PropertySource("classpath:/com/soundsystem/app.properties") //This properties file is loaded into Spring’s Environment, from which it can be retrieved later.
@@ -420,6 +460,7 @@ public class PropertiesConfig {
 - In XML
 <context:property-placeholder location="com/soundsystem/app.properties" />
 - the <context:property-placeholder> element from Spring’s context namespace will give you a PropertySourcesPlaceholderConfigurer bean
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 #SpEL
 #{T(System).currentTimeMillis()}
@@ -451,3 +492,7 @@ in xml congfig
 <context:component-scan base-package="concert" />
 <aop:aspectj-autoproxy />
 <bean class="concert.Audience" />
+
+
+
+
