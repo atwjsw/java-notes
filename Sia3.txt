@@ -2230,4 +2230,480 @@ public class SpitterServiceImpl implements SpitterService{
 }
 >>>>>>>>>>>>>>>>>>>
 
+9. Chapter 9 Spring Security
+- security is a crucial “aspect” of most applications. for the most part, an application should play no part in securing itself. Although you could write security functionality directly into your application’s code (and that’s not uncommon), it’s better to keep security concerns separate from application concerns.
+- Spring Security, a security framework implemented with Spring AOP and servlet filters.
+- servlet filters are a primitive form of AOP, with URL patterns as a kind of pointcut expression language
+- Spring Security provides declarative security, handling authentication and authorization at both the web request level and at the method invocation level.
+- Spring Security 2.0 (and SpEL in Spring 3.0) introduced a new security-specific XML namespace for configuring security in Spring. The new namespace, along with annotations and reasonable defaults, simplified typical security configuration.
 
+# Spring Security modules
+- ACL: Provides support for domain object security through access control lists (ACLs)
+- CAS: Client Provides integration with JA-SIG’s Central Authentication Service (CAS) 
+- Configuration: Contains support for Spring Security’s XML namespace
+- Core: Provides the essential Spring Security library
+- LDAP: Provides support for authentication using the Lightweight Directory Access Protocol (LDAP)
+- OpenID: Provides integration with the decentralized OpenID standard
+- Tag Library: Includes a set of JSP tags for view-level security 
+- Web: Provides Spring Security’s filter-based web security support
+
+- Core and Configuration modules is minimium. 
+- web module is needed to secure web applications. 
+- JSP tag library module is required to view protection.
+
+#Spring Security configuration namespace
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:security="http://www.springframework.org/schema/security" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	http://www.springframework.org/schema/security
+	http://www.springframework.org/schema/security/spring-security-3.0.xsd">
+
+	// security:-prefixed elements go here
+
+</beans>
+
+- seperate security-specific configuration into spitter-security.xml. Since all of the configuration in this file will be from the security namespace, we’ve changed the security namespace to be the "primary namespace" for that file.
+
+<beans:beans xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns="http://www.springframework.org/schema/security" 						//security as primary namespace
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	http://www.springframework.org/schema/security
+	http://www.springframework.org/schema/security/spring-security-3.0.xsd">
+
+	// Non-prefixed security elements go here
+
+</beans:beans>
+
+#Securing web requests
+- Authorization: The most basic form of request-level security involves declaring one or more URL patterns as requiring some level of granted authority and preventing users without that authority from accessing the content behind those URLs. 
+- Encryption: furthermore, you may want to require that certain URLs can only be accessed over HTTPS.
+- Authentication: Before you can restrict access to users with certain privileges, there must be a way to know who’s using the application. Therefore, the application will need to authenticate the user, prompting them to log in and identify themselves.
+
+#Proxying servlet filters
+- Spring Security uses several servlet filters to provide various aspects of security. 
+- Instead of configuring several <filter> declarations in your application’s web.xml file, only DelegatingFilterProxy is configured to delegates to actual Filter beans. these beans are implementations of javax.servlet.Filter
+
+<filter>
+	<filter-name>springSecurityFilterChain</filter-name>
+	<filter-class>
+			org.springframework.web.filter.DelegatingFilterProxy
+	</filter-class>
+</filter>
+
+<filter-mapping>
+    <filter-name>springSecurityFilterChain</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+- a bean with id springSecurityFilterChain will be created, id is DelegatingFilterProxy's filter-name.
+- springSecurityFilterChain bean is a special filter known as FilterChainProxy, a single filter that chains together other filters. 
+- Spring Security relies on several servlet filters to provide different security features. Spring Security will automatically create those beans for us when we configure the <http> element
+
+#Configuring minimal web security
+<http auto-config="true">
+	<intercept-url pattern="/**" access="ROLE_SPITTER"/>
+</http>
+
+<authentication-manager>
+        <authentication-provider user-service-ref="userService" />
+</authentication-manager>
+
+<user-service id="userService">
+    <user name="habuma" password="123" authorities="ROLE_SPITTER,ROLE_ADMIN"/>
+    <user name="spitter" password="123" authorities="ROLE_SPITTER"/>
+    <user name="admin" password="admin" authorities="ROLE_ADMIN"/>
+</user-service>
+
+- intercept requests for all URLs and restrict access to only authenticated users who have the ROLE_SPITTER role
+- <http> element automatically sets up a FilterChainProxy (which is delegated to by the DelegatingFilterProxy we configured in web.xml) and all of the filter beans in the chain.
+- auto-config="true": Autoconfiguration gives our application a free login page, support for HTTP Basic authentication, and support for logging out. equivalent to:
+<http>
+	<form-login/>
+	<http-basic/>
+	<logout/>
+	<intercept-url pattern="/**" access="ROLE_SPITTER"/>
+</http>
+
+#DEFAULT LOGIN FORM
+<html>
+	<head><title>LoginPage</title></head>
+	<body onload='document.f.j_username.focus();'>
+		<h3>Login with Username and Password</h3>
+		<form name='f' method='POST' action='/Spitter/j_spring_security_check'>			//Authentication filter path
+			<table>
+				<tr>
+					<td>User:</td>
+					<td><input type='text'name='j_username'value=''></td></tr>			//Username field
+				<tr>
+					<td>Password:</td>														
+					<td><input type='password' name='j_password'/></td></tr>			//Password field
+				<tr><td colspan='2'><input name="submit" type="submit"/></td></tr>
+				<tr><td colspan='2'><input name="reset" type="reset"/></td></tr>
+			</table>
+		</form>
+	</body>
+</html>
+- You can get to the automatically generated login form via the path /spring_security_login relative to the application’s context URL.
+
+#Basic authentication mechanism
+1) When a request arrives, security servlet filter intercept the request, check the url, if url matches intercept-url pattern and authentication is required, then request is redirect(302) to "/spring_security_login"
+2) "spring_security_login" handler will check user session(j_sessionid) for user credentials first, if there is one there, indicates user was already authenticated goto 6).
+3) if no user credential found, a default handler method will return a default login form.
+<form name="f" action="/j_spring_security_check" method="POST">
+	<input type="text" name="j_username"/>
+	<input type="password" name="j_password"/>
+</form> 
+4) submit will go to Authentication filter path "/j_spring_security_check", with values of params j_username and j_password. another default handler will check the j_username and j_password against the authentication-provider.
+5) if credentials(j_username and j_password) does not match the data from authentication-provider, auhenticated will fail and spring will redirect(302) to the "/spring_security_login?login_error", the same login page will be returned with default error messages.
+6) if credentials(j_username and j_password) matchs the data from authentication-provider, authentication succeeds and spring will redirect the request to the original request url. User credentials is put into user session.
+7) the request is again be intercepted (by what??), the credentials(j_username and j_password) will check the authorities against the access rules, if do not matche spring will return a 403 forbidden response, otherwise will be processed and data returned.
+8) when subsequential requests will through 1) 2) 7).
+
+logout
+9) send request to /j_spring_security_logout, server will invalidate the user's session and redirect (302) request to /.
+
+#RESTful environment(Using session)
+1) same as above
+2) same as above
+3) if no user credential found, not a form but certian response indicating authentication required (probably indicating the authentication location/username/password as well) should be returned.
+======================================
+4) client submits "/j_spring_security_check", with values of params j_username and j_password. "j_spring_security_check" handler will check the j_username and j_password against the authentication-provider.
+5) if credentials(j_username and j_password) does not match the data from authentication-provider, auhenticated will fail and a response indicating authentication error should be returned.
+6) same as above
+7) same as above
+8) same as above
+
+logout
+9) send request to /j_spring_security_logout, server will invalidate the user's session and redirect (302) request to /.
+
+#RESTful environment(without session, using token) ???
+1) When a request arrives, security servlet filter intercept the request, check the url, if url matches intercept-url pattern and authentication is required, then request is redirect(302) to "/spring_security_login"
+2) "spring_security_login" handler will check request for token. (in header or cookie??)
+3) if user token not found, return 403 response to user. 
+4) if user token found, it will be parsed, user id and secret will be used to authenticated the user.
+5) if authenticated, redirect user request to original request url. (repeat itself?)
+
+6) client submits "/j_spring_security_check", with values of params j_username and j_password. "j_spring_security_check" handler will check the j_username and j_password against the authentication-provider.
+7) if credentials(j_username and j_password) does not match the data from authentication-provider, auhenticated will fail and a response indicating authentication error should be returned.
+8) if credentials(j_username and j_password) matchs the data from authentication-provider and authorities meet the access rules, authentication succeeds and spring will create a token with user id and password encrypted and return the token in response.  (in header or cookie??)
+9) subsequential requests will carries the token.
+
+logout
+10) stateless, no concept of logout 
+
+#CUSTOM LOGIN FORM
+- 1) <form-login> element to override the default behavior:
+<http auto-config="true" use-expressions="false">
+	<form-login 
+		login-processing-url="/static/j_spring_security_check" 	//authentication filter url. i.e. j_spring_security_check in default config
+		login-page="/login"	//login entry point. i.e. spring_security_login in default config
+		authentication-failure-url="/login?login_error=t"/> //authentication-failure-url i.e. spring_security_login?login_error
+</http>
+
+- 2) custom login.jsp
+<spring:url var="authUrl" value="/static/j_spring_security_check" /> <!--map to authentication filter url -->
+<form method="post" class="signin" action="${authUrl}">
+   ...
+  <input id="username_or_email" name="j_username" type="text" />  <!--name set as j_username by convention -->
+  <input id="password" name="j_password" type="password" /> <!--name set as j_password by convention -->
+  <input id="remember_me" name="_spring_security_remember_me" type="checkbox"/> <!--name set as _spring_security_remember_me by convention-->
+  <input name="commit" type="submit" value="Sign In" /></td>
+...
+</form>
+- the key thing is that the form submits j_username and j_password parameters with the user’s credentials. Everything else is decoration.
+
+#3) LOGGING OUT
+- The <logout> element sets up a Spring Security filter that will invalidate a user session. When used as is, the filter set up by <logout> is mapped to /j_spring_security_logout.
+- To avoid collide with DispatcherServlet url, we need to override the filter’s URL much as we did for the login form. set the logout-url attribute:
+<logout logout-url="/static/j_spring_security_logout"/>
+
+4) LoginController
+- 4.1 /login -> showLoginPage, method=GET, forward to login.jsp. /login should be allowed access, otherwise will go into infinite loop.
+- 4.2 /static/j_spring_security_check -> will be routed to default Authentication filter. Authentication filter autenticated using authentication provider
+- 4.3 if fails back to /login with parameter login_error=t, cab display error messsage based on login_error=t
+- 4.4. if success, redirect to original request url
+- 4.5 /static/j_spring_security_logout, invalidate session and redirect to / 
+
+#HANDLING BASIC AUTHENTICATION
+- form based authentication is Form-based authentication is ideal for human users of an application. But in RESTful env, when the user of the application is another application, prompting for login with a form just won’t do. 
+- HTTP Basic authentication is a way to authenticate a user to an application directly in the HTTP request itself. When encountered by a web browser, it prompts the user with a plain modal dialog box. web browser response to an HTTP 401 response this way, indicating that a username and password must be presented with the request. This makes it suitable as a means for REST clients to authenticate against the services that they’re consuming.
+- Not much customization is available with <http-basic>. HTTP Basic authentication is either turned on or it’s not. 
+- configure HTTP Basic authentication in web.xml. 
+- client set username and password before sending request:
+一是在请求头中添加Authorization：  
+Authorization: "Basic 用户名和密码的base64加密字符串"  
+二是在url中添加用户名和密码：  
+http://userName:password@api.minicloud.com.cn/statuses/friends_timeline.xml
+- 与FORM-BASED authentication 的不同之处在于其直接返回401 Unauthorized.
+
+#Intercepting requests
+- The <intercept-url> element is the first line of defense of spring security. 
+- pattern attribute is given a URL pattern that will be matched against incoming requests. If any requests match the pattern, then that <intercept-url>’s
+security rules will be applied.
+<intercept-url pattern="/admin/**" access="ROLE_ADMIN"/> // restricts access to the /admin branch of the site’s hierarchy to users with ROLE_ADMIN authority.
+<intercept-url pattern="/**" access="ROLE_SPITTER"/> //all requests, regardless of the URL, to require ROLE_SPITTER access
+
+- The pattern attribute takes an Ant-style path by default. setting the <http> element’s path-type attribute to regex to use regular expressions.
+- multiple <intercept-url> entries can be used to secure various paths, <intercept-url> rules are applied top to bottom. Therefore, this new <intercept-url> should be placed before the original one or else it’ll be eclipsed by the broad scope of the /** path.
+- from specific to broad.
+
+#SECURING WITH SPRING EXPRESSIONS
+- Listing required authorities is simple enough, but it’s somewhat one-dimensional. What if you wanted to express security constraints that are based on more than just granted privileges?
+- enable SpEL
+<http auto-config="true" use-expressions="true">
+<intercept-url pattern="/admin/**" access="hasRole('ROLE_ADMIN')" /> 
+- hasRole() expression evaluates to true if the current user has been granted the given authority. credential.hadRole()??
+
+authentication: The user’s authentication object
+denyAll: Always evaluates to false
+hasAnyRole(list of roles): true if the user has been granted any of the roles specified
+hasRole(role): true if the user has been granted the specified role
+hasIpAddress(IP Address): The user’s IP address (only available in web security)
+isAnonymous(): true if the current user is an anonymous user
+isAuthenticated(): true if the current user is not anonymous
+isFullyAuthenticated(): true if the current user is neither an anonymous nor a remember-me user
+isRememberMe(): true if the current user was automatically authenticated via remember-me
+permitAll: Always evaluates to true
+principal: The user’s principal object
+
+<intercept-url pattern="/admin/**" access="hasRole('ROLE_ADMIN') and hasIpAddress('192.168.1.2')"/>
+- more than just limit access based on a user’s granted authorities. For example, if you wanted to lock down the /admin/** URLs to not only require ROLE_ADMIN, but to also only be allowed from a given IP address
+
+FORCING REQUESTS TO HTTPS
+- Working with HTTPS seems simple enough. All you have to do is add an s after the http in a URL and you’re set. However, if you have dozens or hundreds of links and form actions that go to an HTTPS URL, it’s easy to forget to add that S., or you may overcorrect and use HTTPS in places where it’s unnecessary.
+- The <intercept-url> element’s requires-channel attribute shifts the responsibility for channel enforcement into the Spring Security configuration.
+<intercept-url pattern="/spitters/**" requires-channel="https"/> //spitter registration form data is protected
+- Anytime a request comes in for /spitters/, Spring Security will see that it requires the https channel and automatically redirect the request to go over HTTPS. i.e. http://localhost:8080/spitters?new redirect 302 to https://localhost:8443/spitters?new
+- <intercept-url pattern="/home" requires-channel="http"/> //home page doesn’t require HTTPS
+
+#URL rewrite
+<spring:url var="authUrl" value="/static/j_spring_security_check" /> will rewrite URL if cookie is disabled.
+http://localhost:8080/login;jsessionid=6CC5F33FC1A756124D20DFACABBA1024
+
+#Securing view-level elements
+- security would involve stopping a user from accessing a URL that they’re not authorized to use. But it’s also a good idea to never show links that a user
+won’t be able to follow.
+- Spring Security at view layer comes with a JSP tag library with three tags:
+- <security:accesscontrollist>: Allows the body of the tag to be rendered if the currently authenticated user has one of the stipulated permissions in
+the specified domain object 
+- <security:authentication>: Accesses properties of the current user’s authentication object 
+- <security:authorize>: Allows the body of the tag to be rendered if a specified security constraint has been met
+- If you prefer Velocity over JSP for rendering views, Spring Security also comes with a set of Velocity macros that are similar to its JSP tags.
+- does freemarker has the similar taglib??
+
+- specify taglib:
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
+
+#Accessing authentication details
+Hello <security:authentication property="principal.username"/>!
+==
+<security:authentication property="principal.username" var="loginId"/>
+Hello ${loginId}!
+
+- The variable is created in page scope by default. you can create it in other scope such as request or session (or any of the scopes available from
+javax.servlet.jsp.PageContext) using the scope attribute:
+<security:authentication property="principal.username" var="loginId" scope="request"/>
+
+- The property attribute identifies a property of the user’s authentication object. The properties available will vary depending on how the user was authenticated. But you can count on a few common properties as following: 
+- authorities: A collection of GrantedAuthority objects that represent the privileges granted to the user 
+- credentials: The credentials that were used to verify the principal (commonly, this is the user’s password) 
+- details: Additional information about the authentication (IP address, certificate serial number, session ID, and so on)
+- principal: The user’s principal
+
+#Rendering with authorities
+- - use-expressions="true" to enable SpEL in <http>
+<http auto-config="true" use-expressions="true">
+
+- Sometimes portions of the view should or shouldn’t be rendered, depending on what the user is privileged to do.
+- <security:authorize> tag conditionally renders a portion of the view depending on the user’s granted authorities.
+<sec:authorize access="hasRole('ROLE_SPITTER')">
+        <s:url value="/spittles" var="spittle_url"/>
+        <sf:form modelAttribute="spittle" method="POST" action="${spittle_url}">
+            ...
+        </sf:form>
+</sec:authorize>
+
+- some administrative functions that are only available to the user whose username is habuma.
+<security:authorize access="isAuthenticated() and principal.username=='habuma'">
+	<a href="/admin">Administration</a>
+</security:authorize>
+- above config will keep the link from being rendered in the view. But user can still manually enter the /admin URL in the browser's address line
+- Adding a new <intercept-url> in the security configuration will tighten security around the /admin URL:
+<intercept-url pattern="/admin/**" access="hasRole('ROLE_ADMIN') and hasIpAddress('192.168.1.2')"/>
+- The URL is secured and the link to the URL won’t appear unless the user is authorized to use it.
+- Wouldn’t it make more sense to only show the URL if the URL’s security constraint was met?
+
+- the url attribute indirectly refers to the security constraints for a given URL pattern.
+<intercept-url pattern="/admin/**" access="hasRole('ROLE_ADMIN') and hasIpAddress('192.168.1.2')"/>
+
+<security:authorize url="/admin/**">
+	<spring:url value="/admin" var="admin_url"/>
+	<br/><a href="${admin_url}">Admin</a>
+</security:authorize>
+
+- Since the /admin URL is restricted to only authenticated users who have ROLE_ADMIN authority and to requests coming from a specific IP address, the body of
+the <security:authorize> tag will only be rendered if those conditions are met.
+
+#Authenticating users
+- Spring Security is flexible enough to authenticate against virtually any kind of user repository
+In-memory (Spring-configured) user repositories
+JDBC-based user repositories
+LDAP-based user repositories
+OpenID decentralized user identity systems
+Central Authentication System (CAS)
+X.509 certificates
+JAAS-based providers
+
+#in-memory user repository
+- declare the user details directly in the Spring configuration by creating a user service using the <user-service> element from Spring:Security’s XML namespace:
+<user-service id="userService">
+        <user name="habuma" password="123" authorities="ROLE_SPITTER,ROLE_ADMIN"/>
+        <user name="spitter" password="123" authorities="ROLE_SPITTER"/>
+        <user name="admin" password="admin"   authorities="ROLE_ADMIN"/>
+</user-service>
+
+- wire it into Spring Security’s authentication manager
+<authentication-manager>
+    <authentication-provider user-service-ref="userService" />
+</authentication-manager>
+- "authentication-manager"->registers->"ProviderManager"-> delegates authentication job -> "authentication providers" -> get user details from user service
+- Defining user details in the Spring application context is convenient for testing not a realistic way of managing users in a production application.
+
+#database user repository
+-  <jdbc-user-service> is used the same way that <user-service> is used. wiring it into <authentication-provider>’s user-service-ref attribute or
+embedding it within <authentication-provider>.
+<jdbc-user-service id="userService" data-source-ref="dataSource"/> //uses a JDBC data source to query a database for user details
+
+- default sql for user information:
+select username,password,enabled from users where username=? //need a users table
+- default sql for user authorities:
+select username,authority,from authorities where username=? //need a authorities table
+- user details and authorities needs to store this way
+
+- The attributes of <jdbc-user-service> that can change the SQL used to query for user details:
+users-by-username-query: Queries for a user’s username, password, and enabled status given the username
+authorities-by-username-query: Queries for a user’s granted authorities given the username 
+group-authorities-by-username-query: Queries for a user’s group authorities given the username
+
+<jdbc-user-service id="userService" data-source-ref="dataSource" 
+	users-by-username-query="select username,password,true from spitter where username=?"
+	authorities-by-username-query="select username,'ROLE_SPITTER' from spitter where username=?"/>
+- In the Spitter application, the username and password are stored in the spitter table in the username and password properties, respectively. But we haven’t really considered the idea of a user being enabled or disabled and have been assuming that all users are enabled. So we’ve written the SQL to always return true for all users.
+- We also haven’t given much thought to giving Spitter users different levels of authority. All Spitter users have the same authorities. In fact, the Spitter database schema doesn’t have a table for storing user authorities. Therefore, we’ve set authorities-by-username-query with a concocted query that gives all users ROLE_SPITTER authority.
+
+<jdbc-user-service id="userService" data-source-ref="dataSource" 
+	users-by-username-query="select username,password,true from spitter where username=?"
+	authorities-by-username-query="select username,'ROLE_SPITTER' from spitter where username=?"/>
+
+#Authenticating against LDAP
+- We’ve all seen an organizational chart or two before. Most organizations are structured hierarchically. Within that hierarchy you’ll often find a similarly
+hierarchical set of security rules. Human resources personnel are probably granted different privileges than accounting personnel. Supervisors probably have more open access than those that report to them.
+- LDAP is better in terms reresenting hierarchical data. it’s common to find a company’s organizational structure represented in an LDAP directory. alongside, you’ll often find the company’s security constraints mapped to the entries in the directory.
+- To use LDAP-based authentication, we’ll first need to use Spring Security’s LDAP module and configure LDAP authentication within the Spring application context. When it comes to configuring LDAP authentication, we have two choices:
+With an LDAP-oriented authentication provider
+With an LDAP-oriented user service
+
+#DECLARING AN LDAP AUTHENTICATION PROVIDER
+<authentication-manager alias="authenticationManager">
+	<ldap-authentication-provider 
+		user-search-filter="(uid={0})"
+		group-search-filter="member={0}"/>
+</authentication-manager>
+
+- The user-search-filter and group-search-filter attributes are used to provide "a filter for the base LDAP queries", which are used to search for users and groups.
+- By default, the "base queries" for both users and groups are empty, indicating that the search will be done from the root of the LDAP hierarchy. But we can change that by specifying a query base:
+<ldap-user-service id="userService" 
+	user-search-base="ou=people"
+	user-search-filter="(uid={0})"
+	group-search-base="ou=groups"
+	group-search-filter="member={0}"/>
+- The user-search-base attribute provides a base query for finding users. Likewise, the group-search-base specifies the base query for finding groups. Rather than search from the root, we’ve specified that users be searched for where the organization unit is people. And groups should be searched for where the organizational unit is groups.
+- ??ldap data structure, base query, filter， organiztion unit，uid， member??
+
+#CONFIGURING PASSWORD COMPARISON
+- The default strategy to authenticate against LDAP is to perform a bind operation, authenticating the user directly to the LDAP server. 
+- Another option is to perform a comparison operation. This involves sending the entered password to the LDAP directory and asking the server to compare the password against a user’s password attribute. Because the comparison is done within the LDAP server, the actual password remains secret.
+- authenticate by doing a password comparison with the <password-compare> element:
+<ldap-authentication-provider 
+	user-search-filter="(uid={0})"
+	group-search-filter="member={0}">
+	<password-compare/>
+</ldap-authentication-provider>
+- the password given in the login form will be compared with the value of the “userPassword” attribute in the user’s LDAP entry. If the password is kept in a different attribute, then specify the password attribute’s name with password-attribute:
+<password-compare hash="md5" password-attribute="passcode"/> //encrypted passwords using MD5 by setting hash to md5
+
+- It’s nice that the actual password is kept secret on the server when doing server-side password comparison. But the attempted password is still passed across the wire to the LDAP server and could be intercepted by a hacker. To prevent that, you can specify an encryption strategy by setting the hash attribute to one of the following values：
+{sha}，{ssha}，md4，md5，plaintext, sha, sha-256
+
+#REFERRING TO A REMOTE LDAP SERVER
+- configure ldap location:
+<ldap-server url="ldap://habuma.com:389/dc=habuma,dc=com"/>
+
+#CONFIGURING AN EMBEDDED LDAP SERVER
+- Just leave off the url parameter
+<ldap-server root="dc=habuma,dc=com"/>
+- The root attribute is optional and defaults to dc=springframework,dc=org, not applicable to our application
+- When the LDAP server starts, it will attempt to load data from any LDIF files in the classpath. 
+- LDIF (LDAP Data Interchange Format) is a standard way of representing LDAP data in a plain text file. 
+- Each record is comprised of one or more lines, each containing a name:value pair. Records are separated from each other by blank lines:
+- use ldif attribute to be more explicit about which LDIF file gets loaded
+<ldap-server root="dc=habuma,dc=com" ldif="classpath:users.ldif"/>
+- sample LDIF file:
+dn: ou=groups,dc=habuma,dc=com
+objectclass:top
+objectclass:organizationalUnit
+ou: groups
+
+dn: ou=people,dc=habuma,dc=com
+objectclass:top
+objectclass:organizationalUnit
+ou: people
+
+dn: uid=habuma,ou=people,dc=habuma,dc=com
+objectclass:top
+objectclass:person
+objectclass:organizationalPerson
+objectclass:inetOrgPerson
+cn: CraigWalls
+sn: Walls
+uid: habuma
+userPassword:password
+
+dn: uid=jsmith,ou=people,dc=habuma,dc=com
+objectclass:top
+objectclass:person
+objectclass:organizationalPerson
+objectclass:inetOrgPerson
+cn: JohnSmith
+sn: Smith
+uid: jsmith
+userPassword:password
+
+dn: cn=spitter,ou=groups,dc=habuma,dc=com
+objectclass:top
+objectclass:groupOfNames
+cn: spitter
+member: uid=habuma,ou=people,dc=habuma,dc=com
+
+#remember-me functionality
+- from the user’s perspective, it’d be nice if the application didn’t always prompt them with a login every time they use it. 
+- That’s why many websites offer remember-me functionality so that you can log in once and then be remembered by the application when you come
+back to it later.
+- To enable remember-me support, all we need to do is add a <remember-me> element within the <http>:
+<http auto-config="true" use-expressions="true">
+	...
+	<remember-me
+		key="spitterKey"
+		token-validity-seconds="2419200"/> //valid for four weeks (2,419,200 seconds)
+</http>
+- this feature is accomplished by storing a token in a cookie(SPRING_SECURITY_REMEMBER_ME_COOKIE). The token is made up of the username, password, an expiration date, and a private key, all encoded in an MD5 hash.
+- By default, the private key is SpringSecured, but we’ve set it to spitterKey to make it specific to the Spitter application.
+- by default the cookie is valid for up to two weeks. But here we’ve specified that the token should be valid for four weeks (2,419,200 seconds).
+
+- login request will need to include a _spring_security_remember_me parameter for users to indicate that they’d like the application to remember them.
+<input id="remember_me" name="_spring_security_remember_me" type="checkbox"/>
+- next time the user access the server, the token will be compared to md5 hash of username+password+an expiration date+a private key, username are needed to get password
