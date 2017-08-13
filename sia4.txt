@@ -493,12 +493,2328 @@ in xml congfig
 <aop:aspectj-autoproxy />
 <bean class="concert.Audience" />
 
+5. Chapter5 Spring MVC mechanism 
+#CONFIGURING DISPATCHERSERVLET
+- thanks to recent advances in the Servlet 3 specification and in Spring 3.1. Instead of a web.xml file, you’re going to use Java to configure DispatcherServlet in the servlet container.
+public class SpittrWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer { // Configure spring Context == loading web.xml
+	@Override
+	protected String[] getServletMappings() {
+		return new String[] { "/" };	// Map DispatcherServlet to / (== configure DispatcherServlet mapping <servlet-mapping> in xml)
+	}
+	
+	@Override
+	protected Class<?>[] getRootConfigClasses() {
+		return new Class<?>[] { RootConfig.class }; 			//Specify contextLoaderListener context configuration class  						
+																	== loading classpath:datasource-context-jdbcDaoSupport.xml
+	}
+	
+	@Override
+	protected Class<?>[] getServletConfigClasses() {
+		return new Class<?>[] { WebConfig.class };	//Specify disptacherServlet context configuration class == laoding spitter-context.xml
+	}
+}
+
+- 总而言之
+1. any class that extends AbstractAnnotationConfigDispatcherServletInitializer will automatically be used to configure 1)DispatcherServlet and 2)the Spring application context in the application’s servlet context.
+2. AbstractAnnotationConfigDispatcherServletInitializer creates both a DispatcherServlet and a ContextLoaderListener. 
+3. getServletMappings() identifies one or more paths that DispatcherServlet will be mapped to. In this case, it’s mapped to /, indicating that it will be the application’s default servlet. It will handle all requests coming into the application.
+4. @Configuration classes returned from getServletConfigClasses() will define beans for DispatcherServlet’s application context. In this case, DispatcherServlet’s configuration is declared in WebConfig.
+5. the @Configuration class’s returned getRootConfigClasses() will be used to configure the application context created by ContextLoaderListener. In this case, your root configuration is defined in RootConfig.
+
+#further information:
+- configuring DispatcherServlet via AbstractAnnotationConfigDispatcherServletInitializer is an alternative to the traditional web.xml file. Although you can include a web.xml file alongside a subclass of AbstractAnnotationConfigDispatcherServletInitializer if you like, it’s not necessary.
+- configuring DispatcherServlet using AbstractAnnotationConfigDispatcherServletInitializer will only work when deploying to a server that supports
+Servlet 3.0, such as Apache Tomcat 7 or higher. The Servlet 3.0 specification has been final since December 2009. If you’re not yet working with a Servlet 3.0-capable server, you’ll have no choice but to configure DispatcherServlet in web.xml.
+
+#Machanism
+- In a Servlet 3.0 environment, the container looks for any classes in the classpath that implement the "javax.servlet.ServletContainerInitializer" interface; if any are found, they’re used to configure the servlet container.
+- Spring supplies an implementation of that interface called SpringServletContainerInitializer that, in turn, seeks out any classes that implement WebApplicationInitializer and delegates to them for configuration.
+- Spring 3.2 introduced a convenient base implementation of WebApplicationInitializer called AbstractAnnotationConfigDispatcherServletInitializer. Because
+your SpittrWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer (and thus implements WebApplicationInitializer), it will
+be automatically discovered when deployed in a Servlet 3.0 container and be used to configure the servlet context.
+
+#relationship between DispatcherServlet and a servlet listener known as ContextLoaderListener.
+- DispatcherServlet is expected to load beans containing web components such as controllers, view resolvers, and handler mappings.
+- But in Spring web applications, there’s often another application context. This other application context is created by ContextLoaderListener.
+- ContextLoaderListener is expected to load the other beans in your application. These beans are typically the middle-tier and data-tier components that drive the back end of the application.
+
+#ENABLING SPRING MVC
+- Just as there are several ways of configuring DispatcherServlet, there’s more than one way to enable Spring MVC components. Historically, Spring has been configured using XML, and there’s an <mvc:annotation-driven> element that you can use to enable annotation-driven Spring MVC.
+
+- Simplest Spring MVC configuration. 
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+@Configuration
+@EnableWebMvc
+public class WebConfig {
+}
+
+- WebConfig == spitter-servlet.xml
+- @EnableWebMvc == <mvc:annotation-driven>
+- In above simplest config, no view resolver is configured. default to using BeanNameViewResolver, a view resolver that resolves views by looking for beans ID matching the view name and whose class implements the View interface.
+- Component-scanning isn’t enabled. controllers need to be  declared explicitly in the configuration.
+- DispatcherServlet is mapped as the default servlet and will handle all requests, including requests for static resources, such as images and stylesheets
+
+@Configuration
+@EnableWebMvc
+@ComponentScan("spitter.web")	//Enable component-scanning == <context:component-scan base-package="spitter.web"/>
+public class WebConfig extends WebMvcConfigurerAdapter {
+	@Bean
+	public ViewResolver viewResolver() {	//Configure a JSP view resolver == <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		InternalResourceViewResolver resolver = New InternalResourceViewResolver();
+		resolver.setPrefix("/WEB-INF/views/");
+		resolver.setSuffix(".jsp");
+		resolver.setExposeContextBeansAsAttributes(true);
+		return resolver;
+	}
+	
+	@Override
+	public void configureDefaultServletHandling(	//Configure static content handling == <mvc:resources mapping="/resources/**" location="/resources/"/> ??
+		DefaultServletHandlerConfigurer configurer) {
+		configurer.enable();
+	}
+}
+
+- WebConfig is now annotated with @ComponentScan so that the spitter.web package will be scanned for components
+- a ViewResolver bean is added
+- extends WebMvcConfigurerAdapter and overrides its configureDefaultServletHandling() method. By calling enable() on the given DefaultServletHandlerConfigurer, you’re asking DispatcherServlet to forward requests for static resources to the servlet container’s default servlet and not to try to handle them itself. where is static resources located?
+
+#RootConfig for ContextListener
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+
+@Configuration
+@ComponentScan(basePackages={"spitter"},
+	excludeFilters={
+		@Filter(type=FilterType.ANNOTATION, value=EnableWebMvc.class)
+	})
+public class RootConfig {
+}
+
+#Writing a simple controller
+#关联知识点
+- <c:url value="/spittles" /> 会自动生成URL rewrite
+- /spittles;jsessionid=50C9E74BE0850DB689664D7432305378" //在原始url后面添加;jsessionid=xxxxxx
+- <%@ page session="false" %> //不生成session, 默认创建session
+- maven中三种classpath：编译，测试，运行，scope不同的artifact会放到不同的classpath中 
+1.compile：默认范围，编译测试运行都有效 
+2.provided：在编译和测试时有效 
+3.runtime：在测试和运行时有效 
+4.test:只在测试时有效 
+5.system:在编译和测试时有效，与本机系统关联，可移植性差
+- for example:
+- 以下aritifacts在编译测试运行都有效，可以在编译和测试代码中使用，也要部署到server
+compile "org.springframework:spring-webmvc:$springVersion"
+compile "org.springframework:spring-jdbc:$springVersion"
+- 以下aritifacts在编译和测试时有效，可以在编译和测试代码中使用，不需部署到server, 因为server本身有 
+providedCompile "javax.servlet:javax.servlet-api:$servletApiVersion"
+providedCompile "javax.servlet.jsp:jsp-api:$jspApiVersion"
+providedCompile "javax.el:javax.el-api:$jspElVersion"
+- 以下aritifacts只在测试时有效，只可以在测试代码中reference（编译代码中是用不了Junit的），也不会部署到server， 
+testCompile "junit:junit-dep:$junitVersion"
+testCompile "org.springframework:spring-test:$springVersion"
+testCompile "org.mockito:mockito-core:$mockitoVersion"
+testCompile "org.hamcrest:hamcrest-library:$hamcrestVersion"
+
+- it’s easy to test POJOs. ??because you don't need all the dependency libary.
+public class HomeControllerTest {
+	@Test
+	public void testHomePage() throws Exception {
+		HomeController controller = new HomeController();
+		assertEquals("home", controller.home());
+	}
+}
+- it only tests what happens in the home() method. It calls home() directly and asserts that a String containing the value “home” is returned. 
+- It completely fails to test what makes that method a Spring MVC controller method. Nothing about the test asserts that home() will be called when a GET request for / comes in. And just because it returns “home”, there’s nothing to truly test that home is the name of the view.
+- Starting with Spring 3.2, you can test Spring MVC controllers as controllers, not merely as POJOs. Spring now includes a mechanism for mocking all
+the mechanics of Spring MVC and executing HTTP requests against controllers. 
+- enable you to test your controllers without firing up a web server or web browser.
+
+public class HomeControllerTest {
+	@Test
+	public void testHomePage() throws Exception {
+		HomeController controller = new HomeController();
+		MockMvc mockMvc = standaloneSetup(controller).build();	//Set up MockMvc
+		mockMvc.perform(get("/"))								//Perform GET /
+			.andExpect(view().name("home"));					//Expect home view
+	}
+}
+
+- Rather than call home() directly and test its return value, this test issues a GET request for / and asserts that the resulting view is named home. 
+- It starts by passing an instance of HomeController to MockMvcBuilders.standaloneSetup() and calling build() to set up the MockMvc instance. 
+- Then it asks the MockMvc instance to perform a GET request for / and sets an expectation for the view name.
+
+#Passing model data to the view
+- domain object
+public class Spittle {
+	private final Long id;
+	private final String message;
+	private final Date time;
+	private Double latitude;
+	private Double longitude;
+	
+	public Spittle(String message, Date time) {
+		this(message, time, null, null);
+	}
+	...
+	@Override
+	public boolean equals(Object that) {
+		return EqualsBuilder.reflectionEquals(this, that, "id", "time");
+	}
+	
+	@Override
+	public int hashCode() {
+		return HashCodeBuilder.reflectionHashCode(this, "id", "time");
+	}
+}
+
+- using Apache Commons Lang for easy implementation of the equals() and hashCode() methods. Aside from the general utility value of those methods, they’ll be valuable in writing a test for the controller handler method.
 
 
+@Test
+  public void shouldShowRecentSpittles() throws Exception {
+    List<Spittle> expectedSpittles = createSpittleList(20);									//create a list of 20 spittles
+    SpittleRepository mockRepository = mock(SpittleRepository.class);						//creating a mock implementation of the SpittleRepository interface
+    when(mockRepository.findSpittles(Long.MAX_VALUE, 20))		//mock respository will return the list of 20 Spittle objects from its findSpittles() method
+    	.thenReturn(expectedSpittles);		
 
+    SpittleController controller = new SpittleController(mockRepository);	 				//injects that repository into a new SpittleController instance	
+    MockMvc mockMvc = standaloneSetup(controller)											//sets up MockMvc to use the controller.
+        .setSingleView(new InternalResourceView("/WEB-INF/views/spittles.jsp"))		//calls setSingleView() on the MockMvc builder
+        .build();
 
+    mockMvc.perform(get("/spittles"))														//GET /spittles
+       .andExpect(view().name("spittles"))													//asserting that the view name is spittles
+       .andExpect(model().attributeExists("spittleList"))									//asserting the model has an attribute named spittleList
+       .andExpect(model().attribute("spittleList", hasItems(expectedSpittles.toArray())));	//asserting the attribute spittleList has expected contents.
+  }
 
+- unlike HomeControllerTest, this test calls setSingleView() on the MockMvc builder. so the mock framework won’t try to resolve the view name coming from the controller on its own. In many cases, this is unnecessary. But for this controller method, the view name (spittles) will be similar to the request’s path(/spittles); left to its default view resolution, MockMvc will fail because the view path will be confused with the controller’s path. 
+- The actual path given when constructing the InternalResourceView is unimportant in this test, but you set it to be consistent with how you’ve configured InternalResourceViewResolver.
+- when a controller’s handler method finishes, a logical view name is usually returned. Even if the method doesn’t directly return a logical view name (if the method returns void, for example), then the logical view name is derived from the request’s URL.
 
+@RequestMapping(method=RequestMethod.GET)
+public List<Spittle> spittles() {
+	return spittleRepository.findSpittles(Long.MAX_VALUE, 20));
+}
 
+- Rather than return a logical view name and explicitly setting the model, this method returns the Spittle list. When a handler method returns an object or a collection like this, the value returned is put into the model, and the model key is inferred from its type (spittleList, as in the other examples).
+- As for the logical view name, it’s inferred from the request path. Because this method handles GET requests for /spittles, the view name is spittles (chopping off the leading slash).
+- Now that there’s data in the model, how does the JSP access it? As it turns out when the view is a JSP, the model data is copied into the request as request attributes. Therefore, the spittles.jsp file can use JavaServer Pages Standard Tag Library’s (JSTL).
+<c:forEach items="${spittleList}" var="spittle" >
+    <li id="spittle_<c:out value="${spittle.id}"/>">
+      <div class="spittleMessage"><c:out value="${spittle.message}" /></div>
+      <div>
+        <span class="spittleTime"><c:out value="${spittle.time}" /></span>
+        <span class="spittleLocation">(<c:out value="${spittle.latitude}" />, <c:out value="${spittle.longitude}" />)</span>
+      </div>
+    </li>
+</c:forEach>
 
+#Accepting request input
+- 3 ways for a client to pass data into a controller’s handler method:
+Query parameters
+Form parameters
+Path variables
 
+#Taking query parameters
+- If you’re going to let users go through spittle history a page at a time, you’ll need to offer a way for them to pass in parameters that determine which set of spittles to display.
+- To implement this paging solution, you’ll need to write a handler method that accepts the following:
+A max parameter (which indicates the ID of the Spittle that all Spittle objects in the results are before)
+A count parameter (which indicates how many spittles to include in the result)
+@RequestMapping(method=RequestMethod.GET)
+public List<Spittle> spittles(@RequestParam("max") long max, @RequestParam("count") int count) {
+	return spittleRepository.findSpittles(max, count);
+}
+
+- If the handler method in SpittleController is going to handle requests with or without the max and count parameters, you’ll need to change it to accept those parameters, but still default to Long.MAX_VALUE and 20 if those parameters are absent on the request. The defaultValue attribute of @RequestParam will do the trick:
+
+@RequestMapping(method=RequestMethod.GET)
+public List<Spittle> spittles(
+	@RequestParam(value="max", defaultValue=MAX_LONG_AS_STRING) long max,
+	@RequestParam(value="count", defaultValue="20") int count) {
+	return spittleRepository.findSpittles(max, count);
+}
+
+- if the max parameter isn’t specified, it will default to the maximum value of Long.
+- Because query parameters are always of type String, the defaultValue attribute requires a String value. Therefore, Long.MAX_VALUE won’t work. Instead, you can capture Long.MAX_VALUE in a String constant, it will be converted to a Long when bound to the method’s max parameter:
+private static final String MAX_LONG_AS_STRING = "9223372036854775807";
+
+#Taking input via path parameters
+- path parameter is popular in building resource-oriented controllers
+- from a resource-orientation perspective, the resource being identified (the Spittle) would be identified by the URL path, not by query parameters.
+- /spittles/show?spittle_id=12345 == A GET request for /spittles/12345
+- The latter identifies a resource to be retrieved. The former describes an operation with a parameter—essentially RPC over HTTP.
+- Up to this point, all of your controller methods have been mapped (via @RequestMapping) to a statically defined path. But if you’re going to make this test pass, you’ll need to write an @RequestMapping that has a variable portion of the path that represents the Spittle ID.
+- To accommodate these path variables, Spring MVC allows for placeholders in an @RequestMapping path. The placeholders are names surrounded by curly braces
+({ and }). Although all the other parts of the path need to match exactly for the request to be handled, the placeholder can carry any value.
+
+@RequestMapping(value="/{spittleId}", method=RequestMethod.GET)
+public String spittle(@PathVariable("spittleId") long spittleId, Model model) {
+	model.addAttribute(spittleRepository.findOne(spittleId));
+	return "spittle";
+}
+
+- spittle() has a spittleId parameter that is annotated with @PathVariable("spittleId"). This indicates that whatever value is at the placeholder
+position in the request path will be passed into the handler method’s spittleId parameter.
+
+#Processing forms
+- Query parameters and path parameters are fine for passing small amounts of data on a request.
+- But often you need to pass a lot of data (perhaps data coming from a form submission), and query parameters are too awkward and limited for that.
+- There are two sides to working with forms: displaying the form and processing the data the user submits from the form.
+- same as "sia3".
+
+- More mockMvc usage:
+ @Test
+  public void shouldProcessRegistration() throws Exception {
+    SpitterRepository mockRepository = mock(SpitterRepository.class);
+    Spitter unsaved = new Spitter("jbauer", "24hours", "Jack", "Bauer", "jbauer@ctu.gov");
+    Spitter saved = new Spitter(24L, "jbauer", "24hours", "Jack", "Bauer", "jbauer@ctu.gov");
+    when(mockRepository.save(unsaved)).thenReturn(saved);
+    
+    SpitterController controller = new SpitterController(mockRepository);
+    MockMvc mockMvc = standaloneSetup(controller).build();
+
+    mockMvc.perform(post("/spitter/register") 	//performs a POST request against /spitter/register
+           .param("firstName", "Jack")			// As part of that POST request, user information is passed as parameters on the request to simulate a form being submitted.
+           .param("lastName", "Bauer")	
+           .param("username", "jbauer")
+           .param("password", "24hours")
+           .param("email", "jbauer@ctu.gov"))
+           .andExpect(redirectedUrl("/spitter/jbauer")); //expects that the request will end in a redirect to the URL path of the new user’s profile page.    
+    verify(mockRepository, atLeastOnce()).save(unsaved); //verifies that the mocked SpitterRepository was actually used to save the data coming in on the form.
+  }
+
+@RequestMapping(value="/register", method=POST)
+public String processRegistration(Spitter spitter) {
+	spitterRepository.save(spitter);
+	return "redirect:/spitter/" + spitter.getUsername();
+}
+
+- process-egistration() method is given a Spitter object as a parameter. This object has firstName, lastName, username, and password properties that will be populated from the request parameters of the same name.
+- When InternalResourceViewResolver sees the redirect: prefix on the view specification, it knows to interpret it as a redirect specification instead of as a view name. 
+- in addition to redirect:, InternalResourceViewResolver also recognizes the forward: prefix. When it sees a view specification prefixed with forward:, the request is forwarded to the given URL path instead of view resolving or redirected.
+
+#Validating forms
+- Rather than litter your handler methods with validation logic, however, you can take advantage of Spring’s support for the Java Validation API (a.k.a. JSR-303). 
+- Starting with Spring 3.0, Spring supports the Java Validation API in Spring MVC. No extra configuration is required to make Java Validation work in Spring MVC. You just need to make sure an implementation of the Java API, such as Hibernate Validator, is in the project’s classpath.
+- The Java Validation API defines several annotations that you can put on properties to place constraints on the values of those properties. All of these annotations are in the javax.validation.constraints package.
+@AssertFalse: The annotated element must be a Boolean type and be false.
+@AssertTrue: The annotated element must be a Boolean type and be true.
+@DecimalMax: The annotated element must be a number whose value is less than or equal to a given BigDecimalString value.
+@DecimalMin: The annotated element must be a number whose value is greater than or equal to a given BigDecimalString value.
+@Digits: The annotated element must be a number whose value has a specified number of digits.
+@Future: The value of the annotated element must be a date in the future.
+@Max: The annotated element must be a number whose value is less than or equal to a given value.
+@Min: The annotated element must be a number whose value is greater than or equal to a given value.
+@NotNull: The value of the annotated element must not be null.
+@Null: The value of the annotated element must be null.
+@Past: The value of the annotated element must be a date in the past.
+@Pattern: The value of the annotated element must match a given regular expression.
+@Size The value of the annotated element must be either a String, a collection, or an array whose length fits within the given range.
+- In addition to the annotations in above list, Java Validation API implementations may provide additional validation annotations. And it’s also possible to define your own constraints.
+
+public class Spitter {
+	private Long id;
+	
+	@NotNull				//Not null
+	@Size(min=5, max=16)	//from 5 to 16 characters
+	private String username;
+	
+	@NotNull
+	@Size(min=5, max=25)
+	private String password;
+	
+	@NotNull
+	@Size(min=2, max=30)	
+	private String firstName;
+	
+	@NotNull
+	@Size(min=2, max=30)
+	private String lastName;
+	...
+}
+
+- it’s important that the Errors parameter immediately follow the @Valid-annotated parameter that’s
+being validated.) The first thing processRegistration() does is call Errors.hasErrors() to check for any errors.
+- in the next chapter, you’ll adapt the form (using srping taglib) to 1)show the values that were originally submitted <sf:form method="POST" modelAttribute="spitter"> and 2)communicate validation problems to the user. <sf:error>
+
+6. Chapter6 Spring MVC Views
+#Understanding view resolution
+- Decoupling request-handling logic in the controller from the view-rendering of a view
+- controllers do not directly produce the HTML that is rendered in the browser. Instead, they populate the model with some data and then pass the model off to a view for rendering. controllers is not aware of JSP etc.
+- At most, the controller methods and view implementations should agree on the contents of the model
+
+#Test case:
+1. Validation (done)
+2. validation with message in one place and label cssErrorClass (Done)
+3. Validation with internationalized validation message （done）
+4. DISPLAYING INTERNATIONALIZED MESSAGES (done)
+5. DISPLAYING INTERNATIONALIZED MESSAGES using ReloadableResourceBundleMessageSource (failed)
+6. S:url tag (done)
+
+#ViewResolver machanism
+- Spring MVC defines an interface named ViewResolver that looks a little something
+like this:
+public interface ViewResolver {
+	View resolveViewName(String viewName, Locale locale) throws Exception;
+}
+
+- The resolveViewName() method, when given a view name and a Locale, returns a View instance:
+public interface View {
+	String getContentType();
+	void render(Map<String, ?> model, HttpServletRequest request, HttpServletResponse response) throws Exception;
+}
+- take the model, as well as the servlet request and response objects, and render output into the response.
+
+- TilesViewResolver to achieve layout control over JSP pages
+- Thymeleaf is a compelling alternative to JSP that offers a view resolver for working with Thymeleaf’s natural templates: templates that have more in common with the HTML they produce than with the Java code that drives them.
+
+#Creating JSP views
+- JSP has evolved over the years to include support for an expression language and custom tag libraries.
+- Spring supports JSP views in two ways:
+1) InternalResourceViewResolver can be used to resolve view names into JSP files. Moreover, if you’re using JavaServer Pages Standard Tag Library (JSTL)
+tags in your JSP pages, InternalResourceViewResolver can resolve view names into JSP files fronted by JstlView to expose JSTL locale and resource bundle
+variables to JSTL’s formatting and message tags.
+2) Spring provides two JSP tag libraries, one for "form-to-model binding" and one providing general "utility" features.
+
+#Configuring a JSP-ready view resolver
+@Bean
+public ViewResolver viewResolver() {
+	InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+	resolver.setPrefix("/WEB-INF/views/");
+	resolver.setSuffix(".jsp");
+	return resolver;
+}
+
+#RESOLVING JSTL VIEWS
+- InternalResourceViewResolver resolves logical view names into instances of InternalResourceView that reference jsp files.
+- if those JSP files are using JSTL tags for formatting or messages, then you may want to configure InternalResourceViewResolver to resolve a JstlView instead.
+
+@Bean
+public ViewResolver viewResolver() {
+	InternalResourceViewResolver resolver = new InternalResourceViewResolver();
+	resolver.setPrefix("/WEB-INF/views/");
+	resolver.setSuffix(".jsp");
+	resolver.setViewClass(org.springframework.web.servlet.view.JstlView.class);
+	return resolver;
+}
+
+- JSTL’s formatting tags need a Locale to properly format locale-specific values such as dates and money. And its message tags can use a Spring message source and a Locale to properly choose messages to render in HTML. By resolving JstlView, the JSTL tags will be given the Locale and any message source configured in Spring.
+
+#Using Spring’s JSP libraries
+- Tag libraries are a powerful way to bring functionality to a JSP template without resorting to writing Java code directly in scriptlet blocks.
+
+#form-binding tag library
+- form can be prepopulated and validation errors can be displayed after a failed form submission.
+- Spring’s form-binding JSP tag library includes 14 tags, most of which render HTML.
+- But what makes these different from the raw HTML tags is that they’re bound to an object in the model and can be populated with values from the model object’s properties.
+- The tag library also includes a tag that can be used to communicate errors to the user by rendering them into the resulting HTML.
+
+<%@ taglib uri="http://www.springframework.org/tags/form" prefix="sf" %>
+<sf:checkbox>: Renders an HTML <input> tag with type set to checkbox.
+<sf:checkboxes>: Renders multiple HTML <input> tags with type set to checkbox.
+*<sf:errors>: Renders field errors in an HTML <span> tag.
+*<sf:form>: Renders an HTML <form> tag and exposed "binding path" to inner tags for data-binding.
+<sf:hidden>: Renders an HTML <input> tag with type set to hidden.
+<sf:input>: Renders an HTML <input> tag with type set to text.
+<sf:label>: Renders an HTML <label> tag.
+<sf:option>: Renders an HTML <option> tag. The selected attribute is set according to the bound value.
+<sf:options>: Renders a list of HTML <option> tags corresponding to the bound collection, array, or map.
+<sf:password>: Renders an HTML <input> tag with type set to password.
+<sf:radiobutton>: Renders an HTML <input> tag with type set to radio.
+<sf:radiobuttons>: Renders multiple HTML <input> tags with type set to radio.
+<sf:select>: Renders an HTML <select> tag.
+<sf:textarea>: Renders an HTML <textarea> tag.
+
+<sf:form method="POST" commandName="spitter"> 
+	First Name: <sf:input path="firstName" /><br/> //value=${spitter.firstName}
+	Last Name: <sf:input path="lastName" /><br/>
+	Email: <sf:input path="email" /><br/>
+	Username: <sf:input path="username" /><br/>
+	Password: <sf:password path="password" /><br/>
+	<input type="submit" value="Register" />
+</sf:form>
+
+- The <sf:form> tag renders an HTML <form> tag. But it also sets some context around a model object designated in the commandName attribute. 
+- Properties on the model object will be referenced in the other form-binding tags you use.
+- In the preceding code, you set commandName to spitter. Therefore, there must be an object in the model whose key is spitter, or else the form won’t be able to render (and you’ll get JSP errors). Add a Spitter object is in the model
+model.addAttribute(new Spitter());
+- Its value attribute will be set to the value of the model object’s property specified in the path attribute
+- starting with Spring 3.1, the <sf:input> tag allows you to specify a type attribute so that you can declare HTML 5–specific type text fields such as data,
+range, and email, among other options.
+<sf:input path="email" type="email" /><br/>
+rendered ad: <input id="email" name="email" type="email" value="jack"/><br/>
+
+#<sf:errors>
+<sf:form method="POST" commandName="spitter">
+	First Name: <sf:input path="firstName" />
+	<sf:errors path="firstName" /><br/>
+	...
+</sf:form>
+- its path attribute is set to firstName, the name of the Spitter model object property for which errors should be displayed. If there are no errors for the firstName property, then <sf:errors> won’t render anything. But if there is a validation error, it will render that error message in an HTML <span> tag.
+- set the cssClass attribute for changing the style of the error so that it stands out 
+<sf:errors path="firstName" cssClass="error" />
+- display error all together. 
+<sf:errors path="*" element="div" cssClass="errors" />
+- set the element attribute to div. By default, errors are rendered in an HTML <span> tag
+- setting the cssErrorClass attribute on each field. You can also wrap each label with <sf:label> and set its cssErrorClass
+<sf:form method="POST" commandName="spitter" >
+	<sf:label path="firstName" cssErrorClass="error">First Name</sf:label>:
+	<sf:input path="firstName" cssErrorClass="error" /><br/>
+	...
+</sf:form>
+
+- set the message attribute on the validation annotations to reference a friendly message
+@NotNull
+@Size(min=5, max=16, message="{username.size}")
+private String username;
+
+- create a file named ValidationMessages.properties at the root of the classpath
+firstName.size=First name must be between {min} and {max} characters long.
+lastName.size=Last name must be between {min} and {max} characters long.
+username.size=Username must be between {min} and {max} characters long.
+password.size=Password must be between {min} and {max} characters long.
+email.valid=The email address must be valid.
+- the key for each message in ValidationMessages.properties corresponds to the placeholder values in the message attributes
+- messages have placeholders of their own—{min} and {max}—that reference the min and max attributes given on the @Size annotation
+- extracting the error messages to a properties file enables displaying language- and locale-specific messages by creating a locale-specific properties
+file such as ValidationMessages_es.properties:
+firstName.size=Nombre debe ser entre {min} y {max} caracteres largo.
+lastName.size=El apellido debe ser entre {min} y {max} caracteres largo.
+username.size=Nombre de usuario debe ser entre {min} y {max} caracteres largo.
+password.size=Contraseña debe estar entre {min} y {max} caracteres largo.
+email.valid=La dirección de email no es válida
+
+根据浏览器语言设置，broswser will send http request with different Content-Language header, if the Content-Language header matches the resource bunder suffix.
+e.g. Content-Language:es matches ValidationMessages_es.properties, message in the file will be displayed, if npm match, default message from ValidationMessages.properties will be used.
+Content-Language:zh
+Content-Language:es
+
+#SPRING’S GENERAL TAG LIBRARY
+- <%@ taglib uri="http://www.springframework.org/tags" prefix="s" %>
+<s:bind>: Exports a bound property status to a page-scoped status property. Used along with <s:path> to obtain a bound property value.
+<s:escapeBody>: HTML and/or JavaScript escapes the content in the body of the tag. 
+<s:hasBindErrors>: Conditionally renders content if a specified model object (in a request attribute) has bind errors.
+<s:htmlEscape>: Sets the default HTML escape value for the current page.
+<s:message>: Retrieves the message with the given code and either renders it (default) or assigns it to a page-, request-, session-, or application-scoped variable (when using the var and scope attributes).
+<s:nestedPath>: Sets a nested path to be used by <s:bind>.
+<s:theme>: Retrieves a theme message with the given code and either renders it (default) or assigns it to a page-, request-, session-, or application-scoped
+variable (when using the var and scope attributes).
+<s:transform>: Transforms properties not contained in a command object using a command object’s property editors.
+<s:url>: Creates context-relative URLs with support for URI template variables and HTML/XML/JavaScript escaping. Can either render the URL (default) or
+assign it to a page-, request-, session-, or application-scoped variable (when using the var and scope attributes).
+<s:eval>: Evaluates Spring Expression Language (SpEL) expressions, rendering the result (default) or assigning it to a page-, request-, session-, or applicationscoped variable (when using the var and scope attributes).
+
+#DISPLAYING INTERNATIONALIZED MESSAGES
+- As it stands, your JSP templates contain a lot of hard-coded text, it doesn’t lend itself to easily changing the text. 
+- Moreover, there’s no way to internationalize the text so it’s tailored to the user’s language settings.
+- The <s:message> tag is perfect for rendering text that’s externalized in one or more properties files:
+<h1><s:message key="spittr.welcome" /></h1>
+- <s:message> will render the text available from a message source where the key is spittr.welcome.
+- Spring has a handful of message-source classes, all implementing the MessageSource interface. One of the more common and useful implementations is "ResourceBundleMessageSource". It loads messages from a properties file whose name is derived from a base name.
+@Bean
+public MessageSource messageSource() {
+	ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
+	messageSource.setBasename("messages"); //base name to resolve properties file names
+	return messageSource;
+}
+- setting of the basename property. You can set it to any value you’d like, but here I’ve chosen to set it to messages. By setting it to messages, you can expect ResourceBundleMessageResolver to resolve messages from properties files at the root of the classpath whose names are derived from that base name.
+- ReloadableResourceBundleMessageSource works much like ResourceBundleMessageSource, but it has the ability to reload message properties without recompiling or restarting the application.
+@Bean
+public MessageSource messageSource() {
+	ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
+	messageSource.setBasename("file:///etc/spittr/messages");
+	messageSource.setCacheSeconds(10);
+	return messageSource;
+}
+- The basename property can be set to look for messages in the classpath (with a classpath: prefix), in the filesystem (with a file: prefix), or at the root of the web application(with no prefix).
+- create the default properties file named messages.properties:
+spittr.welcome=Welcome to Spittr!
+- create another properties file named messages_es.properties:
+spittr.welcome=Bienvenidos a Spittr!
+
+#CREATING URLS
+- <s:url> tag's main job is to create a URL and either assign it to a variable or render it in the response. It’s a drop-in replacement for JSTL’s
+<c:url> tag, but with a few new tricks up its sleeve.
+
+<a href="<s:url href="/spitter/register" />">Register</a>
+- prepend servlet context: In its simplest form, <s:url> takes a servlet-context-relative URL and renders it with the servlet context path prepended.
+<a href="<s:url href="/spitter/register" />">Register</a>
+- rendered as:
+<a href="/spittr/spitter/register">Register</a> // /spittr is the servlet context
+
+- reuse: have <s:url> construct the URL and assign it to a variable to be used later in the template
+<s:url href="/spitter/register" var="registerUrl" />
+<a href="${registerUrl}">Register</a>
+
+- resue: By default, URL variables are created in page scope. But you can have <s:url> create them in application, session, or request scope instead by setting the scope attribute:
+<s:url href="/spitter/register" var="registerUrl" scope="request" />
+
+- use <s:param> tag to add parameters to the URL:
+<s:url href="/spittles" var="spittlesUrl">
+	<s:param name="max" value="60" />
+	<s:param name="count" value="20" />
+</s:url>
+
+- create a URL with a path parameter
+<s:url href="/spitter/{username}" var="spitterUrl">
+	<s:param name="username" value="jbauer" />
+</s:url>
+- the parameter is inserted into the placeholder’s spot. If the <s:param> parameter doesn’t match any placeholders in href, then the parameter is used as a
+query parameter.
+
+#Defining a layout with Apache Tiles views
+- add a common header and footer to all pages in the application
+- use a layout engine such as Apache Tiles to define a common page layout that will be applied to all pages. 
+- Spring MVC provides support for Apache Tiles in the form of a view resolver that can resolve logical view names into tile definitions.
+- 1)declare a TilesConfigurer bean whose job is to locate and load tile definitions and generally coordinate Tiles. 
+
+@Bean
+public TilesConfigurer tilesConfigurer() {
+	TilesConfigurer tiles = new TilesConfigurer();
+	tiles.setDefinitions(new String[] {
+		"/WEB-INF/layout/tiles.xml"			//Specify tile definition locations
+	});
+	tiles.setCheckRefresh(true);			//Enable refresh
+	return tiles;
+}
+- the most important property you set is definitions. This property takes an array of Strings where each entry specifies the location of tile-definition XML files. For the Spittr application, you’ll have it look for /WEB-INF/layout/tiles.xml
+- it’s also possible to specify multiple tile-definition files and even use wildcards in the location path. For example, you could ask that TilesConfigurer look for any file named tiles.xml anywhere under the /WEB-INF/ directory by setting the definitions property like this:
+tiles.setDefinitions(new String[] {
+	"/WEB-INF/**/tiles.xml"
+});
+
+- 2)declare a TilesViewResolver bean to resolve logical view names to tile definitions.
+@Bean
+public ViewResolver viewResolver() {
+	return new TilesViewResolver();
+}
+
+#DEFINING TILES
+- Apache Tiles provides a document type definition (DTD) for specifying tile definitions in an XML file. Each definition consists of a <definition> element that generally has one or more <put-attribute> elements.
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+	"http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+<tiles-definitions>
+	<definition name="base" template="/WEB-INF/layout/page.jsp">			//base definition
+		<put-attribute name="header" value="/WEB-INF/layout/header.jsp" />
+		<put-attribute name="footer" value="/WEB-INF/layout/footer.jsp" />
+	</definition>
+	<definition name="home" extends="base">									//home definition, inherit header/footer
+		<put-attribute name="body" value="/WEB-INF/views/home.jsp" />
+	</definition>
+	<definition name="registerForm" extends="base">							//registerForm definition
+		<put-attribute name="body" value="/WEB-INF/views/registerForm.jsp" />
+	</definition>
+	<definition name="profile" extends="base">								//profile definition
+		<put-attribute name="body" value="/WEB-INF/views/profile.jsp" />	
+	</definition>
+	<definition name="spittles" extends="base">								//spittles definition
+		<put-attribute name="body" value="/WEB-INF/views/spittles.jsp" />	
+	</definition>
+	<definition name="spittle" extends="base">								//spittle definition
+		<put-attribute name="body" value="/WEB-INF/views/spittle.jsp" />	
+	</definition>
+</tiles-definitions>
+
+- Each <definition> element defines a tile that ultimately references a JSP template. 
+- In the case of the tile whose name is base, the template referenced is at /WEB-INF/layout/page.jsp.
+- A tile may also reference other JSP templates to be embedded in the main template. For the base tile, it references a header JSP template and a footer JSP
+template.
+<html>
+	<head>
+		<title>Spittr</title>
+			...
+	</head>
+	<body>
+		<div id="header">
+			<t:insertAttribute name="header" />		//Insert the header 
+		</div>
+		<div id="content">
+			<t:insertAttribute name="body" />		//Insert the body
+		</div>
+		<div id="footer">
+			<t:insertAttribute name="footer" />		//Insert the footer
+		</div>
+	</body>
+</html>
+
+- The header and footer attributes were set in the base tile definition to point at /WEB-INF/layout/header.jsp and /WEB-INF/layout/footer.jsp respectively.
+- The base tile is never expected to be used on its own. It serves as a base definition (thus the meaning behind its name) for other tile definitions to extend. the other tile definitions all extend base.
+- This means they inherit its settings for the header and footer attributes (although they could choose to override them).
+- But each also sets a body attribute to reference a JSP template specific to that tile.
+- therfore, home tile's effective definition is the following:
+<definition name="home" template="/WEB-INF/layout/page.jsp">
+	<put-attribute name="header" value="/WEB-INF/layout/header.jsp" />
+	<put-attribute name="footer" value="/WEB-INF/layout/footer.jsp" />
+	<put-attribute name="body" value="/WEB-INF/views/home.jsp" />
+</definition>
+
+- The key point here is that the common elements of a page are captured in page.jsp, header.jsp, and footer.jsp and are absent in each of the other tile templates. This makes them reusable across all pages and simplifies maintenance of those elements.
+
+Testcase :
+1) tiles (done)
+
+#Working with Thymeleaf
+#Disadvantage of JSP
+- JSP has been around for a long time and is ubiquitous among Java web servers, it has a few unfortunate flaws.
+1) it appears to be a form of HTML or XML, but it’s really neither. Most JSP templates take the form of HTML, "littered with tags from various JSP tag libraries".
+2) Although these tag libraries bring dynamic rendering power to JSP in a succinct form, they break any hope of authoring a well-formed document. e.g. a JSP tag can even be used as the value of an HTML parameter: <input type="text" value="<c:out value="${thing.name}"/>" />
+3) Because JSP isn’t truly HTML, many web browsers and editors have problems to display anything that aesthetically approximates what the template will render.
+4) JSP is a specification that’s tightly coupled to the servlet specification. This means it can only be used for web views in a servlet-based web application. JSP templates aren’t an option for general-purpose templating (such as formatted emails) or in web applications that aren’t based on servlets.
+
+#Thymeleaf
+- Thymeleaf templates are natural and don’t rely on tag libraries. 
+- They can be edited and rendered anywhere that raw HTML is welcome. And because they’re not coupled to the servlet specification
+
+- Configuring a Thymeleaf view resolver
+1)A ThymeleafViewResolver that resolves Thymeleaf template views from logical view names
+@Bean
+public ViewResolver viewResolver(SpringTemplateEngine templateEngine) {
+		ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
+		viewResolver.setTemplateEngine(templateEngine);
+		return viewResolver;
+}
+
+2)A SpringTemplateEngine to process the templates and render the results
+@Bean
+public TemplateEngine templateEngine(TemplateResolver templateResolver) {
+		SpringTemplateEngine templateEngine = new SpringTemplateEngine();
+		templateEngine.setTemplateResolver(templateResolver);
+		return templateEngine;
+}
+3)A TemplateResolver that loads Thymeleaf templates
+@Bean
+public TemplateResolver templateResolver() {
+	TemplateResolver templateResolver = new ServletContextTemplateResolver();
+	templateResolver.setPrefix("/WEB-INF/templates/");
+	templateResolver.setSuffix(".html");
+	templateResolver.setTemplateMode("HTML5");
+	return templateResolver;
+}
+
+- ThymeleafViewResolver is an implementation of Spring MVC’s ViewResolver. Just like any view resolver, it takes a logical view name and resolves a view. But in this case, that view is ultimately a Thymeleaf template.
+- Notice that the ThymeleafViewResolver bean is injected with a reference to the SpringTemplateEngine bean. SpringTemplateEngine is a Spring-enabled Thymeleaf
+engine for parsing templates and rendering results based on those templates. As you can see, it’s injected with a reference to the TemplateResolver bean.
+- TemplateResolver is what ultimately locates the templates. It’s configured much as you previously configured InternalResourceViewResolver with prefix and
+suffix properties. The prefix and suffix are applied to the logical view name to locate the Thymeleaf template. Its templateMode property is also set to HTML5, indicating that the templates resolved are expected to render HTML5 output.
+
+- ThymeleafViewResolver ref SpringTemplateEngine ref TemplateResolver, templateResolver locates the actual template
+
+#Defining Thymeleaf templates
+- Thymeleaf templates are primarily just HTML files. There are no special tags or tag libraries as with JSP. 
+- it adds Thymeleaf attributes to the standard set of HTML tags via a custom namespace. 
+<html xmlns="http://www.w3.org/1999/xhtml" 
+			xmlns:th="http://www.thymeleaf.org">											//Declare Thymeleaf namespace
+	<head>
+		<title>Spittr</title>
+		<link rel="stylesheet" type="text/css" th:href="@{/resources/style.css}"></link>	//th:href link to stylesheet
+	</head>
+	<body>
+		<h1>Welcome to Spittr</h1>
+		<a th:href="@{/spittles}">Spittles</a> |											//th:href links to pages
+		<a th:href="@{/spitter/register}">Register</a>
+	</body>
+</html>
+
+- th:href attribute greatly resembles its native HTML counterpart, the href attribute, and can be used the same way. 
+- th:href attribute's value can contain Thymeleaf expressions to evaluate dynamic values. It will render a standard href attribute containing a value that’s dynamically created at render time. 
+- attributes in the Thymeleaf namespace mirror the standard HTML attribute that they share a name with, to render some computed value. 
+- In this case, all three uses of the th:href attribute use the @{} expressions to calculate context-sensitive URL paths (much as you might use JSTL’s <c:url> tag or Spring’s <s:url> tag in a JSP page). 
+- The only thing that stands out is the th:href attribute. Otherwise, it’s your basic, garden-variety HTML file.
+
+#FORM BINDING WITH THYMELEAF
+- instead of using Spring’s JSP tags to achieve form binding, you’ll take advantage of features of Thymeleaf’s Spring dialect.
+
+<label th:class="${#fields.hasErrors('firstName')}? 'error'">First Name</label>:
+<input type="text" th:field="*{firstName}" th:class="${#fields.hasErrors('firstName')}? 'error'" /><br/>
+
+- Instead of using the cssClassName attribute as you did with Spring’s JSP tags, here you use Thymeleaf’s th:class attribute on standard HTML tags. The th:class attribute renders a class attribute with a value calculated from the given expression. In both uses of th:class, it directly checks to see if there are any field errors for the firstName field. If so, the class attribute is rendered with a value of error. If there are no field errors, the class attribute isn’t rendered at all.
+- The <input> tag uses the th:field attribute to reference the firstName field from the backing object.
+- because you’re binding the field to the backing object’s firstName property, you use the th:field attribute, referring to the firstName field. By using
+th:field, you get both a value attribute set to the value of firstName and also a name attribute set to firstName.
+
+<form method="POST" th:object="${spitter}">	//th:object ref to a Spitter object from the model
+	<div class="errors" th:if="${#fields.hasErrors('*')}">	//checks to see if there are any errors
+		<ul>
+			//The th:each attribute on the <li> tag instructs Thymeleaf to render the <li> one time for each error
+			//th:text attribute render its value as the body of the <li> tag
+			<li th:each="err : ${#fields.errors('*')}" th:text="${err}">Input is incorrect</li>
+		</ul>
+	</div>
+	
+	<label th:class="${#fields.hasErrors('firstName')}? 'error'">First Name</label>:
+	<input type="text" th:field="*{firstName}" th:class="${#fields.hasErrors('firstName')}? 'error'" /><br/>	//*{firstName} ref to spitter.firstname
+	
+	<label th:class="${#fields.hasErrors('lastName')}? 'error'">Last Name</label>:
+	<input type="text" th:field="*{lastName}" th:class="${#fields.hasErrors('lastName')}? 'error'" /><br/>
+
+	<label th:class="${#fields.hasErrors('email')}? 'error'">Email</label>:
+	<input type="text" th:field="*{email}" th:class="${#fields.hasErrors('email')}? 'error'" /><br/>
+	
+	<label th:class="${#fields.hasErrors('username')}? 'error'">Username</label>:
+	<input type="text" th:field="*{username}" th:class="${#fields.hasErrors('username')}? 'error'" /><br/>
+
+	<label th:class="${#fields.hasErrors('password')}? 'error'">Password</label>:
+	<input type="password" th:field="*{password}" th:class="${#fields.hasErrors('password')}? 'error'" /><br/>	
+	<input type="submit" value="Register" />
+</form>
+
+- Thymeleaf is used near the top of the form to render all errors. The <div> element has a th:if attribute that checks to see if there are any errors. If
+there are, the <div> will be rendered. Otherwise, it won’t be rendered.
+- In the <div> is an unordered list to display each of the errors. The th:each attribute on the <li> tag instructs Thymeleaf to render the <li> one time for each error, assigning the current error in each iteration to a variable named err.
+- th:text attribute. This attribute instructs Thymeleaf to evaluate an expression (in this case, the value of the err variable) and render its value as the body of the <li> tag. In effect, there will be one <li> for each error, displaying the text of that error.
+
+- the difference between the expressions wrapped with ${} and those wrapped with *{}. The ${} expressions (such as ${spitter}) are variable
+expressions. Normally, these are Object-Graph Navigation Language (OGNL) expressions (http://commons.apache.org/proper/commons-ognl/). But when used
+with Spring, they’re SpEL expressions. In the case of ${spitter}, it resolves to the model property whose key is spitter.
+
+- As for *{} expressions, they’re selection expressions. Whereas variable expressions are evaluated against the entire SpEL context, selection expressions are evaluated on a selected object. In the case of the form, the selected object is the one given in the <form> tag’s th:object attribute: a Spitter object from the model. Therefore the *{firstName} expression evaluates to the firstName property on the Spitter object.
+
+Test case: Thymleaf home.html (done)
+1) setup resolver/templateEmgine/templateResolver
+2) home.html, spitter.html
+
+7. Chapter 7 Advanced Spring MVC
+- how to pass data around in the model such that it survives a redirect
+
+#Alternate Spring MVC configuration
+- Spring configuration in Java may not always fit what you need. You may need servlets and filters in addition to DispatcherServlet. Maybe you need to do some additional configuration on DispatcherServlet itself. if you’re deploying your application to a pre-Servlet 3.0 container, you may need to
+configure DispatcherServlet in a traditional web.xml file.
+
+#Customizing DispatcherServlet configuration
+- The three methods you wrote in SpittrWebAppInitializer were the only abstract ones you were required to override. But there are more methods that can be overridden to apply additional configuration.
+- If you plan to use Servlet 3.0 support for multipart configuration, you need to enable DispatcherServlet’s registration to enable multipart requests. You can override the customizeRegistration() method to set a MultipartConfigElement like this:
+@Override
+protected void customizeRegistration(Dynamic registration) {
+	registration.setMultipartConfig(new MultipartConfigElement("/tmp/spittr/uploads"));
+}
+- With the ServletRegistration.Dynamic that’s given to customizeRegistration(), you can do several things, including set the load-on-startup priority by calling setLoadOnStartup(), set an initialization parameter by calling setInitParameter(), and call setMultipartConfig() to configure Servlet 3.0 multipart support. 
+- In the preceding example, you’re setting up multipart support to temporarily store uploaded files at /tmp/spittr/uploads.
+
+#Adding additional servlets and filters
+- AbstractAnnotationConfigDispatcherServletInitializer will create a DispatcherServlet and a ContextLoaderListener. 
+- WebApplicationInitializer is a fine general-purpose way of registering servlets, filters, and listeners in Java when deploying to a Servlet 3.0 container.
+- Using Java-based initializer (unlike with web.xml), you can define as many initializer classes as you want. Therefore, if you need to register any additional components into the web container, you need only create a new initializer class. 
+- The easiest way to do this is by implementing Spring’s WebApplicationInitializer interface. the following listing shows how to create an implementation of
+WebApplicationInitializer that registers a servlet:
+
+import javax.servlet.ServletRegistration.Dynamic;
+import org.springframework.web.WebApplicationInitializer;
+import com.myapp.MyServlet;
+public class MyServletInitializer implements WebApplicationInitializer {
+	@Override
+	public void onStartup(ServletContext servletContext) throws ServletException {
+		Dynamic myServlet = servletContext.addServlet("myServlet", MyServlet.class); 	//Register the servlet
+		myServlet.addMapping("/custom/**");												//Map the servlet
+	}
+}
+
+- You could use this approach to register DispatcherServlet manually. (But there’s no need, because AbstractAnnotationConfigDispatcherServletInitializer does a fine job without as much code.)
+
+- Similarly, you can register listeners and filters by creating a new implementation of WebApplicationInitializer.
+@Override
+public void onStartup(ServletContext servletContext) throws ServletException {
+	javax.servlet.FilterRegistration.Dynamic filter = servletContext.addFilter("myFilter", MyFilter.class);		//Register filter
+	filter.addMappingForUrlPatterns(null, false, "/custom/*");													//Add filter mapping
+}
+
+- if you’re registering a filter and only need to map that filter to DispatcherServlet, then there’s a shortcut in AbstractAnnotationConfigDispatcherServletInitializer.
+
+- To register one or more filters and map them to DispatcherServlet, all you need to do is override the getServletFilters() method of AbstractAnnotationConfigDispatcherServletInitializer. For example, the following getServletFilters() method overrides the one from AbstractAnnotationConfigDispatcherServletInitializer to register a filter:
+@Override
+protected Filter[] getServletFilters() {
+	return new Filter[] { new MyFilter() };
+}
+- As you can see, this method returns an array of javax.servlet.Filter. Here it only returns a single filter, but it could return as many filters as you need. There’s no need to declare the mapping for the filters; any filter returned from getServletFilters() will automatically be mapped to DispatcherServlet.
+
+- When deploying to a Servlet 3.0 container, Spring offers several ways of registering servlets (including DispatcherServlet), filters, and listeners without creating a web.xml file.
+
+#Declaring DispatcherServlet in web.xml
+<?xml version="1.0" encoding="UTF-8"?>
+	<web-app version="2.5" 	xmlns="http://java.sun.com/xml/ns/javaee"
+							xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+							xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+							http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>/WEB-INF/spring/root-context.xml</param-value>		//Set root context location
+	</context-param>
+
+	<listener>
+		<listener-class>
+			org.springframework.web.context.contextLoaderListener 		//Register ContextLoaderListener
+		</listener-class>
+	</listener>
+
+	<servlet>
+		<servlet-name>appServlet</servlet-name>
+		<servlet-class>
+			org.springframework.web.servlet.DispatcherServlet 			//Register DispatcherServlet
+		</servlet-class>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>
+				/WEB-INF/spring/appServlet/servlet-context 				//set DispatcherServlet configuration file location
+			</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>appServlet</servlet-name>
+		<url-pattern>/</url-pattern>									//Map DispatcherServlet to /
+	</servlet-mapping>
+</web-app>
+
+- DispatcherServlet loads its application context with beans defined in a file whose name is based on the servlet name. In above listing, the servlet is named appServlet. Therefore, DispatcherServlet loads its application context from an XML file at /WEB-INF/appServlet-context.xml.
+- If you’d rather specify the location of the DispatcherServlet configuration file, you can set a "contextConfigLocation initialization parameter on the servlet". 
+
+#Configuring web.xml to use Java configuration
+- To use Java-based configuration in Spring MVC, you need to tell DispatcherServlet and ContextLoaderListener to use AnnotationConfigWebApplicationContext, an
+implementation of WebApplicationContext that loads Java configuration classes instead of XML.
+
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="2.5" 	xmlns="http://java.sun.com/xml/ns/javaee"
+						xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+						xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+						http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+
+	<context-param>
+		<param-name>contextClass</param-name>
+		<param-value>																		
+			org.springframework.web.context.support.AnnotationConfigWebApplicationContext
+																			//register application context loader class, default to XmlWebApplicationContext
+		</param-value>
+	</context-param>
+	
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>com.habuma.spitter.config.RootConfig</param-value>		//register java config class location == root-context.xml location		
+	</context-param>
+
+	<listener>
+		<listener-class>
+			org.springframework.web.context.contextLoaderListener 			//register context listener
+		</listener-class>
+	</listener>
+
+	<servlet>
+		<servlet-name>appServlet</servlet-name>								//register Dispatcher Servlet
+		<servlet-class>
+			org.springframework.web.servlet.DispatcherServlet
+		</servlet-class>
+		<init-param>
+			<param-name>contextClass</param-name>			//Dispatcher servlet's init param define context loader class, default to XmlWebApplicationContext
+			<param-value>
+				org.springframework.web.context.support.AnnotationConfigWebApplicationContext
+			</param-value>
+		</init-param>
+
+		<init-param>										//Dispatcher servlet's init param define java config class location == appServlet-servlet.xml
+			<param-name>contextConfigLocation</param-name>
+			<param-value>
+				com.habuma.spitter.config.WebConfigConfig
+			</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+	
+	<servlet-mapping>										//DispatcherServlet mapping / handles all requests
+		<servlet-name>appServlet</servlet-name>
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+</web-app>
+
+Test case:
+1) web.xml config loading default xml context file (done)
+- declare DispatcherServlet and mapping
+- declare ContextListener
+- default configuration file location should be /WEB-INF/servletName-servlet.xml and /WEB-INF/applicationContext.xml
+
+2) web.xml config loading xml context file from customized locations (done)
+- specify configuration file location. In servlet config, specify <init-param><param-name>contextConfigLocation; speficy <context-param><param-name>contextConfigLocation
+- furthermore, you can use only DispatcherServlet or contextListener to load both context config files. 
+
+3) web.xml config loading java web configs (done)
+- instead of specify xml config file location, specify java config class location: <init-param><param-name>contextConfigLocation  <init-param><param-value>xxx.xxx.WebConfig
+- also need to specify <init-param><param-name>contextClass to AnnotationConfigWebApplicationContext
+- meanwhile, need to specify java config location and contextClass in <context-param> for contextListener
+
+4) pure java config (done)
+- WebAppInitializer class extends AbstractAnnotationConfigDispatcherServletInitializer and implements three methods: getRootConfigClasses(), getServletConfigClasses() and getServletMappings() (==web.xml)
+
+#Processing multipart form data
+- The request resulting from a typical form submission is simple and takes the form of multiple name-value pairs separated by ampersands. when submitting
+the registration form from the Spittr application, the request might look like this:
+firstName=Charles&lastName=Xavier&email=professorx%40xmen.org&username=professorx&password=letmein01
+-In contrast, multipart form data breaks a form into individual parts, with one part per field. Each part can have its own type. Typical form fields have textual data in their parts, but when something is being uploaded, the part can be binary:
+
+------WebKitFormBoundaryqgkaBn8IHJCuNmiW
+Content-Disposition: form-data; name="firstName"
+
+Charles
+
+------WebKitFormBoundaryqgkaBn8IHJCuNmiW
+Content-Disposition: form-data; name="lastName"
+
+Xavier
+...
+------WebKitFormBoundaryqgkaBn8IHJCuNmiW
+Content-Disposition: form-data; name="profilePicture"; filename="me.jpg"
+Content-Type: image/jpeg				//it has its own Content-Type header indicating that it’s a JPEG image
+[[ Binary image data goes here ]]
+------WebKitFormBoundaryqgkaBn8IHJCuNmiW--
+
+#Configuring a multipart resolver
+- Since Spring 3.1, Spring comes with two out-of-the-box implementations of MultipartResolver to choose from:
+1) CommonsMultipartResolver — Resolves multipart requests using Jakarta Commons FileUpload
+2) StandardServletMultipartResolver — Relies on Servlet 3.0 support for multipart requests (since Spring 3.1)
+
+- Generally speaking, StandardServletMultipartResolver should probably be your first choice of these two. It uses existing support in your servlet container and doesn’t require any additional project dependencies. 
+- But you might choose CommonsMultipartResolver if you’ll be deploying your application to a pre-Servlet 3.0 container or if you aren’t using Spring 3.1 or higher yet.
+
+#RESOLVING MULTIPART REQUESTS WITH SERVLET 3.0
+- declare MultipartResolver as a bean in your Spring configuration
+@Bean
+public MultipartResolver multipartResolver() throws IOException {
+	return new StandardServletMultipartResolver();
+}
+
+- instead of configuring StandardServletMultipartResolver in your Spring configuration, you must specify multipart configuration in the servlet
+configuration.
+- If you’re configuring DispatcherServlet in a servlet initializer class that implements WebApplicationInitializer, you can configure multipart details by calling setMultipartConfig() on the servlet registration, passing an instance of MultipartConfigElement.
+DispatcherServlet ds = new DispatcherServlet();
+Dynamic registration = context.addServlet("appServlet", ds);
+registration.addMapping("/");
+registration.setMultipartConfig(new MultipartConfigElement("/tmp/spittr/uploads")); //sets the temporary location to /tmp/spittr/uploads
+
+- If you’ve configured DispatcherServlet in a servlet initializer class that extends AbstractAnnotationConfigDispatcherServletInitializer or AbstractDispatcherServletInitializer, you don’t create the instance of DispatcherServlet or register it with the servlet context directly.
+- Consequently, there’s no handy reference to the Dynamic servlet registration to work with. But you can override the customizeRegistration() method (which is given a Dynamic as a parameter) to configure multipart details:
+
+@Override
+protected void customizeRegistration(Dynamic registration) {
+	registration.setMultipartConfig(new MultipartConfigElement("/tmp/spittr/uploads"));
+}
+- The single-argument constructor for MultipartConfigElement that you’ve been using thus far takes the absolute path to a directory in the filesystem where the uploaded file will be written temporarily.
+
+- In addition to the temporary location path, the other constructor accepts the following:
+1) The maximum size (in bytes) of any file uploaded. By default there is no limit.
+2) The maximum size (in bytes) of the entire multipart request, regardless of how many parts or how big any of the parts are. By default there is no limit.
+3) The maximum size (in bytes) of a file that can be uploaded without being written to the temporary location. The default is 0, meaning that all uploaded files will be written to disk.
+
+@Override
+protected void customizeRegistration(Dynamic registration) {
+	registration.setMultipartConfig(
+			new MultipartConfigElement("c:/tmp/spittr/uploads", 2097152, 4194304, 0));
+}
+
+- limit files to no more than 2 MB, to limit the entire request to no more than 4 MB, and to write all files to disk.
+- If you’re configuring DispatcherServlet in a more traditional way in web.xml, you can specify multipart configuration using the <multipart-config> element in the <servlet> element, like this:
+<servlet>
+	<servlet-name>appServlet</servlet-name>
+	<servlet-class>
+		org.springframework.web.servlet.DispatcherServlet
+	</servlet-class>
+	<load-on-startup>1</load-on-startup>
+	<multipart-config>
+		<location>/tmp/spittr/uploads</location>
+		<max-file-size>2097152</max-file-size>
+		<max-request-size>4194304</max-request-size>
+	</multipart-config>
+</servlet>
+
+#CONFIGURING A JAKARTA COMMONS FILEUPLOAD MULTIPART RESOLVER
+- Spring offers CommonsMultipartResolver as an out-of-the-box alternative to StandardServletMultipartResolver
+
+- declare CommonsMultipartResolver as a Spring bean:
+@Bean
+public MultipartResolver multipartResolver() {
+	return new CommonsMultipartResolver();
+}
+
+- specify other multipart upload details directly in the Spring configuration:
+@Bean
+public MultipartResolver multipartResolver() throws IOException {
+	CommonsMultipartResolver multipartResolver = new CommonsMultipartResolver();
+	multipartResolver.setUploadTempDir(new FileSystemResource("/tmp/spittr/uploads"));
+	multipartResolver.setMaxUploadSize(2097152);
+	multipartResolver.setMaxInMemorySize(0);
+	return multipartResolver;
+}
+- Unlike StandardServletMultipartResolver, there’s no need to configure a temporary file location with CommonsMultipartResolver. By default, the location is the servlet container’s temporary directory.
+- Unlike MultipartConfigElement, however, there’s no way to specify the maximum multipart request size.
+
+#Handling multipart requests
+- The most common way of doing that is to annotate a controller method parameter with @RequestPart.
+- update the form so that the user can select a picture to be uploaded
+<form method="POST" th:object="${spitter}" enctype="multipart/form-data">
+	...
+	<label>Profile Picture</label>:
+	<input type="file" name="profilePicture" accept="image/jpeg,image/png,image/gif" /><br/>
+	...
+</form>
+
+- enctype="multipart/form-data and <input type="file"...>
+
+- change the processRegistration() method to accept the uploaded image. One way to do that is to add a byte array parameter that’s annotated with @RequestPart:
+
+@RequestMapping(value="/register", method=POST)
+public String processRegistration(@RequestPart("profilePicture") byte[] profilePicture, @Valid Spitter spitter, Errors errors) {
+	...
+}
+
+#RECEIVING A MULTIPARTFILE
+- Working with the uploaded file’s raw bytes is simple but limiting, Spring also offers MultipartFile as a way to get a richer object for processing multipart data:
+
+package org.springframework.web.multipart;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+
+public interface MultipartFile {
+	String getName();
+	String getOriginalFilename();
+	String getContentType();
+	boolean isEmpty();
+	long getSize();
+	byte[] getBytes() throws IOException;
+	InputStream getInputStream() throws IOException;
+	void transferTo(File dest) throws IOException;
+}
+- MultipartFile offers a way to get at the bytes for the uploaded file. But it offers much more, including the original filename, size, and content type. It
+also offers an InputStream for reading the file data as a stream.
+- MultipartFile offers a convenient transferTo() method to help you write the uploaded file to the filesystem. e.g.
+profilePicture.transferTo(new File("/data/spittr/" + profilePicture.getOriginalFilename()));
+
+#SAVING FILES TO AMAZON S3
+
+#RECEIVING THE UPLOADED FILE AS A PART
+- If you’re deploying your application to a Servlet 3.0 container, you have an alternative to MultipartFile. Spring MVC will also accept a javax.servlet.http.Part as a controller method parameter. Using Part instead of MultipartFile leaves the processRegistration() method signature looking like this:
+@RequestMapping(value="/register", method=POST)
+	public String processRegistration(@RequestPart("profilePicture") Part profilePicture, @Valid Spitter spitter, Errors errors) {
+	...
+}
+- For the most part, the Part interface isn’t much different from MultipartFile. As you can see in the next listing, the Part interface has several methods
+that mirror the methods in MultipartFile.
+package javax.servlet.http;
+import java.io.*;
+import java.util.*;
+public interface Part {
+	public InputStream getInputStream() throws IOException;
+	public String getContentType();
+	public String getName();
+	public String getSubmittedFileName();
+	public long getSize();
+	public void write(String fileName) throws IOException;
+	public void delete() throws IOException;
+	public String getHeader(String name);
+	public Collection<String> getHeaders(String name);
+	public Collection<String> getHeaderNames();
+}
+
+profilePicture.write("/data/spittr/" + profilePicture.getOriginalFilename());
+
+- It’s worth noting that if you write your controller handler methods to accept file uploads via a Part parameter, then you don’t need to configure the StandardServletMultipartResolver bean. StandardServletMultipartResolver is required only when you’re working with MultipartFile.
+
+#Test cases:
+1)  JAKARTA COMMONS FILEUPLOAD MULTIPART RESOLVER + servlet 2.3 using xml: sia3 (done)
+- in jsp form: <form enctype="multipart/form data"/> <input type="file" name="image">
+- MutipartResolver bean: 
+<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"> + uploadSize...
+- @RequestParam("image") MultiPartFile file
+- file.transferTo(new File("/abc/def/"+filename))
+
+2)  JAKARTA COMMONS FILEUPLOAD MULTIPART RESOLVER + java config: sia4 java config (done)
+- in jsp file form: (same as above)
+- @Bean InternalResourceViewResolver in WebConfig (Depending on the view template used)
+- @Bean multipartResolver in WebConfig (using CommonsMultipartResolver)
+- @RequestParam("image") MultiPartFile file (same as above)
+- file.transferTo(new File("/abc/def/"+filename))  (same as above)
+
+3) java config file upload using servlet3 (done)
+- in jsp file form: (same as above)
+- @Bean multipartResolver in WebConfig (using StandardServletMultipartResolver())
+- Config upload parameters for ServletContext in SpittrWebInitializer: registration.setMultipartConfig(new MultipartConfigElement("c:/ftpfile/temp/", 2097152, 4194304, 0));
+- or config in web.xml's servlet config: <multipart-config>
+- @RequestParam("image") MultiPartFile file (same as above)
+- or (@RequestPart("profilePicture") Part profilePicture using javax.servlet.http.Part  (***failed***))
+- file.transferTo(new File("/abc/def/"+filename))  (same as above)
+
+4) saving files to amazon s3.
+
+#Handling exceptions
+- No matter what happens, good or bad, the outcome of a servlet request is a servlet response. If an exception occurs during request processing, the outcome is still a servlet response. Somehow, the exception must be translated into a response.
+- Spring offers a handful of ways to translate exceptions to responses:
+1) Certain Spring exceptions are automatically mapped to specific HTTP status codes.
+2) An exception can be annotated with @ResponseStatus to map it to an HTTP status code.
+3) A method can be annotated with @ExceptionHandler to handle the exception.
+
+#Mapping exceptions to HTTP status codes, Some Spring exceptions are mapped by default to HTTP status codes:
+- BindException 400 - Bad Request
+- ConversionNotSupportedException 500 - Internal Server Error
+- HttpMediaTypeNotAcceptableException 406 - Not Acceptable
+- HttpMediaTypeNotSupportedException 415 - Unsupported Media Type
+- HttpMessageNotReadableException 400 - Bad Request
+- HttpMessageNotWritableException 500 - Internal Server Error
+- HttpRequestMethodNotSupportedException 405 - Method Not Allowed
+- MethodArgumentNotValidException 400 - Bad Request
+- MissingServletRequestParameterException 400 - Bad Request
+- MissingServletRequestPartException 400 - Bad Request
+- NoSuchRequestHandlingMethodException 404 - Not Found
+- TypeMismatchException 400 - Bad Request
+
+- The exceptions above are usually thrown by Spring itself as the result of something going wrong in DispatcherServlet or while performing validation. For example, if DispatcherServlet can’t find a controller method suitable to handle a request, a NoSuchRequestHandlingMethodException will be thrown, resulting in a response with a status code of 404 (Not Found).
+- in the event of any exception that isn’t otherwise mapped, the response will always have a 500 status code.
+
+-Spring offers a way to map exceptions to HTTP status codes via the @ResponseStatus annotation.
+@ResponseStatus(value=HttpStatus.NOT_FOUND, reason="Spittle Not Found")
+public class SpittleNotFoundException extends RuntimeException {
+}
+- After introducing this @ResponseStatus annotation, if a SpittleNotFoundException were to be thrown from a controller method, the response would have a status code of 404 and a reason of Spittle Not Found.
+
+#Writing exception-handling methods
+@ExceptionHandler(DuplicateSpittleException.class)
+public String handleDuplicateSpittle() {
+	return "error/duplicate";
+}
+- The @ExceptionHandler annotation has been applied to the handleDuplicateSpittle() method, designating it as the go-to method when a DuplicateSpittle-
+Exception is thrown. It returns a String, which, just as with the request-handling method, specifies the logical name of the view to render, telling the user that they attempted to create a duplicate entry.
+- @ExceptionHandler methods is that they handle their exceptions from any handler method in the "same controller".
+
+#Advising controllers
+- As of Spring 3.2, by using a controller advice class, spring can handle exceptions thrown from handler methods in any controller. 
+- create a base controller class that all of your controllers could extend to inherit the common @ExceptionHandler method.
+- Spring 3.2 brings another option to the table: controller advice. A controller advice is any class that’s annotated with @ControllerAdvice and has one or more of the following kinds of methods:
+1) @ExceptionHandler-annotated
+2) @InitBinder-annotated
+3) @ModelAttribute-annotated
+-Those methods in an @ControllerAdvice-annotated class are applied globally across all @RequestMapping-annotated methods on all controllers in an application.
+-One of the most practical uses for @ControllerAdvice is to gather all @ExceptionHandler methods in a single class so that exceptions from all controllers are handled consistently in one place.
+@ControllerAdvice
+public class AppWideExceptionHandler {
+	@ExceptionHandler(DuplicateSpittleException.class)
+	public String duplicateSpittleHandler() {
+		return "error/duplicate";
+	}
+}
+- Those methods in an @ControllerAdvice-annotated class are applied globally across all @RequestMapping-annotated methods on all controllers in an application.
+
+#Test cases:
+1) map exceptions to HTTP status codes via the @ResponseStatus annotation. (done)
+@ResponseStatus(value= HttpStatus.NOT_FOUND, reason = "spittle not found")
+public class SpittleNotFoundException extends RuntimeException {
+}
+- 很难看，没什么用
+2) exception-handling methods (done)
+- create exception
+public class DuplicateSpittleException extends RuntimeException {
+}
+- config exception handler nethod in controller 
+@ExceptionHandler(DuplicateSpittleException.class)
+public String handleDuplicateSpittle() {		//exception can be passed into the method: handleDuplicateSpittle(DuplicateSpittleException e)
+	return "error/duplicate";
+}
+- more friendly (done)
+3) @ControllerAdvice
+- WebConfig requires @EnableWebMvc
+- create exception
+- careate AppWideExceptionHandler
+@ControllerAdvice
+public class AppWideExceptionHandler {
+	@ExceptionHandler(DuplicateSpittleException.class)
+	public String duplicateSpittleHandler() {
+		return "error/duplicate";
+	}
+}
+- very userful
+
+#Carrying data across redirect requests
+- it’s generally a good practice to perform a redirect after handling a POST request. Among other things, this prevents the client from reissuing a dangerous POST request if the user clicks the Refresh or back-arrow button in their browser. (<Test>)
+- when a controller method results in a redirect, the original request ends and a new HTTP GET request begins. Any model data carried in the original request dies with the request. The new request is devoid of any model data in its attributes and has to figure it out on its own.
+- a couple of options to get the data from the redirecting method to the redirecthandling method:
+1) Passing data as path variables and/or query parameters using URL templates
+2) Sending data in flash attributes
+
+#Redirecting with URL templates
+- for example, the newly created Spitter’s username is passed as a path variable. But as it’s currently written, the username value is concatenated to the redirect String. That works, but it’s far from bulletproof. String concatenation is dangerous business when constructing things like URLs and SQL queries.
+return "redirect:/spitter/" + username ; 
+- Instead of concatenating your way to a redirect URL, Spring offers the option of using templates to define redirect URLs.
+return "redirect:/spitter/{username}"; test
+- All you need to do is set the value in the model. To do that, the processRegistration() needs to be written to accept a Model as a parameter and populate it with the username: <Test> <Test-Done>
+@RequestMapping(value="/register", method=POST)
+public String processRegistration(Spitter spitter, Model model) {
+		spitterRepository.save(spitter);
+		model.addAttribute("username", spitter.getUsername());
+		return "redirect:/spitter/{username}";
+}
+
+- Because it’s filled into the placeholder in the URL template instead of concatenated into the redirect String, any unsafe characters in the username property are escaped.
+- This is safer than allowing the user to type in whatever they want for the username and then appending it to the path.
+
+- What’s more, any other primitive values in the model are also added to the redirect URL as query parameters. <Test> <Test-Done>
+@RequestMapping(value="/register", method=POST)
+	public String processRegistration(Spitter spitter, Model model) {
+	spitterRepository.save(spitter);
+	model.addAttribute("username", spitter.getUsername());
+	model.addAttribute("spitterId", spitter.getId());
+	return "redirect:/spitter/{username}";
+}
+- because the spitterId attribute from the model doesn’t map to any URL placeholders in the redirect, it’s tacked on to the redirect automatically as a query parameter. If the username attribute is habuma and the spitterId attribute is 42, then the resulting redirect path will be /spitter/habuma?spitterId=42.
+
+- Sending data across a redirect via path variables and query parameters is only good for sending simple values, such as String and numeric values. There’s no good way to send anything more complex in a URL. <Test> <Test-Done> exception thrown when an object is add to attributes and redirect.
+
+#Working with flash attributes
+- Let’s say that instead of sending a username or ID in the redirect, you want to send the actual Spitter object.
+- A Spitter object is a bit more complex than a String or an int. Therefore, it can’t easily be sent as a path variable or a query parameter. It can, however, be set as an attribute in the model.
+- But as we’ve already discussed, model attributes are ultimately copied into the request as request attributes and are lost when the redirect takes place. Therefore, you need to put the Spitter object somewhere that will survive the redirect.
+- One option is to put the Spitter into the session. A session is long-lasting, spanning multiple requests. So you could put the Spitter into the session before the redirect and then retrieve it from the session after the redirect. Of course, you’re also responsible for cleaning it up from the session after the redirect.
+- As it turns out, Spring agrees that putting data into the session is a great way to pass information that survives a redirect. But Spring doesn’t think you should be responsible for managing that data. Instead, Spring offers the capability of sending the data as flash attributes. Flash attributes, by definition, carry data until the next request; then they go away.  
+- Spring offers a way to set flash attributes via RedirectAttributes, a sub-interface of Model added in Spring 3.1. RedirectAttributes offers everything that Model offers, plus a few methods for setting flash attributes.
+@RequestMapping(value="/register", method=POST)
+	public String processRegistration(Spitter spitter, RedirectAttributes model) {
+			spitterRepository.save(spitter);
+			model.addAttribute("username", spitter.getUsername());
+			model.addFlashAttribute("spitter", spitter);
+			return "redirect:/spitter/{username}";
+}
+
+- Flash attributes are stored in the session and then retrieved into the model, surviving a redirect. <Test> <Test-Done>
+@RequestMapping(value="/{username}", method=GET)
+public String showSpitterProfile(@PathVariable String username, Model model) {
+	if (!model.containsAttribute("spitter")) {		
+	//only if the model doesn’t contain a spitter attribute, then showSpitterProfile() will look up the Spitter from the repository 
+		model.addAttribute(
+			spitterRepository.findByUsername(username));
+	}
+	return "profile";
+}
+
+Chapter 16 Spring REST
+
+- controllers usually don’t concern themselves with how resources are represented. Controllers deal with resources in terms of the Java objects
+that define them.
+- two options to transform a resource’s Java representation into the representation to the client:
+1)Content negotiation—A view is selected that can render the model into a representation to be served to the client.
+2)Message conversion—A message converter transforms an object returned from the controller into a representation to be served to the client.
+
+- Match view name + find representation suitable to the client
+- ContentNegotiatingViewResolver considers the Accept header and uses whatever media types it asks for, but only after it first looks at the URL’s file extension.
+There are three ways to configure a ContentNegotiationManager:
+1) Directly declare a bean whose type is ContentNegotiationManager. (more complicated)
+2) Create the bean indirectly via ContentNegotiationManagerFactoryBean.
+3) Override the configureContentNegotiation() method of WebMvcConfigurerAdapter.
+
+- ContentNegotiationManager is relatively new to Spring, having been introduced in Spring 3.2. As of Spring 3.2, most of the setter methods of ContentNegotiatingViewResolver have been deprecated, and you’re encouraged to configure it via a ContentNegotiationManager.
+
+- Generally speaking, ContentNegotiationManagerFactoryBean is most useful when you’re configuring the ContentNegotiationManager in XML. configure a ContentNegotiationManager with a default content type of application/json in XML:
+<bean id="contentNegotiationManager" class="org.springframework.http.ContentNegotiationManagerFactoryBean" p:defaultContentType="application/json">
+- ContentNegotiationManagerFactoryBean is an implementation of FactoryBean, this results in a ContentNegotiationManager bean being created.
+- That ContentNegotiationManager can then be injected into ContentNegotiatingViewResolver’s contentNegotiationManager property.
+
+<Test> <Test done>
+- For Java configuration, the easiest way to get a ContentNegotiationManager is to extend WebMvcConfigurerAdapter and override the configureContentNegotiation() method. In WebConfig:
+
+@Override
+public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
+	configurer.defaultContentType(MediaType.APPLICATION_JSON);
+}
+
+- inject ContentNegotiationManager into the contentNegotiationManager property of ContentNegotiatingViewResolver.
+@Bean
+public ViewResolver cnViewResolver(ContentNegotiationManager cnm) {	
+	ContentNegotiatingViewResolver cnvr = new ContentNegotiatingViewResolver();
+	cnvr.setContentNegotiationManager(cnm);
+	return cnvr;
+}
+
+- common configuration: ContentNegotiatingViewResolver defaults to HTML views but renders JSON output for certain view names.
+@Override
+public void configureContentNegotiation(ContentNegotiationConfigurer configurer) {
+	configurer.defaultContentType(MediaType.TEXT_HTML);
+}
+
+@Bean
+public ViewResolver beanNameViewResolver() {
+	return new BeanNameViewResolver();
+}
+
+@Bean
+public View spittles() {
+	return new MappingJackson2JsonView();
+}
+
+- Under most circumstances, ContentNegotiatingViewResolver assumes that the client wants HTML, as configured in its ContentNegotiationManager. 
+- But if the client specifies that it wants JSON (either with a .json extension on the request path or via the Accept header), then ContentNegotiatingViewResolver attempts to find a view resolver that can serve a JSON view.
+- If the logical view name is “spittles”, then the configured BeanNameViewResolver resolves the View declared in the spittles() method. That’s because the bean name matches the logical view name. 
+- Otherwise, unless there’s another matching View, ContentNegotiatingViewResolver falls back to the default, serving HTML. Once ContentNegotiatingViewResolver knows what media types the client wants, it’s time to find a view that can render that kind of content.
+
+#THE BENEFITS AND LIMITATIONS OF CONTENTNEGOTIATINGVIEWRESOLVER
+- The key benefit of using ContentNegotiatingViewResolver is that it layers REST resource representation on top of the Spring MVC with no change in controller code. The same controller method that serves human-facing HTML content can also serve JSON or XML to a non-human client.
+- Content negotiation is a convenient option when there’s a great deal of overlap between your human and non-human interfaces.
+- In practice, though, human-facing views rarely deal at the same level of detail as a REST API. The benefit of ContentNegotiatingViewResolver isn’t realized when there isn’t much overlap between the human and non-human interfaces.
+- As a ViewResolver implementation, it only has an opportunity to determine how a resource is rendered to a client. It has no say in what representations a controller can consume from the client. If the client is sending JSON or XML, then ContentNegotiatingViewResolver isn’t much help.
+- The View chosen renders the model—not the resource—to the client. this is a subtle but important distinction. 
+
+#Working with HTTP message converters
+- Message conversion is a more direct way to transform data produced by a controller into a representation that’s served to a client. When using message conversion, DispatcherServlet doesn’t bother with ferrying model data to a view. In fact, there is no model, and there is no view. There is only data produced by the controller and a resource representation produced when a message converter transforms that data.
+- list of converters:
+MappingJacksonHttpMessageConverter: json<->object or hashmap
+MappingJackson2HttpMessageConverter: same as above
+FormHttpMessageConverter: application/x-www-form-urlencoded<->MultiValueMap<String,String>. MultiValueMap<String, Object>->multipart/form-data.
+Jaxb2RootElementHttpMessageConverter: XML (either text/xml or application/xml)<->JAXB2-annotated objects.
+StringHttpMessageConverter: (*/*) -> String, String->text/plain
+
+- For example, suppose the client has indicated via the request’s Accept header that it can accept application/json. Assuming that the Jackson JSON library is in the application’s classpath, the object returned from the handler method is given to MappingJacksonHttpMessageConverter for conversion into a JSON representation to be returned to the client. 
+- On the other hand, if the request header indicates that the client prefers text/xml, then Jaxb2RootElementHttpMessageConverter is tasked with
+producing an XML response to the client.
+- if you want to use MappingJacksonHttpMessageConverter to convert JSON messages to and from Java objects, you’ll need to add the Jackson JSON Processor library to the classpath. same applied to Jaxb2RootElementHttpMessageConverter.
+
+#RESPONSE BODY
+- Normally, when a handler method returns a Java object (anything other than String or an implementation of View), that object ends up in the model for rendering in the view. But if you’re going to employ message conversion, you need to tell Spring to skip the normal model/view flow and use a message converter instead. There are a handful of ways to do this, but the simplest is to annotate the controller method with @ResponseBody.
+@RequestMapping(method=RequestMethod.GET, produces="application/json")
+public @ResponseBody List<Spittle> spittles(
+	@RequestParam(value="max", defaultValue=MAX_LONG_AS_STRING) long max,
+	@RequestParam(value="count", defaultValue="20") int count) {
+	return spittleRepository.findSpittles(max, count);
+}
+- The @ResponseBody annotation tells Spring that you want to send the returned object as a resource to the client, converted into some representational form that the client can accept. More specifically, DispatcherServlet considers the request’s Accept header and looks for a message converter that can give the client the representation it wants. <Test> <Test Done>
+
+- the Jackson JSON libraries use reflection in producing the JSON resource representation from the returned object. For simple representations, this may be fine. But if you refactor the Java type by adding, removing, or renaming properties, then the produced JSON will be changed as well (which might break clients, depending on those properties). 
+- You can influence how the JSON is produced by applying Jackson’s mapping annotations on the Java type. This gives you more control over what the resulting JSON looks like and prevents changes that could break your API and its clients. Jackson’s mapping annotations are well outside the scope of this book, but there’s some useful documentation on the subject at http://wiki.fasterxml.com/Jackson-Annotations. <Test> <Test Done>
+e.g. 
+@JsonIgnore
+private final Long id;
+
+#REQUEST BODY
+- @RequestBody tells Spring to find a message converter to convert a resource representation coming from a client into an object.
+@RequestMapping(method=RequestMethod.POST, consumes="application/json")
+public @ResponseBody
+Spittle saveSpittle(@RequestBody Spittle spittle) {
+	return spittleRepository.save(spittle);
+}
+- the Spittle parameter is annotated with @RequestBody, Spring will look at the Content-Type header of the request and try to find a message converter that can convert the request body into a Spittle.
+- For example, if the client sent the Spittle data in a JSON representation, then the Content-Type header might be set to application/json. In that case, DispatcherServlet will look for a message converter that can convert JSON into Java objects. <Test> <Test Done>
+
+@RestController
+- @RestController = @Controller + @ResponseBody
+- if you’re writing a controller that has several methods, all of which should use message conversion, Spring 4.0 introduced the @RestController annotation 
+which applies message conversion to all handler methods in the controller. You don’t need to annotate each method with @ResponseBody.
+
+#Serving more than resources
+- there’s more to a response than the payload. There are headers and status codes that can also provide useful information about the response to the client. Let’s see how to populate response headers and set the status code when serving resources.
+- A good REST API does more than transfer resources between the client and server. It also gives the client additional metadata to help the client understand the resource or know what has just taken place in the request.
+
+#Communicating errors to the client
+@RequestMapping(value="/{id}", method=RequestMethod.GET)
+public @ResponseBody Spittle spittleById(@PathVariable long id) {
+	return spittleRepository.findOne(id);
+}
+
+- if spittleById() returns null, the body of the response is empty. <Test> <Test Done> status code=200, response body is empty
+- No useful data is returned to the client. Meanwhile, the default HTTP status code carried on the response is 200 (OK), which means everything is fine.
+
+- Spring offers a few options for dealing with such scenarios:
+1） Status codes can be specified with the @ResponseStatus annotation.	<Test> 
+2) Controller methods can return a ResponseEntity that carries more metadata concerning the response. <Test> <Test Done> 
+- return status 404 and {"code": 1,"message": "spittle not found"}
+3) An exception handler can deal with the error cases, leaving the handler methods to focus on the happy path. <Test> <Test Done>
+
+#WORKING WITH RESPONSEENTITY
+@RequestMapping(value="/{id}", method=RequestMethod.GET)
+public ResponseEntity<Spittle> spittleById(@PathVariable long id) {
+	Spittle spittle = spittleRepository.findOne(id);
+	HttpStatus status = spittle != null ? HttpStatus.OK : HttpStatus.NOT_FOUND;
+	return new ResponseEntity<Spittle>(spittle, status);
+}
+- if spittle no found, return status 404, body is empty
+- Notice that spittleById() isn’t annotated with @ResponseBody. In addition to carrying response headers, a status code, and a payload, ResponseEntity implies the semantics of @ResponseBody, so the payload will be rendered into the response body just as if the method were annotated with @ResponseBody. There’s no need to annotate the method with @ResponseBody if it returns ResponseEntity.
+
+- configure the body to carry additional error information.
+- First, define an Error object to carry the error information:
+public class Error {
+	private int code;
+	private String message;
+	public Error(int code, String message) {
+		this.code = code;
+		this.message = message;
+	}
+	public int getCode() {
+		return code;
+	}
+	public String getMessage() {
+		return message;
+	}
+}
+
+Then you can change spittleById() to return the Error:
+@RequestMapping(value="/{id}", method=RequestMethod.GET)
+public ResponseEntity<?> spittleById(@PathVariable long id) {
+	Spittle spittle = spittleRepository.findOne(id);
+	if (spittle == null) {
+		Error error = new Error(4, "Spittle [" + id + "] not found");
+		return new ResponseEntity<Error>(error, HttpStatus.NOT_FOUND);
+	}
+	return new ResponseEntity<Spittle>(spittle, HttpStatus.OK);
+}
+
+- There’s a bit more logic involved, including a conditional statement. And the fact that the method returns ResponseEntity<?> feels wrong. The generic use of ResponseEntity leaves too much open for interpretation or mistake.
+
+#HANDLING ERRORS
+- The if block in spittleById() is handling an error. But that’s what controller error handlers are good for. Error handlers deal with the ugly realities of what could go wrong, leaving the regular handler methods to blissfully focus on the happy path.
+- defining an error handler that reacts to a SpittleNotFoundException:
+@ExceptionHandler(SpittleNotFoundException.class)
+public ResponseEntity<Error> spittleNotFound(SpittleNotFoundException e) {
+	long spittleId = e.getSpittleId();
+	Error error = new Error(4, "Spittle [" + spittleId + "] not found");
+	return new ResponseEntity<Error>(error, HttpStatus.NOT_FOUND);
+}
+
+-define Exception:
+public class SpittleNotFoundException extends RuntimeException {
+	private long spittleId;
+	public SpittleNotFoundException(long spittleId) {
+		this.spittleId = spittleId;
+	}
+	public long getSpittleId() {
+	return spittleId;
+	}
+}
+
+- remove most of the error handling from the spittleById() method:
+@RequestMapping(value="/{id}", method=RequestMethod.GET)
+	public ResponseEntity<Spittle> spittleById(@PathVariable long id) {
+	Spittle spittle = spittleRepository.findOne(id);
+	if (spittle == null) { throw new SpittleNotFoundException(id); }
+	return new ResponseEntity<Spittle>(spittle, HttpStatus.OK);
+}
+
+- cleanup#1: spittleById() will return a Spittle and that the HTTP status will always be 200 (OK), you no longer need to use ResponseEntity and can replace it with @ResponseBody:
+@RequestMapping(value="/{id}", method=RequestMethod.GET)
+public @ResponseBody Spittle spittleById(@PathVariable long id) {
+	Spittle spittle = spittleRepository.findOne(id);
+	if (spittle == null) { throw new SpittleNotFoundException(id); }
+	return spittle;
+}
+
+- cleanup#2: Knowing that the error handler method always returns an Error and always responds with an HTTP status code of 404 (Not Found), you can apply a similar cleanup:
+@ExceptionHandler(SpittleNotFoundException.class)
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public @ResponseBody Error spittleNotFound(SpittleNotFoundException e) {
+    long spittleId = e.getSpittleId();
+    return new Error(4, "Spittle [" + spittleId + "] not found");
+}
+
+- In some ways, you’ve gone full circle. In order to set the response status code, you began using ResponseEntity. But then you were able to use an exception handler and @ResponseStatus to eliminate the need for ResponseEntity and tighten up the code.
+
+#Setting headers in the response
+- when something was just created, and an HTTP status code communicates that to the client. HTTP 201 says that the request completed successfully <Test> <Test Done>
+@RequestMapping(method=RequestMethod.POST, consumes="application/json")
+@ResponseStatus(HttpStatus.CREATED)
+public Spittle saveSpittle(@RequestBody Spittle spittle) {
+	return spittleRepository.save(spittle);
+}
+- communicate the resource’s URL to the client in the Location header of the response
+- HttpHeaders is a special implementation of MultiValueMap<String, String> with some convenient setter methods (such as setLocation()), for setting common HTTP headers.
+@RequestMapping(method=RequestMethod.POST, consumes="application/json")
+public ResponseEntity<Spittle> saveSpittle(@RequestBody Spittle spittle) {
+	Spittle spittle = spittleRepository.save(spittle);
+	HttpHeaders headers = new HttpHeaders();
+	URI locationUri = URI.create("http://localhost:8080/spittr/spittles/" + spittle.getId());
+	headers.setLocation(locationUri);
+	ResponseEntity<Spittle> responseEntity = new ResponseEntity<Spittle>(spittle, headers, HttpStatus.CREATED)
+	return responseEntity;
+}
+
+- Spring offers some help in the form of UriComponentsBuilder. It’s a builder class that lets you build up a UriComponents instance by specifying the various components of the URI (such as the host, port, path, and query) a piece at a time. From the UriComponents object that UriComponentsBuilder builds, you can obtain a URI suitable for setting the Location header.
+@RequestMapping(method=RequestMethod.POST, consumes="application/json")
+public ResponseEntity<Spittle> saveSpittle(@RequestBody Spittle spittle, UriComponentsBuilder ucb) {
+Spittle spittle = spittleRepository.save(spittle);
+	HttpHeaders headers = new HttpHeaders();
+	URI locationUri = ucb.path("/spittles/")
+							.path(String.valueOf(spittle.getId()))
+							.build()
+							.toUri();
+	headers.setLocation(locationUri);
+	ResponseEntity<Spittle> responseEntity =
+	new ResponseEntity<Spittle>(
+	spittle, headers, HttpStatus.CREATED)
+	return responseEntity;
+}
+- The UriComponentsBuilder given to the handler method is preconfigured with known information such as the host, port, and servlet content. It obtains this foundational information from the request that the handler method is serving.
+
+#Consuming REST resources
+- Commonly, mobile and JavaScript applications are the clients of a REST API, but there’s no reason a Spring application can’t consume those resources, too.
+- 11 operations overloaded into 3 froms, 
+1) One that takes a java.net.URI as the URL specification with no support for parameterized URLs (URI as parameters
+2) One that takes a String URL specification with URL parameters specified as a Map (string URL + map of parameters )
+3) One that takes a String URL specification with URL parameters specified as a variable argument list (string URL + varialbes parameters list )
+e.g.
+
+#2 for get <Test> <Test Done>
+- getForObject() Sends an HTTP GET request, returning an object mapped from a response body <Test>
+<T> T getForObject(URI url, Class<T> responseType) throws RestClientException;
+<T> T getForObject(String url, Class<T> responseType, Object... uriVariables) throws RestClientException;
+<T> T getForObject(String url, Class<T> responseType, Map<String, ?> uriVariables) throws RestClientException;
+
+- Under the covers, getForObject() converts the response body into an object for you. It does this by relying on the same set of HTTP message converters from table 16.1 that Spring MVC uses for handler methods that are annotated with @ResponseBody.
+
+- getForEntity() Sends an HTTP GET request, returning a ResponseEntity containing an object mapped from the response body <Test>
+<T> ResponseEntity<T> getForEntity(URI url, Class<T> responseType) throws RestClientException;
+<T> ResponseEntity<T> getForEntity(String url, Class<T> responseType, Object... uriVariables) throws RestClientException;
+<T> ResponseEntity<T> getForEntity(String url, Class<T> responseType, Map<String, ?> uriVariables) throws RestClientException;
+
+#3 for post <Test> <Test Done>
+- postForObject() POSTs data to a URL, returning an object mapped from the response body
+- postForEntity() POSTs data to a URL, returning a ResponseEntity containing an object mapped from the response body
+- postForLocation() POSTs data to a URL, returning the URL of the newly created resource
+
+# exchange <Test> <Test Done>
+- exchange() Executes a specified HTTP method against a URL, returning a ResponseEntity containing an object mapped from the response body 
+- getForEntity() and postForEntity() give you the resulting resource wrapped in a ResponseEntity from which you can retrieve response headers and status codes. But what if you want to set headers on the request sent to the server? That’s what RestTemplate’s exchange() methods are good for.
+<T> ResponseEntity<T> exchange(URI url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType) throws RestClientException;
+<T> ResponseEntity<T> exchange(String url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType, Object... uriVariables) throws RestClientException;
+<T> ResponseEntity<T> exchange(String url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType, Map<String, ?> uriVariables) throws RestClientException;
+
+#execute
+- execute() Executes a specified HTTP method against a URL, returning an object mapped from the response body
+
+# headForHeaders()
+- headForHeaders() Sends an HTTP HEAD request, returning the HTTP headers for the specified resource URL
+
+#optionsForAllow()
+optionsForAllow() Sends an HTTP OPTIONS request, returning the Allow header for the specified URL
+
+#delete
+delete() Performs an HTTP DELETE request on a resource at a specified URL 
+#put
+put() PUTs resource data to the specified URL
+
+9. Chapter9 Spring Security Web
+#Spring Security basics
+- Spring Security is a security framework that provides declarative security for Spring-based applications. 
+- Spring Security provides a solution for authentication and authorization at both the web request level and at the method invocation level. 
+- Sring Security takes full advantage of DI and AOP.
+- To secure web requests and restrict access at the URL level, Spring Security uses servlet filters. Spring Security can also secure method invocations using Spring AOP
+- commonly used modules include the Core and Configuration modules, the Web module, JSP tag library module.
+- DelegatingFilterProxy is a special servlet filter that, by itself, doesn’t do much. Instead, it delegates to an implementation of javax.servlet.Filter that’s registered as a <bean> in the Spring application context
+- Whether you configure DelegatingFilterProxy in web.xml or by subclassing AbstractSecurityWebApplicationInitializer, it will intercept requests coming
+into the application and delegate them to a bean whose ID is springSecurityFilterChain.
+- config In Xml: 
+<filter>
+	<filter-name>springSecurityFilterChain</filter-name>
+	<filter-class>
+		org.springframework.web.filter.DelegatingFilterProxy
+	</filter-class>
+</filter>
+
+- configure DelegatingFilterProxy in Java with a WebApplicationInitializer, then all you need to do is create a new class that extends Abstract-
+SecurityWebApplicationInitializer: SecurityWebInitializer == <filter-name>springSecurityFilterChain</filter-name> in xml
+
+import org.springframework.security.web.context.AbstractSecurityWebApplicationInitializer;
+public class SecurityWebInitializer extends AbstractSecurityWebApplicationInitializer {}
+- AbstractSecurityWebApplicationInitializer implements WebApplicationInitializer, so it will be discovered by Spring and be used to register DelegatingFilterProxy with the web container
+- As for the springSecurityFilterChain bean itself, it’s another special filter known as FilterChainProxy. It’s a single filter that chains together one or more additional filters.
+
+#Writing a simple security configuration, SecurityConfig == security-context.xml
+@Configuration
+@EnableWebSecurity	//enables web security in any web application.
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+}
+
+- Spring Security must be configured in a bean that implements WebSecurityConfigurer or (for convenience) extends WebSecurityConfigurerAdapter. Any bean in the Spring application context that implements WebSecurityConfigurer can contribute to Spring Security configuration, but it’s often most convenient for the configuration class to extend WebSecurityConfigurerAdapter 
+- @EnableWebSecurity is generally useful for enabling security in any web application. But if you happen to be developing a Spring MVC application, you should consider using @EnableWebMvcSecurity instead
+
+@Configuration
+@EnableWebMvcSecurity //enables spring mvc security
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+}
+- Among other things, the @EnableWebMvcSecurity annotation configures a "Spring MVC argument resolver" so that handler methods can receive the authenticated user’s principal (or username) via @AuthenticationPrincipal-annotated parameters. It also configures a bean that automatically adds a hidden cross-site request forgery (CSRF) token field on forms using Spring’s form-binding tag library.
+
+- You can configure web security by overriding WebSecurityConfigurerAdapter’s three configure() methods and setting behavior on the parameter passed in.
+configure(WebSecurity): Override to configure Spring Security’s filterchain.
+configure(HttpSecurity): Override to configure how requests are secured by interceptors.
+configure(AuthenticationManagerBuilder): Override to configure user-details services.
+
+- the default filter chain is fine for our needs, the default configure(HttpSecurity) effectively looks like this: <Test> <Test Done> default login page and default error shown
+protected void configure(HttpSecurity http) throws Exception {
+	http
+	.authorizeRequests()
+	.anyRequest().authenticated()
+	.and()
+	.formLogin().and()
+	.httpBasic();
+}
+- The call to authorizeRequests() and anyRequest().authenticated() demands that all HTTP requests coming into the application be authenticated. It also configures Spring Security to support authentication via a form-based login (using a predefined login page) as well as HTTP Basic.
+- Meanwhile, because you haven’t overridden the configure(AuthenticationManagerBuilder) method, there’s no user store backing the authentication process.
+- need to add a bit more configuration to bend Spring Security to fit your application’s needs.
+1) Configure a user store
+2) Specify which requests should and should not require authentication, as well as what authorities they require
+3) Provide a custom login screen to replace the plain default login screen
+
+#Selecting user details services
+- Several common user store situations—such as in-memory, relational database, and LDAP—are provided out of the box. But you can also create and plug in custom user store implementations.
+
+#Working with an in-memory user store
+- override the configure() method that takes an AuthenticationManagerBuilder as a parameter. AuthenticationManagerBuilder has several methods that can be used to configure Spring Security’s authentication support. 
+- With the inMemoryAuthentication() method, you can enable and configure and optionally populate an in-memory user store. <Test> <Test Done>
+@Configuration 
+@EnableWebMvcSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+	@Override
+	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+	auth
+		.inMemoryAuthentication()
+		.withUser("user").password("password").roles("USER").and()
+		.withUser("admin").password("password").roles("USER", "ADMIN");
+	}
+}
+- calling inMemoryAuthentication() will enable an in-memory user store.
+- call the withUser() method to add a new user to the inmemory user store
+- withUser() returns a UserDetailsManagerConfigurer.UserDetailsBuilder,which has several methods for further configuration of the user, including password() to set the user’s password and roles() to give the user one or more role authorities.
+- the and() method is used to chain together multiple user configurations.
+- all of the methods available from UserDetailsManagerConfigurer.UserDetailsBuilder:
+accountExpired(boolean): Defines if the account is expired or not
+accountLocked(boolean): Defines if the account is locked or not 
+and(): Used for chaining configuration
+authorities(GrantedAuthority…): Specifies one or more authorities to grant to the user
+authorities(List<? extends GrantedAuthority>): Specifies one or more authorities to grant to the user
+authorities(String…): Specifies one or more authorities to grant to the user
+credentialsExpired(boolean): Defines if the credentials are expired or not 
+disabled(boolean): Defines if the account is disabled or not 
+password(String): Specifies the user’s password
+roles(String…): Specifies one or more roles to assign to the user
+
+#TBD
+#Authenticating against database tables
+@Autowired
+DataSource dataSource;
+@Override
+protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+	auth
+	.jdbcAuthentication()
+	.dataSource(dataSource);
+}
+
+- Although this minimal configuration will work, it makes some assumptions about your database schema. default SQL queries that will be performed when looking up user details:
+public static final String DEF_USERS_BY_USERNAME_QUERY = "select username,password,enabled from users where username = ?";
+public static final String DEF_AUTHORITIES_BY_USERNAME_QUERY = "select username,authority from authorities where username = ?";
+public static final String DEF_GROUP_AUTHORITIES_BY_USERNAME_QUERY = "select g.id, g.group_name, ga.authority from groups g, group_members gm, group_authorities ga where gm.username = ? and g.id = ga.group_id and g.id = gm.group_id";
+
+- customize sql: <Test> <Test Done>
+@Override
+protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+	auth
+	.jdbcAuthentication()
+	.dataSource(dataSource)
+	.usersByUsernameQuery("select username, password, true from Spitter where username=?")
+	.authoritiesByUsernameQuery("select username, 'ROLE_USER' from Spitter where username=?");
+}
+- In this case, you’re only overriding the authentication and basic authorization queries. But you can also override the group authorities query by calling groupAuthoritiesByUsername() with a custom query.
+
+#WORKING WITH ENCODED PASSWORDS <Test>
+@Override
+protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+	auth
+	.jdbcAuthentication()
+	.dataSource(dataSource)
+	.usersByUsernameQuery("select username, password, true from Spitter where username=?")
+	.authoritiesByUsernameQuery("select username, 'ROLE_USER' from Spitter where username=?")
+	.passwordEncoder(new StandardPasswordEncoder("53cr3t"));
+}
+- The passwordEncoder method accepts any implementation of Spring Security’s PasswordEncoder interface. Spring Security’s cryptography module includes
+three such implementations: BCryptPasswordEncoder, NoOpPasswordEncoder, and StandardPasswordEncoder.
+- No matter which password encoder you use, it’s important to understand that the password in the database is never decoded. Instead, the password that the user enters at login is encoded using the same algorithm and is then compared with the encoded password in the database.
+
+#Applying LDAP-backed authentication
+- simple configuration for LDAP authentication <Test>
+@Override
+protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+	auth
+	.ldapAuthentication()
+	.userSearchFilter("(uid={0})")
+	.groupSearchFilter("member={0}");
+}
+
+- The userSearchFilter() and groupSearchFilter() methods are used to provide a filter for the base LDAP queries, which are used to search for users and groups. By default, the base queries for both users and groups are empty, indicating that the search will be done from the root of the LDAP hierarchy. <Test>
+@Override
+protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+	auth
+	.ldapAuthentication()
+	.userSearchBase("ou=people")
+	.userSearchFilter("(uid={0})")
+	.groupSearchBase("ou=groups")
+	.groupSearchFilter("member={0}");
+}
+
+#CONFIGURING PASSWORD COMPARISON
+- The default strategy for authenticating against LDAP is to perform a bind operation, authenticating the user directly to the LDAP server. 
+- Another option is to perform a comparison operation. This involves sending the entered password to the LDAP directory and asking the server to compare the password against a user’s password attribute. Because the comparison is done within the LDAP server, the actual password remains secret.
+@Override
+protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+	auth
+	.ldapAuthentication()
+	.userSearchBase("ou=people")
+	.userSearchFilter("(uid={0})")
+	.groupSearchBase("ou=groups")
+	.groupSearchFilter("member={0}")
+	.passwordCompare()	//authenticate by doing a password comparison
+	.passwordEncoder(new Md5PasswordEncoder())	//specify an encryption strategy
+	.passwordAttribute("passcode"); //specify the password attribute’s name
+}
+
+#REFERRING TO A REMOTE LDAP SERVER <Test>
+@Override
+protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+	auth
+	.ldapAuthentication()
+		.userSearchBase("ou=people")
+		.userSearchFilter("(uid={0})")
+		.groupSearchBase("ou=groups")
+		.groupSearchFilter("member={0}")
+		.contextSource()
+			.url("ldap://habuma.com:389/dc=habuma,dc=com");
+}
+
+#CONFIGURING AN EMBEDDED LDAP SERVER <Test>
+@Override
+protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+	auth
+	.ldapAuthentication()
+		.userSearchBase("ou=people")
+		.userSearchFilter("(uid={0})")
+		.groupSearchBase("ou=groups")
+		.groupSearchFilter("member={0}")
+		.contextSource()
+			.root("dc=habuma,dc=com");
+			.ldif("classpath:users.ldif"); 	//specify ldif location, if ignored, locate ldif from classpath
+}
+
+- When the LDAP server starts, it will attempt to load data from any LDIF files that it can find in the classpath. LDIF (LDAP Data Interchange Format) is a standard way of representing LDAP data in a plain text file. Each record is composed of one or more lines, each containing a name:value pair. Records are separated from each other by blank lines.
+- ldif:
+dn: ou=groups,dc=habuma,dc=com
+objectclass: top
+objectclass: organizationalUnit
+ou: groups
+dn: ou=people,dc=habuma,dc=com
+objectclass: top
+objectclass: organizationalUnit
+ou: people
+dn: uid=habuma,ou=people,dc=habuma,dc=com
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+cn: Craig Walls
+sn: Walls
+uid: habuma
+userPassword: password
+dn: uid=jsmith,ou=people,dc=habuma,dc=com
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+cn: John Smith
+sn: Smith
+uid: jsmith
+userPassword: password
+dn: cn=spittr,ou=groups,dc=habuma,dc=com
+objectclass: top
+objectclass: groupOfNames
+cn: spittr
+member: uid=habuma,ou=people,dc=habuma,dc=com
+
+#Using Active directory <Test>
+
+#Configuring a custom user service
+- Suppose that you need to authenticate against users in a non-relational database such as Mongo or Neo4j. In that case, you’ll need to implement a custom implementation of the UserDetailsService interface.
+public interface UserDetailsService {
+	UserDetails loadUserByUsername(String username) throws UsernameNotFoundException;
+}
+
+- an implementation of UserDetailsService that looks up a user from a given implementation of SpitterRepository. <Test> <Test Done>
+public class SpitterUserService implements UserDetailsService {
+	private final SpitterRepository spitterRepository;
+	public SpitterUserService(SpitterRepository spitterRepository) {
+		this.spitterRepository = spitterRepository;
+	}
+	@Override
+	public UserDetails loadUserByUsername(String username) 	throws UsernameNotFoundException {
+		Spitter spitter = spitterRepository.findByUsername(username);
+		if (spitter != null) {
+			List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+			authorities.add(new SimpleGrantedAuthority("ROLE_SPITTER"));
+			return new User(spitter.getUsername(), spitter.getPassword(), authorities);
+		}
+		throw new UsernameNotFoundException"User '" + username + "' not found.");
+	}
+}
+
+- To use SpitterUserService to authenticate users, you can configure it in your security configuration with the userDetailsService() method:
+@Autowired
+SpitterRepository spitterRepository;
+@Override
+protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+	auth
+		.userDetailsService(new SpitterUserService(spitterRepository));
+}
+- The userDetailsService() method (like jdbcAuthentication(), ldapAuthentication, and inMemoryAuthentication()) configures a configuration store. But instead of using one of Spring’s provided user stores, it takes any implementation of UserDetailsService.
+
+#commons-lang包中对我们有用的类主要有:
+1.StringUtils 该类主要提供对字符串的操作,对null是安全的,主要提供了字符串查找,替换,分割,去空白,去掉非法字符等等操作
+2.ObjectUtils 主要是对null进行安全处理,可以设置为null时的默认返回值,比较相等时是调用对象的equals方法,因此需要对对象进行方法进行覆盖
+3.SystemUtils 主要获取一些系统属性,例如工作目录等等
+4.DateUtils/CalendarUtils 主要提供了对日期的操作,包括日期加减,日期格式化,日期比较,一定时间范围内日期的迭代等等
+5.StopWatch 提供秒表的计时,暂停等功能
+6. EqualsBuilder/HashCodeBuilder提供了方便的方法来覆盖equals() 和hashCode()方法
+7.以Range结尾的类主要提供一些范围的操作,包括判断某些字符,数字等是否在这个范围以内
+8.ArrayUtils 提供了数组的复制,查找,获取子数组,反转等功能
+
+#Intercepting requests
+- The key to fine-tuning security for each request is to override the configure (HttpSecurity) method.
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+	http
+		.authorizeRequests()
+		.antMatchers("/spitters/me").authenticated()
+		.antMatchers(HttpMethod.POST, "/spittles").authenticated()
+		.anyRequest().permitAll();
+}
+<Test> <Test Done>
+
+- The path given to antMatchers() supports Ant-style wildcarding:
+.antMatchers("/spitters/**").authenticated();
+
+- specify multiple paths in a single call to antMatchers():
+.antMatchers("/spitters/**", "/spittles/mine").authenticated();
+
+- regexMatchers() method that accepts regular expressions to define request paths.
+.regexMatchers("/spitters/.*").authenticated(); // equivalent to /spitters/**
+
+#Configuration methods to define how a path is to be secured
+access(String): Allows access if the given SpEL expression evaluates to true
+anonymous(): Allows access to anonymous users
+authenticated(): Allows access to authenticated users
+denyAll(): Denies access unconditionally
+fullyAuthenticated(): Allows access if the user is fully authenticated (not remembered)
+hasAnyAuthority(String…): Allows access if the user has any of the given authorities
+hasAnyRole(String…): Allows access if the user has any of the given roles
+hasAuthority(String): Allows access if the user has the given authority
+hasIpAddress(String): Allows access if the request comes from the given IP address
+hasRole(String): Allows access if the user has the given role
+not(): Negates the effect of any of the other access methods
+permitAll(): Allows access unconditionally
+rememberMe(): Allows access for users who are authenticated via remember-me
+
+- require that the user not only be authenticated, but also have ROLE_SPITTER authority:
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+	http
+		.authorizeRequests()
+		.antMatchers("/spitters/me").hasAuthority("ROLE_SPITTER")
+		.antMatchers(HttpMethod.POST, "/spittles")
+		.hasAuthority("ROLE_SPITTER")
+		.anyRequest().permitAll();
+}
+
+- use the hasRole() method to have the ROLE_ prefix applied automatically:
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+	http
+		.authorizeRequests()
+		.antMatchers("/spitter/me").hasRole("SPITTER")
+		.antMatchers(HttpMethod.POST, "/spittles").hasRole("SPITTER")
+		.anyRequest().permitAll();
+}
+
+- it’s important to configure the most specific request path patterns first and the least specific ones (such as anyRequest()) last. If not, then the least specific paths will trump the more specific ones.
+
+#Securing with Spring Expressions
+- Using the access() method, you can also use SpEL as a means for declaring access requirements.
+.antMatchers("/spitter/me").access("hasRole('ROLE_SPITTER')")
+- Spring Security extends the Spring Expression Language with several security-specific expressions
+authentication: The user’s authentication object
+denyAll: Always evaluates to false
+hasAnyRole(list of roles): True if the user has any of the given roles
+hasRole(role): True if the user has the given role
+hasIpAddress(IP address): True if the request comes from the given IP address
+isAnonymous(): True if the user is anonymous
+isAuthenticated(): True if the user is authenticated
+isFullyAuthenticated(): True if the user is fully authenticated (not authenticated with remember-me)
+isRememberMe(): True if the user was authenticated via remember-me
+permitAll: Always evaluates to true
+principal: The user’s principal object
+
+- you can do more than just limit access based on a user’s granted authorities.
+.antMatchers("/spitter/me").access("hasRole('ROLE_SPITTER') and hasIpAddress('192.168.1.2')") <Test> <Test Done> <Test Fail>
+
+#Enforcing channel security <Test> <Test Done>
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+	http
+		.authorizeRequests()
+		.antMatchers("/spitter/me").hasRole("SPITTER")
+		.antMatchers(HttpMethod.POST, "/spittles").hasRole("SPITTER")
+		.anyRequest().permitAll();
+		.and()
+		.requiresChannel()
+		.antMatchers("/spitter/form").requiresSecure();
+}
+
+- Any time a request comes in for /spitter/form, Spring Security will see that it requires a secure channel (per the call to requiresSecure()) and automatically redirect the request to go over HTTPS.
+- declare that the home page always be sent over HTTP by using requiresInsecure() instead of requiresSecure:
+.antMatchers("/").requiresInecure();
+
+#Authenticating users
+- as soon as you override configure(HttpSecurity), you lose that simple login page. you can add it back: <Test> <Test Done>
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+	http
+		.formLogin()
+		.and()
+		.authorizeRequests()
+		.antMatchers("/spitter/me").hasRole("SPITTER")
+		.antMatchers(HttpMethod.POST, "/spittles").hasRole("SPITTER")
+		.anyRequest().permitAll();
+		.and()
+		.requiresChannel()
+		.antMatchers("/spitter/form").requiresSecure();
+}
+
+#Preventing cross-site request forgery
+- CSRF attack happens when one site tricks a user into submitting a request to another server, possibly having a negative outcome.
+
+- As you’ll recall, our SpittleController will create a new Spittle for a user when a POST request is submitted to /spittles. But what if that POST request comes from another website? And what if that POST request is the result of submitting the following form on that other site?
+<form method="POST" action="http://www.spittr.com/spittles"> <Test> <Test Done>
+	<input type="hidden" name="message" value="I'm stupid!" />
+	<input type="submit" value="Click here to win a new car!" />
+</form>
+
+- Starting with Spring Security 3.2, CSRF protection is enabled by default. In fact, unless you take steps to work with CSRF protection or disable it, you’ll probably have trouble getting the forms in your application to submit successfully.
+- Spring Security implements CSRF protection with a synchronizer token. State-changing requests (for example, any request that is not GET, HEAD, OPTIONS, or TRACE) will be intercepted and checked for a CSRF token.
+- This means that any forms in your application must submit a token in a _csrf field. And that token must be the same as the one calculated and stored by the server so that it matches up when the form is submitted.
+
+- Spring Security makes this easy for you by putting the token into the request under the request attributes. If you’re using Thymeleaf for your page template, you’ll get the hidden _csrf field automatically, as long as the <form> tag’s action attribute is prefixed to come from the Thymeleaf namespace:
+<form method="POST" th:action="@{/spittles}">
+...
+</form>
+- If you’re using JSP for page templates, you can do something very similar:
+<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+- using Spring’s form-binding tag library, the <sf:form> tag will automatically add the hidden CSRF token tag for you.
+
+#Disable CSRF protection <Test> <Test Done>
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+	http
+		...
+		.csrf()
+		.disable();
+}
+
+-  it’s generally not a good idea to disable CSRF protection. If you do, you leave your application open to a CSRF attack.
+
+#Custom login form
+- HTML source of the default login page:
+<html>
+	<head><title>Login Page</title></head>
+	<body onload='document.f.username.focus();'>
+		<h3>Login with Username and Password</h3>
+		<form name='f' action='/spittr/login' method='POST'> //submit to /login
+			<table>
+				<tr><td>User:</td><td>
+				<input type='text' name='username' value=''></td></tr>	//username
+				<tr><td>Password:</td>
+				<td><input type='password' name='password'/></td></tr>	//password
+				<tr><td colspan='2'>
+				<input name="submit" type="submit" value="Login"/></td></tr> 
+				<input name="_csrf" type="hidden" value="6829b1ae-0a14-4920-aac4-5abbd7eeb9ee" />	//csrf
+			</table>
+		</form>
+	</body>
+</html>
+
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+	http
+	    .formLogin()
+	    .loginPage("/login")
+	    .and()
+	    .authorizeRequests()
+	    .antMatchers("/spitter/me").authenticated()
+	    .antMatchers(HttpMethod.POST, "/spittles").authenticated()
+	    .anyRequest().permitAll();
+	...
+}
+
+#Enabling HTTP Basic authentication <Test> <Test No effect>
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+	http
+		.formLogin()
+		.loginPage("/login")
+		.and()
+		.httpBasic()
+		.realmName("Spittr")
+		.and()
+		...
+}
+
+#Enabling remember-me functionality <Test> <Test Done>
+- call rememberMe() on the HttpSecurity to turn on remember-me support:
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+	http
+		.formLogin()
+		.loginPage("/login")
+		.and()
+		.rememberMe()
+		.tokenValiditySeconds(2419200)
+		.key("spittrKey")
+		...
+}
+
+- By default, a remember-me token is stored in a cookie that’s valid for up to two weeks. But this example specifies that the token should stay valid
+for up to four weeks (2,419,200 seconds). 
+- The token that’s stored in the cookie is made up of the username, password, an expiration date, and a private key—all encoded in an MD5 hash before being written to the cookie. 
+- By default, the private key is SpringSecured, but this example sets it to spitterKey to make it specific to the Spittr application.
+
+- the login request will need to include a remember-me parameter:
+<input id="remember_me" name="remember-me" type="checkbox"/>
+<label for="remember_me" class="inline">Remember me</label>
+
+#Logging out <Test> <Test Done>
+- Logout is implemented as a servlet filter that (by default) intercepts requests to /logout. Therefore, adding logout to an application is as easy as adding the following link:
+<a th:href="@{/logout}">Logout</a> or
+<a href="/logout">Logout</a>
+
+- When the user clicks on the link, the request for /logout will be handled by Spring Security’s LogoutFilter. 
+- The user will be logged out and any remember-me tokens cleared. 
+- After the logout is complete, the user’s browser will be redirected to /login?logout to give the user an opportunity to log in again.
+- you can configure HttpSecurity to have the user redirected to some other page, such as the application’s home page: <Test> <Test Done>
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+	http
+		.formLogin()
+		.loginPage("/login")
+		.and()
+		.logout()
+		.logoutSuccessUrl("/")
+		...
+}
+- you may want to also override the default path that LogoutFilter intercepts. <Test> <Test Done>
+.logout()
+	.logoutSuccessUrl("/")
+	.logoutUrl("/signout")
+- logout link is now /signout
+
+#Securing the view
+- When rendering HTML to be served in the browser, you may want the view to reflect the security constraints and information.
+
+#Using Spring Security’s JSP tag library
+<security:accesscontrollist>: Conditionally renders its body content if the user is granted authorities by an access control list
+<security:authentication>: Renders details about the current authentication 
+<security:authorize>: Conditionally renders its body content if the user is granted certain authorities or if a SpEL expression evaluates to true
+
+- declare the JSP tag library:
+<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags" %>
+
+#ACCESSING AUTHENTICATION DETAILS <Test> <Test Done>
+Hello <security:authentication property="principal.username" />!
+
+- You can access several of the user’s authentication details using the <security:authentication> JSP tag
+authorities: A collection of GrantedAuthority objects that represent the privileges granted to the user
+credentials: The credentials that were used to verify the principal (commonly, this is the user’s password)
+details: Additional information about the authentication (IP address, certificate serial number, session ID, and so on)
+principal: The user’s principal
+- assign it to a property named loginId: 
+<security:authentication property="principal.username" var="loginId"/>
+- The variable is created in page scope by default. But if you’d rather create it in some other scope, such as request or session (or any of the scopes available from javax.servlet.jsp.PageContext), you can specify it via the scope attribute.
+<security:authentication property="principal.username" var="loginId" scope="request" />
+
+#CONDITIONAL RENDERING <Test> <Test Done>
+- Spring Security’s <security:authorize> JSP tag conditionally renders a portion of the view depending on the user’s granted authorities.
+- use the <security:authorize> tag to display the spittle form if the user has ROLE_SPITTER authority
+<sec:authorize access="hasRole('ROLE_SPITTER')">
+	<s:url value="/spittles" var="spittle_url" />
+	<sf:form modelAttribute="spittle" action="${spittle_url}">
+	...
+	</sf:form>
+</sec:authorize>
+
+- you have the full power of SpEL at your disposal：
+<security:authorize access="isAuthenticated() and principal.username=='habuma'">
+	<a href="/admin">Administration</a>
+</security:authorize>
+
+# restrict access based on url <Test> <Test Done>
+- Adding a new call to the antMatchers() method in the security configuration will tighten security around the /admin URL:
+.antMatchers("/admin")
+.access("isAuthenticated() and principal.username=='admin'");
+- the url attribute indirectly refers to the security constraints for a given URL pattern.
+<security:authorize url="/admin">
+	<spring:url value="/admin" var="admin_url" />
+	<a href="${admin_url}">Admin</a>
+</security:authorize>
+
+#Working with Thymeleaf’s Spring Security dialect 
+- Thymeleaf’s security dialect offers attributes that mirror much of Spring Security’s tag library
+sec:authentication -  Renders properties of the authentication object. Similar to Spring Security’s <sec:authentication/> JSP tag.
+sec:authorize - Conditionally renders content based on evaluation of an expression. Similar to Spring Security’s <sec:authorize/> JSP tag.
+sec:authorize-acl - Conditionally renders content based on evaluation of an expression. Similar to Spring Security’s <sec:accesscontrollist/> JSP tag.
+sec:authorize-expr - An alias for the sec:authorize attribute.
+sec:authorize-url - Conditionally renders content based on evaluation of security rules associated with a given URL path. Similar to Spring Security’s
+					<sec:authorize/> JSP tag when using the url attribute.
+
+- Thymeleaf Extras Spring Security module is in your application’s classpath.
+- register the SpringSecurityDialect with the SpringTemplateEngine in your configuration.
+@Bean
+public SpringTemplateEngine templateEngine(TemplateResolver templateResolver) {
+	SpringTemplateEngine templateEngine = new SpringTemplateEngine();
+	templateEngine.setTemplateResolver(templateResolver);
+	templateEngine.addDialect(new SpringSecurityDialect()); //Register the security dialect
+	return templateEngine;
+}
+- declare the security namespace in the templates:
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:th="http://www.thymeleaf.org"
+	xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+	...
+</html>
+
+- Now you can use the Thymeleaf attributes however you see fit. e.g. render text saying “Hello” to the user if the user is authenticated: <Test>
+<div sec:authorize="isAuthenticated()">
+	Hello <span sec:authentication="name">someone</span>
+</div>
+
+- using sec:authorize-url attribute to conditionally render based on the authorizations associated with a given URL path: <Test>
+<span sec:authorize-url="/admin">
+	<a th:href="@{/admin}">Admin</a>
+</span>
+
+- Using a series of servlet filters, Spring Security can control access to web resources, including Spring MVC controllers. But thanks to Spring Security’s Java configuration model, you don’t need to deal with those filters directly. Web security can be declared concisely.
+
+10. Chapter 14 - Spring Security - securing methods
+#Securing methods with annotations
+1) Spring Security’s own @Secured
+2) JSR-250’s @RolesAllowed
+3) Expression-driven annotations, with @PreAuthorize, @PostAuthorize, @PreFilter, and @PostFilter
+
+#Restricting method access with @Secured
+@Configuration
+@EnableGlobalMethodSecurity(securedEnabled=true)
+public class MethodSecurityConfig extends GlobalMethodSecurityConfiguration {
+	@Override
+	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+		auth
+			.inMemoryAuthentication()
+			.withUser("user").password("password").roles("USER");
+	}
+}
+
+- In addition to being annotated with @EnableGlobalMethodSecurity, you’ll notice that the configuration class extends GlobalMethodSecurityConfiguration. Much
+like the WebSecurityConfigurerAdapter class that your web security configuration class extended in chapter 9, this class offers you the opportunity to configure the finer points of method-level security.
+- @EnableGlobalMethodSecurity annotation, notice that its securedEnabled attribute is set to true. When securedEnabled is true, a pointcut is
+created such that the Spring Security aspects will wrap bean methods that are annotated with @Secured.
+@Secured("ROLE_SPITTER") <Test> <Test Done>
+public void addSpittle(Spittle spittle) {
+	// ...
+}
+
+@Secured({"ROLE_SPITTER", "ROLE_ADMIN"})
+public void addSpittle(Spittle spittle) {
+	// ...
+}
+
+- When the method is invoked by an unauthenticated user or by a user not possessing the required privileges, the aspect wrapping the method will throw one of Spring Security’s exceptions (probably a subclass of AuthenticationException or AccessDeniedException). These are unchecked exceptions,
+
+#Using JSR-250’s @RolesAllowed with Spring Security <Test> <Test Done>
+- using the standard @RolesAllowed annotation may have implications when used in the context of other frameworks or APIs that process that annotation.
+@Configuration
+@EnableGlobalMethodSecurity(jsr250Enabled=true)
+public class MethodSecurityConfig extends GlobalMethodSecurityConfiguration {
+}
+
+- restrict the invocation of a method based only on whether or not that user has been granted a specific privilege. No other factors can play a part in
+the decision to allow the method to execute or not.
+
+#Using expressions for method-level security
+- Sometimes security constraints depend on more than just whether a user has privileges or not.
+@PreAuthorize： Restricts access to a method before invocation based on the result of evaluating an expression
+@PostAuthorize Allows a method to be invoked, but throws a security exception if the expression evaluates to false
+@PostFilter Allows a method to be invoked, but filters the results of that method based on an expression
+@PreFilter Allows a method to be invoked, but filters input prior to entering the method
+
+- But first, you’ll need to enable them by setting @EnableGlobalMethodSecurity’s prePostEnabled attribute to true:
+
+#PREAUTHORIZING METHOD ACCESS <Test> <test Done>
+@PreAuthorize("(hasRole('ROLE_SPITTER') and #spittle.message.length() <= 140) or hasRole('ROLE_PREMIUM')")
+public void addSpittle(Spittle spittle) {
+	// ...
+}
+
+#POSTAUTHORIZING METHOD ACCESS <Test> <Test Done>
+@PostAuthorize("returnObject.spitter.username == principal.username")
+public Spittle getSpittleById(long id) {
+	// ...
+}
+
+- Spring Security provides the returnObject variable in SpEL.
+- unlike methods annotated with @PreAuthorize, @PostAuthorize-annotated methods will be executed first and intercepted afterward. That means that care should be taken to make sure that the method doesn’t have any side effects that would be undesirable if authorization fails.
+
+#Filtering method inputs and outputs <Test> <Test Done>
+- Sometimes it’s not the method that’s being secured, but rather the data being passed into or returned from that method.
+@PreAuthorize("hasAnyRole({'ROLE_SPITTER', 'ROLE_ADMIN'})")
+@PostFilter( "hasRole('ROLE_ADMIN') || filterObject.spitter.username == principal.username")
+public List<Spittle> getOffensiveSpittles() {
+	...
+}
+
+#PREFILTERING METHOD PARAMETERS <Test> <Test Done>
+@PreAuthorize("hasAnyRole({'ROLE_SPITTER', 'ROLE_ADMIN'})")
+@PreFilter( "hasRole('ROLE_ADMIN') || filterObject.spitter.username == principal.username")
+public void deleteSpittles(List<Spittle> spittles) { ... }
+
+#DEFINING A PERMISSION EVALUATOR （Custom codes for security) <Test> <Test Done>
+@PreAuthorize("hasAnyRole({'ROLE_SPITTER', 'ROLE_ADMIN'})")
+@PreFilter("hasPermission(targetObject, 'delete')")
+public void deleteSpittles(List<Spittle> spittles) { 
+	... 
+}
+
+- asks the question “Does the user have permission to delete the target object?” If so, the expression will evaluate to true and the Spittle will remain in the list passed to deleteSpittles(). If not, then it will be tossed out.
+- hasPermission() function is a Spring Security–provided extension to SpEL, and it represents an opportunity for you, the developer, to plug in whatever logic you want to perform when it’s evaluated.
+
+public class SpittlePermissionEvaluator implements PermissionEvaluator {
+	private static final GrantedAuthority ADMIN_AUTHORITY = new GrantedAuthorityImpl("ROLE_ADMIN");
+	public boolean hasPermission(Authentication authentication, Object target, Object permission) {
+		if (target instanceof Spittle) {
+			Spittle spittle = (Spittle) target;
+			String username = spittle.getSpitter().getUsername();
+			if ("delete".equals(permission)) {
+				return isAdmin(authentication) || username.equals(authentication.getName());
+			}
+		}
+		throw new UnsupportedOperationException("hasPermission not supported for object <" + target + "> and permission <" + permission + ">");
+	}
+	public boolean hasPermission(Authentication authentication, Serializable targetId, String targetType, Object permission) {
+		throw new UnsupportedOperationException();
+	}
+	private boolean isAdmin(Authentication authentication) {
+		return authentication.getAuthorities().contains(ADMIN_AUTHORITY);
+	}
+}
+
+- SpittlePermissionEvaluator implements Spring Security’s PermissionEvaluator interface, which demands that two different hasPermission() methods be implemented.
+- Once the permission evaluator is ready, you need to register it with Spring Security for it to back the hasPermission() operation in the expression given to @PostFilter. To do that, you’ll need to replace the expression handler with one that’s configured to use your custom permission evaluator.
+- By default, Spring Security is configured with a DefaultMethodSecurityExpressionHandler that’s given an instance of DenyAllPermissionEvaluator. always returns false from its hasPermission() methods
+@Override
+protected MethodSecurityExpressionHandler createExpressionHandler() {
+	DefaultMethodSecurityExpressionHandler expressionHandler = new DefaultMethodSecurityExpressionHandler();
+	expressionHandler.setPermissionEvaluator(new SpittlePermissionEvaluator());
+	return expressionHandler;
+}

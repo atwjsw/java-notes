@@ -1032,7 +1032,7 @@ public String addSpitterFromForm(@Valid Spitter spitter, BindingResult bindingRe
 - The image parameter is given as a MultipartFile and is annotated with @RequestParam to indicate that it’s not required
 
 #SAVING FILES TO THE FILE SYSTEM
-private void saveImage(String filename,MultipartFile image) {
+private void saveImage(String filename, MultipartFile image) {
 	...
 	File file=newFile(webRootPath+"/resources/"+filename); 
 	FileUtils.writeByteArrayToFile(file,image.getBytes()); //use FileUtils from Apache Commons IO to write the image data to a file.
@@ -2707,3 +2707,148 @@ back to it later.
 - login request will need to include a _spring_security_remember_me parameter for users to indicate that they’d like the application to remember them.
 <input id="remember_me" name="_spring_security_remember_me" type="checkbox"/>
 - next time the user access the server, the token will be compared to md5 hash of username+password+an expiration date+a private key, username are needed to get password
+
+#Securing methods
+- AOP is the basis for method-level security. But almost no need to deal with Spring Security’s aspects directly. 
+- All of the AOP involved in securing methods is packed into a single element: <global-method-security>:
+<global-method-security secured-annotations="enabled"/>
+- this sets up Spring Security for securing methods that are annotated with Spring Security’s own @Secured annotation.
+
+- 4 ways that Spring Security supports method-level security:
+Methods annotated with @Secured
+Methods annotated with JSR-250’s @RolesAllowed
+Methods annotated with Spring’s pre- and post-invocation annotations
+Methods matching one or more explicitly declared pointcuts
+
+#Securing methods with @Secured
+- When <global-method-security> is configured with its secured-annotations attribute set to enabled, a pointcut is created such that the Spring Security aspects will wrap bean methods that are annotated with @Secured.
+@Secured("ROLE_SPITTER")
+public void addSpittle(Spittle spittle) { //only allow the method to be invoked if the user has ROLE_SPITTER as one of their granted authorities.
+	// ...
+}
+
+- The @Secured annotation takes an array of String ["ROLE SPITTER", "ROLE_ADMIN", "ROLE_XXX"] as an argument. Each String value is a authorization, one of which is required to invoke the method. 
+@Secured({"ROLE_SPITTER","ROLE_ADMIN"}) //user must have ROLE_SPITTER or ROLE_ADMIN privilege to invoke the method 
+public void addSpittle(Spittle spittle){
+// ...
+}
+- When the method is invoked by an unauthenticated user or by a user without the required privileges, the aspect wrapping the method will throw one of Spring
+Security’s exceptions (probably a subclass of AuthenticationException or AccessDeniedException). 
+- If the secured method is invoked in the course of a web request, the exception will be automatically handled by Spring Security’s filters. 
+- Otherwise, you’ll need to write the code to handle the exception.
+- @Secured annotation is that it’s a Spring-specific. standard annotations 
+
+#Using JSR-250’s @RolesAllowed
+- The @RolesAllowed annotation is equivalent to @Secured in almost every way. The only substantial difference is that @RolesAllowed is defined in JSR-250 standard:
+<global-method-security jsr250-annotations="enabled"/>
+- jsr250-annotations and secured-annotations are not mutually exclusive, and can both be enabled at the same time. they may even be used side by side with pre/post-invocation security annotations
+
+#Pre-/Post-invocation security with SpEL
+<global-method-security pre-post-annotations="enabled"/>
+- Pre-/Post-invocation security use SpEL to enable even more flexible security constraints on methods.
+@PreAuthorize: Restricts access to a method before invocation based on the result of evaluating an expression
+@PostAuthorize: Allows a method to be invoked, but throws a security exception if the expression evaluates to false
+@PostFilter: Allows a method to be invoked, but filters the results of that method per an expression
+@PreFilter: Allows a method to be invoked, but filters input prior to entering the method
+
+#PRE-AUTHORIZING METHODS
+- use @PreAuthorize to limit access based on the roles given to the authenticated user, a SpEL-enabled equivalent to @Secured and @RolesAllowed:
+@PreAuthorize("hasRole('ROLE_SPITTER')")
+public void addSpittle(Spittle spittle){
+	// ...
+}
+- uses the Spring Security-provided hasRole() function (who's function??) to authorize access to the method if the user has the ROLE_SPITTER role
+- With SpEL, far more advanced security constraints can be written:
+@PreAuthorize("(hasRole('ROLE_SPITTER') and #spittle.text.length()<=140) or hasRole('ROLE_PREMIUM')")
+public void addSpittle(Spittle spittle){
+	// ...
+}
+- average Spitter user can only write spittles of 140 characters or less, but premium users are allowed unlimited spittle lengths.
+- #spittle in the expression refers to the method parameter of the same name. This enables Spring Security to examine the parameters passed to the
+method and use those parameters in its authorization decision making.
+
+#POST-AUTHORIZING METHODS
+- Post-authorization typically involves making security decisions based on the object returned from the secured method. This of course means that the method must be invoked and given a chance to produce a return value. 
+- Aside from the timing of the authorization, @PostAuthorize works much the same as @PreAuthorize.
+@PostAuthorize("returnObject.spitter.username==principal.username")
+public Spittle getSpittleById(long id){
+	// ...
+}
+- Spring Security provides the returnObject name in SpEL. Here we know that the returned object is a Spittle, so the expression digs into its spitter property and pulls the username property from that.
+- On the other side of the double-equal comparison, the expression digs into the built-in principal object to get its username property. principal is another one of Spring Security’s special "built-in names" that represents the principal of the currently authenticated user. These "build-in-names" can only be accessed from annotaion and xml??
+- If the Spittle object has a Spitter whose username property is the same as the principal’s username, the Spittle will be returned to the caller. Otherwise, an AccessDeniedException will be thrown and the caller won’t get to see the Spittle.
+- unlike methods annotated with @Pre-Authorize, @PostAuthorize-annotated methods will be executed first and intercepted afterward. That means that care should be taken to make sure that the method doesn’t have any side effects that would be undesired if authorization fails.
+
+#POST-FILTERING METHODS
+- Sometimes it’s not the method that’s being secured, but rather the data being returned from that method.
+- return a list of Spittles to the user, but limit that list to only those Spittles that the user is allowed to delete. 
+@PreAuthorize("hasRole('ROLE_SPITTER')")
+@PostFilter("filterObject.spitter.username==principal.username")
+public List<Spittle> getABunchOfSpittles(){
+	...
+}
+- @PostFilter annotation will filter that list, ensuring that the user only sees those Spittle objects that belong to the user.
+- The filterObject referenced in the expression refers to an individual element (which we know to be a Spittle) in the List returned from the method.
+
+- in addition to being able to delete a Spittle that they own, a user is empowered to delete any Spittle that contains profanity.
+@PreAuthorize("hasRole('ROLE_SPITTER)")
+@PostFilter("hasPermission(filterObject,'delete')")
+public List<Spittle> getSpittlesToDelete(){
+	...
+}
+
+- Overriding the behavior of hasPermission() involves creating and registering a permission evaluator:
+public class SpittlePermissionEvaluator implements PermissionEvaluator {
+	public boolean	hasPermission(Authentication authentication, Object target, Object permission) {
+		if (target instanceof Spittle) {
+			Spittle spittle=(Spittle)target;
+				if ("delete".equals(permission)) {
+					return spittle.getSpitter().getUsername().equals(authentication.getName())||hasProfanity(spittle);
+			}
+		}
+		throw new UnsupportedOperationException("hasPermission not supported for object<" + target + "> and permission <" + permission + ">");
+	}
+	public boolean hasPermission(Authenticationauthentication, Serializable targetId, String targetType, Object permission){
+		throw new UnsupportedOperationException();
+	}
+	private boolean hasProfanity(Spittle spittle){
+		...
+		return false;
+	}
+}
+
+- create an expression handler bean and register it with <global-method-security>. create a bean of type DefaultMethodSecurityExpressionHandler and inject its permissionEvaluator property with an instance of our SpittlePermissionEvaluator
+<beans:bean id="expressionHandler" class="org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler">
+	<beans:property name="permissionEvaluator">
+		<beans:bean class="com.habuma.spitter.security.SpittlePermissionEvaluator"/>
+	</beans:property>
+</beans:bean>
+
+- configure that expressionHandler bean in <global-method-security>:
+<global-method-security	pre-post-annotations="enabled">
+	<expression-handler ref="expressionHandler"/>
+</global-method-security>
+- Before, we configured a <global-method-security> without specifying an expression handler. But here we have replaced the default expression handler with one that knows about our permission evaluator.
+
+#Declaring method-level security pointcuts
+- Method-level security constraints often vary from method to method. Annotating each method with the constraints that best serve that method makes a lot of sense. But sometimes it may make sense to apply the same authorization checks to several methods, i.e. cross-cutting authorization
+- To restrict access to multiple methods, we can use the <protect-pointcut> element as a child of the <global-method-security> element
+<global-method-security>
+	<protect-pointcut access="ROLE_SPITTER" expression="execution(@com.habuma.spitter.Sensitive * *.*(String))"/> //custom @Sensitive annotation
+</global-method-security>
+	
+- The expression attribute is given an AspectJ pointcut expression. In this case, it identifies any methods that are annotated with a custom @Sensitive annotation. Meanwhile, the access attribute indicates which authorities the authenticated user must have to access the methods that are identified by the expression attribute.
+- thanks to Spring Security’s configuration namespace, you don’t need to deal with the filters or aspects directly. Security can be declared concisely.
+
+- method security annotation can also be declared on interface method of bean
+public interface SecuredInterface {
+  @PostAuthorize("returnObject.spitter.username == principal.username")
+  Spittle postAuthorizedSpittleMethod(Spittle spittle);
+  ...
+}
+
+
+
+
+
+
