@@ -1855,9 +1855,9 @@ public class HibernateSpitterDao implements SpitterDao {
 1) configure an EntityManagerFactory(emf) bean
 2) use emf to get EntityManager(em), use @PersistenceContext to inject em, PersistenceAnnotationBeanPostProcessor bean is required to enable @PersistenceContext 
 3) APPLICATION-MANAGED JPA: use LocalEntityManagerFactoryBean, use persistence.xml in the META-INF directory within the classpath for JPA configuration (, datasource, db properties) and persistence unit configuration.
-4) CONTAINER-MANAGED JPA: use LocalContainerEntityManagerFactoryBean and confiugure JPA in spring context(not in persistence.xml), but it seems persistence.xml is still necessary in CONTAINER-MANAGED JPA?
+4) CONTAINER-MANAGED JPA: use LocalContainerEntityManagerFactoryBean and confiugure JPA in spring context(not in persistence.xml), but it seems persistence.xml is still necessary in CONTAINER-MANAGED JPA? No
 5) A persistence unit is a grouping of one or more persistent classes (with mapping annotation) that correspond to a single data source. JPA relies on persistence units to locate classes with mapping annotation.
-6) The jpaVendorAdapter property can be used to specify the JPA implementation. only in CONTAINER-MANAGED JPA?? how does APPLICATION-MANAGED JPA specify implementation?
+6) The jpaVendorAdapter property can be used to specify the JPA implementation. only in CONTAINER-MANAGED JPA?? how does APPLICATION-MANAGED JPA specify implementation? in persistence.xml
 7）CONTAINER-MANAGED JPA is more appropriate for Spring, because datasource are already defined and ready to be referened and JPA implementation can be plugged into JpaAdapter property 
 
 <<<<<<<<<<<<<<<<<<<<<<<<<
@@ -1966,7 +1966,6 @@ beans for whom exceptions should be translated into one of Spring’s unified da
 - One way that Spring simplifies data access is by managing the lifecycle of database connections and ORM framework sessions, ensuring that they’re opened and closed as necessary. In this way, management of persistence mechanisms is virtually transparent to your application code.
 >>>>>>>>>>>>>>>>>>>>>>>>>>
 
-TO BE SUMMARIZE:
 6. Chapter 6 Managing Transactions
 - In software, all-or-nothing operations are called transactions.
 
