@@ -1,0 +1,3073 @@
+1 总而言之 (ch1 and ch2 spring basics and configuration)
+1) 5 typles of application Context： AnnotationConfigApplicationContext/AnnotationConfigWebApplicationContext are for loading Java config class. ClassPathXmlApplicationContext/FileSystemXmlApplicationContext/XmlWebApplicationContext are for loading xml config files.
+2) 3 ways of wiring beans: perfer autodiscovery > java config > xml
+3) @Configuration == applicationContext.xml
+4) @Bean == <bean id="knight" class="com.springinaction.knights.BraveKnight">
+5) @Bean method operation == <property>, <constructor-arg>, <p:>...
+6) @ComponentScan(basePackages={"soundsystem", "video"}) == <conext:component-scan base-packages="soundsystem, video"/>
+7) @EnableAspectJAutoProxy == <aop:aspectj-autoproxy /> //enable @Aspect @pointcut ....
+8) In test class: @ContextConfiguration(classes=KnightConfig.class) == @ContextConfiguration(locations="classpath:knight.xml")
+9) Java config imports other config: @Configuration @Import(CDPlayerConfig.class) @ImportResource("classpath:cd-config.xml")
+10) xml config imports other config: <import resource="cd-config.xml" /> <bean id="cdPlayer" class="soundsystem.CDPlayer" c:cd-ref="compactDisc" />
+Web Tier
+11) SpittrWebAppInitializer = the spring dispatcher servlet and contextListener config in web.xml
+public class SpittrWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer
+12) WebConfig == dispatcherServlet-context.xml
+13) RootConfig == root-context.xml
+14) @PropertySource("classpath:/com/soundsystem/app.properties") = <context:property-placeholder location="com/soundsystem/app.properties" />;  
+15) DefaultServletHandler = <mvc:resources mapping ="/resources/**" location="/resources/"/> //but use different approach
+16) @EnableWebMvc == <mvc:annotation-driven/>
+
+2. Chapter3 - Advanced wiring
+- 总而言之，(Profile)
+1） @Profile("dev/prod") specifies different configuration for different environment. only beans in active profile will be created.
+2) values of spring.profiles.active and spring.profiles.default defines the active profiles. spring.profiles.active has higher priority.
+3) values of spring.profiles.active and spring.profiles.default can be retrieved from 1) initialization parameters of DispatcherServlet,2)context parameters of a web application, 3)JNDI entries, 4)environment variables 5)JVM system properties 6)@ActiveProfiles annotation on test class
+4) Usually, spring.profiles.default is set to dev in DispatcherServlet so that development can download and use dev config, in qa/prod, qa/operation team can use env variables or JNDI entry to configure spring.profiles.active to qa/prod.
+
+#Conditional Bean
+@Bean
+@Conditional(MagicExistsCondition.class)
+public MagicBean magicBean() {
+	return new MagicBean();
+}
+
+- MagicExistsCondition need to be implemented
+
+#Addressing ambiguity in autowiring
+- Spring tries byName first, if fails, tries byType
+- Designating a primary bean
+- by component scanning
+@Component
+@Primary
+public class IceCream implements Dessert
+
+- in java Configuration
+@Bean
+@Primary
+public Dessert iceCream() {
+	return new IceCream();
+}
+
+in XML
+<bean id="iceCream" class="com.desserteater.IceCream primary="true" />
+
+#Qualifying autowired beans
+@Autowired
+@Qualifier("iceCream")
+public void setDessert(Dessert dessert) {
+	this.dessert = dessert;
+}
+
+- use "cold" decouple IceCream class name
+@Component
+@Qualifier("cold")
+public class IceCream implements Dessert { ... }
+
+@Autowired
+@Qualifier("cold")
+public void setDessert(Dessert dessert) {
+	this.dessert = dessert;
+}
+
+DEFINING CUSTOM QUALIFIER ANNOTATIONS
+- define @creamy qualifier
+@Target({ElementType.CONSTRUCTOR, ElementType.FIELD,
+ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Qualifier
+public @interface Creamy { }
+
+- define @cold qualifier
+@Target({ElementType.CONSTRUCTOR, ElementType.FIELD,
+ElementType.METHOD, ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Qualifier
+public @interface Cold { }
+
+-apply @cold and @creamy to component
+@Component
+@Cold
+@Creamy
+public class IceCream implements Dessert { ... }
+
+- autowired with @cold and @creamy annotation
+@Autowired
+@Cold
+@Creamy
+public void setDessert(Dessert dessert) {
+	this.dessert = dessert;
+}
+
+#Bean scoping
+- Singleton/Prototype/Session/Request
+
+@Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+public class Notepad { ... }
+
+@Bean
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+public Notepad notepad() {
+	return new Notepad();
+}
+==
+<bean id="notepad" class="com.myapp.Notepad" scope="prototype" />
+
+@Component
+@Scope(value=WebApplicationContext.SCOPE_SESSION, proxyMode=ScopedProxyMode.INTERFACES)
+public ShoppingCart cart() { ... }
+
+#CGLib
+if ShoppingCart is a concrete class, there’s no way Spring can create an interface-based proxy. Instead, it must use CGLib to generate a class-based proxy.
+
+- session bean definition in xml
+<bean id="cart" class="com.myapp.ShoppingCart" scope="session">
+	<aop:scoped-proxy />
+</bean>
+
+- generate an interface-based proxy by setting the proxy-target-class attribute to false:
+<bean id="cart" class="com.myapp.ShoppingCart" scope="session">
+	<aop:scoped-proxy proxy-target-class="false" />
+</bean>
+
+#Runtime value injection
+- by property placeholders
+- by SpEL
+
+3 总而言之，Injecting external values
+there are 4 ways to inject external values:
+1) declare a property source and retrieve the properties via the Spring Environment. @PropertySource("classpath:app.properties"), @Autowired
+Environment env, env.getProperty("disc.title").
+2) RESOLVING PROPERTY PLACEHOLDERS from external properties files. 
+2.1) Config properties files: in xml: <context:property-placeholder location="com/soundsystem/app.properties" />;  in java config: @PropertySource("classpath:/com/soundsystem/app.properties"), same as #1.
+2.2）declare a PropertySourcesPlaceholderConfigurer bean if using java config
+2.3) Access property value: in xml: c:_title="${disc.title}"; in java: @Value("${disc.title}") String title
+3) retrieves value from systemProperties or systemEnvironment: @Value("#{systemProperties.myFavoriteSong}")
+4) retrieve value from properties file using SpEL, In context xml: <util:properties id="s3Properties" location="classpath:s3.properties"/>
+@Value("#{s3Properties['webRootPath']}") <Test> <Test Failed>
+5) @PropertySource can be configured in WebConfig or RootConfig and there is no difference
+
+#SpEL
+#{T(System).currentTimeMillis()}
+#{systemProperties['disc.title']}
+#{sgtPeppers}
+#{sgtPeppers.artist}
+#{artistSelector.selectArtist()}
+#{artistSelector.selectArtist().toUpperCase()}
+#{artistSelector.selectArtist()?.toUpperCase()}
+#{jukebox.songs.?[artist eq 'Aerosmith']}
+#{jukebox.songs.![title]}
+#{jukebox.songs.^[artist eq 'Aerosmith']}
+#{jukebox.songs.?[artist eq 'Aerosmith'].![title]}
+
+4. Chapter4 Aop
+#@EnableAspectJAutoProxy
+- If you’re using JavaConfig, you can turn on auto-proxying by applying the @EnableAspectJAutoProxy annotation at the class level of the configuration class.
+@Configuration
+@EnableAspectJAutoProxy
+@ComponentScan
+public class ConcertConfig {
+	@Bean
+	public Audience audience() {
+		return new Audience();
+	}
+}
+== 
+in xml congfig
+<context:component-scan base-package="concert" />
+<aop:aspectj-autoproxy />
+<bean class="concert.Audience" />
+
+5. Chapter5 Spring MVC mechanism
+#CONFIGURING DISPATCHERSERVLET
+- thanks to recent advances in the Servlet 3 specification and in Spring 3.1. Instead of a web.xml file, you can use Java to configure DispatcherServlet in the servlet container.
+public class SpittrWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer { // Configure spring Context == loading web.xml
+	@Override
+	protected String[] getServletMappings() {
+		return new String[] { "/" };	// Map DispatcherServlet to / (== configure DispatcherServlet mapping <servlet-mapping> in xml)
+	}
+	
+	@Override
+	protected Class<?>[] getRootConfigClasses() {
+		return new Class<?>[] { RootConfig.class }; 			//Specify contextLoaderListener context configuration class  						
+																	== loading classpath:datasource-context-jdbcDaoSupport.xml
+	}
+	
+	@Override
+	protected Class<?>[] getServletConfigClasses() {
+		return new Class<?>[] { WebConfig.class };	//Specify disptacherServlet context configuration class == laoding spitter-context.xml
+	}
+}
+
+- 总而言之 (Spring MVC Java Configuration)
+1. any class that extends AbstractAnnotationConfigDispatcherServletInitializer will automatically be used to configure 1)DispatcherServlet and 2)the Spring application context in the application’s servlet context.
+2. AbstractAnnotationConfigDispatcherServletInitializer creates both a DispatcherServlet and a ContextLoaderListener. 
+public class SpittrWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer
+3. SpittrWebAppInitializer == the spring dispatcher servlet and contextlistener config in web.xml
+4. getServletMappings() identifies one or more paths that DispatcherServlet will be mapped to. In this case, it’s mapped to /, indicating that it will be the application’s default servlet. It will handle all requests coming into the application.
+4. @Configuration classes returned from getServletConfigClasses() will define beans for DispatcherServlet’s application context. 
+- WebConfig == dispatcherServlet-context.xml
+5. the @Configuration class’s returned getRootConfigClasses() will be used to configure the application context created by ContextLoaderListener. 
+- RootConfig == root-context.xml
+6. WebConfig extends WebMvcConfigurerAdapter + configureDefaultServletHandling() == <mvc:resources mapping ="/resources/**" location="/resources/"/> //but use different approach
+7. @EnableWebMvc == <mvc:annotation-driven/>
+
+
+#Accepting request input
+- 总而言之，3 ways for accepting input
+1) Query parameters: @RequestParam(value="max", defaultValue=MAX_LONG_AS_STRING) long max
+2) Form parameters: <sf:form method="POST" commandName="spitter"> + <sf:input path="username" cssErrorClass="error"/>; processRegistration(Spitter spitter) 
+- <sf:form method="POST" modelAttribute="spitter">  = <sf:form method="POST" commandName="spitter"> ??
+3) Path variables: @PathVariable("userid") Integer id
+4) InternalResourceViewResolver regconize redirect: prefix as a redirect specification instead of as a view name; it also recognizes the forward: prefix and forward the request to the given URL path instead of view resolving or redirected.
+
+#Validating forms
+- 总而言之，spring mvc validation
+1) processRegistration(@Valid Spitter spitter, Errors errors)
+2) In domain object: use jsr303 validation annotation (e.g. @Max, @Min, @NotNull，on the field)
+3) if (errors.hasErrors()) { return "registerForm"; }
+4) In the view: <sf:errors path="username"> 
+
+6. Chapter6 Spring MVC Views
+- 总而言之 (JSP view)
+1）controller is responsible for accepting input, processing input and populating the input and return a logical viewname; controller is not aware of the actual view.
+2) ViewResolver interface return an View object based on logical view name and locale, View object use the model render the output to http response
+3) TilesViewResolver to achieve layout control over JSP pages.
+4) Thymleaf has more in common with the HTML than JSP, is more natural.
+5) Spring supports JSP views in two ways: 1) InternalResourceViewResolver can be used to resolve view names into JSP files. also support JSTL locale and resource bundle variables; 2) Spring provides "form-to-model binding" and general "utility" taglib.
+6）Spring’s form-binding JSP tag library includes 14 tags, most of which render HTML. i.e. sf:form, sf:errors, sf:input, sf:password, sf:label..., modelAttribute
+7) <sf:errors path="username" cssClass="error" /> will display validation error and add a css class named error to the element. by predefining the 'error'
+class style, error can be highlighted. same way applied to 1)<sf:errors path="*" element="div" cssClass="errors" /> and 2)<sf:label path="firstName" cssErrorClass="error">
+8) message bundle and internalization: 1) annotation in domain object @Size(min=5, max=16, message="{username.size}"); 2) create a ValidationMessage.properites file at root context and ValiationMessage_xx.properties for other locale; 3) request Content-Language header will be used to match the resource bunder suffix to select the appropriate properties file.
+9) general "utility" taglib has XXX tag. 1)<s:url>: Creates context-relative URLs with support for URI template variables and 2)<s:message> retrieves the message with the given code and either renders it (default) or assigns to a variable with different scopes.
+10) <s:url> can use <s:param> tag to add reqest parameter or path parameter to the URL
+11) Displaying internationalized message: 1)create a MessageSource bean 2)create the default properties file named messages.properties:
+spittr.welcome=Welcome to Spittr! and another properties file named messages_es.properties: spittr.welcome=Bienvenidos a Spittr! 3) use <s:message key="spittr.welcome" /> in jsp page
+
+- 总而言之 (Tiles Views)
+1) declare a TilesConfigurer bean whose job is to locate and load tile definitions and generally coordinate Tiles.
+2) declare a TilesViewResolver bean to resolve logical view names to tile definitions.
+3) define tile definition xml: 1) base template with the standard layout including header, footer, body... 2) other template inherit base. and define its own body. 3)each template can choose to overwrite the header and footer if they want. 4) header and footer is reused.
+
+#Working with Thymeleaf
+- 总而言之(Thymeleaf)
+1) JSP is not natural, littered with jsp tags and the template cannot be displayed by browser; 
+2) Thymeleaf templates are natural and don’t rely on tag libraries and can be edited and rendered as HTML，without special tags or tag libraries as with JSP. 
+3）Configuring resolverThymeleafViewResolver +  SpringTemplateEngine + TemplateResolver
+4）Defining Thymeleaf templates： HTML files + Thymeleaf attributes to the standard set of HTML tags via a custom namespace.e.g. th:href="@{/spittles}, th:field="*{firstName}"， th:class="${#fields.hasErrors('firstName')}? 'error'，th:if="${#fields.hasErrors('*')， th:each="err:${#fields.errors('*')}"， th:text="${err}"
+5) The ${} expressions (such as ${spitter}) are variable expressions. In the case of ${spitter}, it resolves to the model property whose key is spitter.
+6) *{} expressions are selection expressions. Whereas variable expressions are evaluated against the entire SpEL context, selection expressions are evaluated on a selected object. In the case of the form, the selected object is the one given in the <form> tag’s th:object attribute: a Spitter object from the model. Therefore the *{firstName} expression evaluates to the firstName property on the Spitter object.
+7） @{} expressions to calculate context-sensitive URL paths
+
+7. Chapter 7 Advanced Spring MVC
+
+- 总而言之 (More on spring MVC configuration)
+1）traditional web.xml may be needed if pre-Servlet3.0 container is used.
+2) setup additional configuration on DispatcherServlet: besides three abstract methods mandatory to overide, more methods that can be overridden to apply additional configuration: e.g. customizeRegistration(Dynamic registration). 
+3) With the ServletRegistration.Dynamic, set the load-on-startup priority by calling setLoadOnStartup(), set an initialization parameter by calling setInitParameter(), and call setMultipartConfig() to configure Servlet 3.0 multipart support. 
+4) setup servlets and filters in addition to DispatcherServlet: 1)create a class implments WebApplicationInitializer interface; 2)onStartup(ServletContext servletContext)-> servletContext.addServlet("myServlet", MyServlet.class); 3) onStartup(ServletContext servletContext)-> servletContext.addFilter("myFilter", MyFilter.class);
+5) if addtional filters only map to DispatcherServlet, override the getServletFilters() method of AbstractAnnotationConfigDispatcherServletInitializer.
+protected Filter[] getServletFilters() { return new Filter[] { new MyFilter() }; }
+6) load the configuration from @Configuration-annotated classes (e.g. WebConfig) from web.xml: 
+<param-name>contextClass</param-name><param-value>org.springframework.web.context.support.AnnotationConfigWebApplicationContext</param-value>
+<param-name>contextConfigLocation</param-name><param-value>com.habuma.spitter.config.WebConfigConfig</param-value>
+7) also need to specify java config location and contextClass in <context-param> for contextListener, same as #6.
+
+#Processing multipart form data
+总而言之，(spring MVC file upload)
+1）"configure multipart resolver", either a CommonsMultipartResolver from Jakarta Commons FileUpload or StandardServletMultipartResolver from Spring 3.1
+2) CommonsMultipartResolver is useful if using pre-Servlet 3.0 container and StandardServletMultipartResolver is prefer because it doesn't require Jakarta Commons FileUpload.
+3) if you use StandardServletMultipartResolver, you must configure multipart details as part of DispatcherServlet’s configuration in web.xml or in the servlet
+initializer class.
+3.1） If you’re configuring DispatcherServlet in a servlet initializer class that implements WebApplicationInitializer, within onStarup() method, registration.setMultipartConfig(...);
+3.2) If you’ve configured DispatcherServlet in a servlet initializer class that extends AbstractAnnotationConfigDispatcherServletInitializer or AbstractDispatcherServletInitializer, you can override the customizeRegistration() method(which is given a Dynamic as a parameter)
+3.3) If you’re configuring DispatcherServlet in a more traditional way in web.xml, you can specify multipart configuration using the <multipart-config> element in the <servlet> element
+4) if you use Jakarta Commons FileUpload, you declare CommonsMultipartResolver bean and specify multipart upload details in the bean directly
+5) "update form": enctype="multipart/form-data and <input type="file"...>
+6) "update controller handler method": 1)@RequestPart, 2)MultipartFile
+6.1) annotate a controller method parameter with @RequestPart: @RequestPart("profilePicture") byte[] profilePicture, need to process byte arrays
+6.2) use MultipartFile from spring:  MutipartFile profilePicture. MutipartFile provides original filename, size, and content type and transferTo() method to write file to filesystems.
+6.3) use javax.servlet.http.Part in Servlet 3.0 container, @RequestPart("profilePicture") Part profilePicture. the Part interface has several methods
+similar to MultipartFile. no need to configure the StandardServletMultipartResolver bean if using Part interface. 
+
+总而言之，(spring MVC exception handling)
+1) the outcome of a servlet request is a servlet response, an exception must be translated into a response.
+2) 4 ways to translate exceptions to response: 1) Some Spring exceptions are mapped by default to specific HTTP status codes; 2) map exceptions to HTTP status codes using @ResponseStatus; 3) annotate method with @ExceptionHandler. 4) @ControllerAdvice for global exception handling
+2.1) Some Spring exceptions are mapped by default to specific HTTP status codes, if something going wrong in DispatcherServlet or while performing validation, an exception will be thrown and resulting in a response with a mapped status code.
+2.2) map exceptions to HTTP status codes using @ResponseStatus: @ResponseStatus(value=HttpStatus.NOT_FOUND, reason="Spittle Not Found"),the response would have a status code of 404 and a reason of Spittle Not Found.
+2.3) annotate method with @ExceptionHandler: @ExceptionHandler(DuplicateSpittleException.class) public String handleDuplicateSpittle() { return "error/duplicate";}. DuplicateSpittleException will be caught and return to view "error/duplicate", @ExceptionHandler methods handle exceptions from any handler method in the "same controller".
+2.4) @ControllerAdvice for global exception handling: WebConfig requires @EnableWebMvc, create exception, create AppWideExceptionHandler class and annotated with @ControllerAdvice, create exception handler method in the class
+
+总而言之，(carrying data across Spring MVC redirect)
+1) redirect after handling POST request prevents the client from reissuing a dangerous POST request by clicking the Refresh or back-arrow button in browser.
+2) when redirect happens, the original request ends and a new HTTP GET request begins. Any model data carried in the original request are lost.
+3) 2 options to get the data from the redirecting method to the redirect handling method: 1) Passing data as path variables and/or query parameters using URL templates; 2) Sending data in flash attributes
+3.1) using templates to define redirect URLs, return "redirect:/spitter/{username}"; 
+3.2) set the value in the model; attribute in the model map to placeholder will be part of the redirect url
+3.3) attribute from the model doesn’t map to any URL placeholders will be added to the redirect automatically as a query parameter. 
+3.4) Sending data across a redirect via path variables and query parameters is only good for sending simple values, such as String and numeric values. There’s no good way to send anything more complex such as an object in a URL. 
+3.5) use flash attributes via RedirectAttributes, a sub-interface of Model: model.addFlashAttribute("spitter", spitter); 
+3.6) Flash attributes are stored in the session and then retrieved into the model, surviving a redirect.
+
+Chapter 16 Spring REST
+
+总而言之 (Spring MVC restful request and response)
+1) controller works at Java Object level and do not concern with resources representation (json, xml, html...)
+2) 2 options to convert a resource’s Java representation into the representation to the client: 1) Content negotiation 2) Message conversion
+2.1) Content negotiation: still rely on view resolving and rendering machnism, a view is selected that can render the model into a representation to be served to the client.
+2.2) Message conversion: bypass the view resolving and rendering machnism, a message converter transforms an object returned from the controller into a representation to be served to the client.
+3) Content negotiation match view name and find representation suitable to the client. first looks at the URL’s file extension then considers the Accept header
+4) three ways to configure a ContentNegotiationManager: 1) Directly declare a bean whose type is ContentNegotiationManager. (more complicated) 2) Create the bean indirectly via ContentNegotiationManagerFactoryBean. 3) Override the configureContentNegotiation() method of WebMvcConfigurerAdapter.
+5) For Java configuration, the easiest way to get a ContentNegotiationManager is to extend WebMvcConfigurerAdapter and override the configureContentNegotiation() method.
+6) then inject ContentNegotiationManager into the contentNegotiationManager property of ContentNegotiatingViewResolver.
+7) A common configuration: ContentNegotiatingViewResolver defaults to HTML views but renders JSON output for certain view names.
+8) ContentNegotiatingViewResolver's benefits and limitation: 1) layered approach,no change in controller code; 2) userful with more overlap; 3) but overlap is not much; 4) cannot handle different request foramt; 5) subtle difference in rendering format
+9) Message conversion bypass view machnism. message converter convert the java object from controller to a resource representation in json/xml/text/... using MappingJacksonHttpMessageConverter, MappingJackson2HttpMessageConverter, FormHttpMessageConverter, Jaxb2RootElementHttpMessageConverter, JAXB2-annotated objects, StringHttpMessageConverter...
+10) @ResponseBody: tell Spring to skip the normal model/view flow and use a message converter instead: @ResponseBody List<Spittle>
+11) DispatcherServlet considers the request’s Accept header and looks for a message converter that can give the client the representation it wants.
+12) Jackson JSON libraries use reflection in producing the JSON, you can influence how the JSON is produced by applying Jackson’s mapping annotations on the Java type. e.g. @JsonIgnore
+13) @RequestBody: tells Spring to find a message converter to convert a resource representation coming from a client into an object: @RequestBody Spittle spittle.
+14) DispatcherServlet will look at the Content-Type header of the request and try to find a message converter that can convert the request body into the java object
+15) @RestController: @RestController = @Controller + @ResponseBody. if you’re writing a controller that has several methods, all of which should use message conversion, Spring 4.0 introduced the @RestController annotation which applies message conversion to all handler methods in the controller. You don’t need to annotate each method with @ResponseBody.
+
+总而言之, sending headers and status code in restful Spring MVC 
+1) A good REST API does more than transfer resources between the client and server. It also gives the client additional metadata such as headers and status code to help the client understand the resource or know what has just taken place in the request.
+2) 3 ways to communicate errors to the client:
+2.1) use @ResponseStatus annotation to return a status codes
+2.2) use ResponseEntity to return more metadata concerning the response: ResponseEntity<Spittle> spittleById(@PathVariable long id); return new ResponseEntity<Spittle>(spittle, status);
+2.3) use exception handler to deal with the error cases, leaving the handler methods to focus on the happy path. 
+- First, define an Error object with code and message
+- second, update controller method when error situation happens, throw a excetpion
+- third, defining an error handler for Exception
+3) sending response header: use HttpHeaders and ResponseEntity to send response header: 
+4) HttpHeaders headers = new HttpHeaders(); headers.setLocation(locationUri); ResponseEntity<Spittle> responseEntity = new ResponseEntity<Spittle>(spittle, headers, HttpStatus.CREATED)
+5) The UriComponentsBuilder given to the handler method is preconfigured with known information such as the host, port, and servlet content. It obtains this foundational information from the request that the handler method is serving.
+
+#Consuming REST resources
+总而言之，(RestTemplate)
+1) Commonly, mobile and JavaScript applications are the clients of a REST API, but there’s no reason a Spring application can’t consume those resources, too.
+2) 11 operations overloaded into 3 froms, 
+2.1) One that takes a java.net.URI as the URL specification with no support for parameterized URLs (URI as parameters
+2.2) One that takes a String URL specification with URL parameters specified as a Map (string URL + map of parameters )
+2.3) One that takes a String URL specification with URL parameters specified as a variable argument list (string URL + varialbes parameters list )
+3) getForObject() Sends an HTTP GET request, returning an object mapped from a response body
+4) getForEntity() Sends an HTTP GET request, returning a ResponseEntity containing an object mapped from the response body, capable of retriving headers
+5) postForObject() POSTs data to a URL, returning an object mapped from the response body
+6) postForEntity() POSTs data to a URL, returning a ResponseEntity containing an object mapped from the response body, capable of retriving headers
+7) postForLocation() POSTs data to a URL, returning the URL of the newly created resource, just return the url
+8) exchange() Executes a specified HTTP method against a URL, returning a ResponseEntity containing an object mapped from the response body, capable of setting headers on the request
+9) execute() Executes a specified HTTP method against a URL, returning an object mapped from the response body
+10) headForHeaders() Sends an HTTP HEAD request, returning the HTTP headers for the specified resource URL
+11) optionsForAllow() Sends an HTTP OPTIONS request, returning the Allow header for the specified URL
+12) delete() Performs an HTTP DELETE request on a resource at a specified URL 
+13) put() PUTs resource data to the specified URL
+
+9. Chapter9 Spring Security Web
+总而言之，(Spring security - web)
+1) security framework provides declarative security, authentication and authorization at both the web request level and at the method invocation level, relying on DI and AOP, uses servlet filters to secure web requests and AOP to secure method.
+2) first step is configure a DelegatingFilterProxy intercept requests and delegate them to a bean whose ID is springSecurityFilterChain
+3) springSecurityFilterChain bean is another special filter known as FilterChainProxy that chains together one or more additional filters. (authentication, authorization...)
+4) DelegatingFilterProxy configured in xml: <filter-name>springSecurityFilterChain</filter-name><filter-class>	org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+5) DelegatingFilterProxy configured in java: create a new class that extends AbstractSecurityWebApplicationInitializer. 
+6) Congiure secutiry: @Configuration, @EnableWebMvcSecurity, public class SecurityConfig extends WebSecurityConfigurerAdapter == security-context.xml
+7) @EnableWebMvcSecurity configures a "Spring MVC argument resolver" so that handler methods can receive the authenticated user’s principal (or username) via @AuthenticationPrincipal-annotated parameters. It also configures a bean that automatically adds a hidden CSRF token field on forms using Spring’s form-binding tag library.
+8) override WebSecurityConfigurerAdapter’s three configure() methods:
+8.1) configure(WebSecurity): Override to configure Spring Security’s filterchain.
+8.2) configure(HttpSecurity): Override to configure how requests are secured by interceptors.
+8.3) configure(AuthenticationManagerBuilder): Override to configure user-details services.
+9) overide configure(AuthenticationManagerBuilder): several common user store situations—such as in-memory, relational database, and LDAP—are provided out of the box. you can also create and plug in custom user store implementations.
+9.1) auth.inMemoryAuthentication().withUser("user").password("password").roles("USER").and()...
+9.2) auth.jdbcAuthentication().dataSource(dataSource)
+			.usersByUsernameQuery("select username, password, true from Spitter where username=?")
+			.authoritiesByUsernameQuery("select username, 'ROLE_USER' from Spitter where username=?");
+			.passwordEncoder(new StandardPasswordEncoder("53cr3t"));
+9.3) auth.ldapAuthentication().userSearchBase("ou=people").userSearchFilter("(uid={0})").groupSearchBase("ou=groups").groupSearchFilter("member={0}")
+			.contextSource().url("ldap://habuma.com:389/dc=habuma,dc=com");
+9.4) auth.userDetailsService(new SpitterUserService(spitterRepository)); public class SpitterUserService implements UserDetailsService {
+		@Override
+		public UserDetails loadUserByUsername(String username) 	throws UsernameNotFoundException {...}
+	}
+
+#commons-lang包中对我们有用的类主要有:
+1.StringUtils 该类主要提供对字符串的操作,对null是安全的,主要提供了字符串查找,替换,分割,去空白,去掉非法字符等等操作
+2.ObjectUtils 主要是对null进行安全处理,可以设置为null时的默认返回值,比较相等时是调用对象的equals方法,因此需要对对象进行方法进行覆盖
+3.SystemUtils 主要获取一些系统属性,例如工作目录等等
+4.DateUtils/CalendarUtils 主要提供了对日期的操作,包括日期加减,日期格式化,日期比较,一定时间范围内日期的迭代等等
+5.StopWatch 提供秒表的计时,暂停等功能
+6. EqualsBuilder/HashCodeBuilder提供了方便的方法来覆盖equals() 和hashCode()方法
+7.以Range结尾的类主要提供一些范围的操作,包括判断某些字符,数字等是否在这个范围以内
+8.ArrayUtils 提供了数组的复制,查找,获取子数组,反转等功能
+
+总而言之 (spring security - intercepting request)
+1）override the configure (HttpSecurity) method to configure intercept rules
+2) use antMatchers() and regexMatchers() to define request pattern
+3) use authenticated, hasRole, hasAuthority, access... for diffrent path, use anyRequest().permitAll() at the end
+4) configure the most specific request path patterns first and the least specific ones (such as anyRequest()) last
+5) Use access() to apply SpEL for declaring access requirements: .antMatchers("/spitter/me").access("hasRole('ROLE_SPITTER') and hasIpAddress('192.168.1.2')")
+6) Enforcing channel security: .requiresChannel().antMatchers("/spitter/form").requiresSecure();
+7) Authenticating users with default login form: .formLogin()
+8) Preventing CSRF: CSRF attack happens when one site tricks a user into submitting a request to another server, possibly having a negative outcome.
+9) Spring Security implements CSRF protection with a synchronizer token. State-changing requests (for example, any request that is not GET, HEAD, OPTIONS, or TRACE) will be intercepted and checked for a CSRF token.
+10) If you’re using JSP, <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />; if using Thymeleaf or spring form binding taglib, CSRF token will be added automatically.
+11) disable csrf: .csrf().disable();
+
+#Custom login form
+总而言之 (spring security - custom login form)
+1) configure custom login form:
+1.1）create a custom login page with <input type='text' name='username'> <input type='password' name='password'/> action='/login'
+1.2) controller handler method to toute /login to the login page
+1.3) In configure(HttpSecurity http) throws Exception {} http.formLogin().loginPage("/login")
+2) Enabling HTTP Basic authentication: .httpBasic().realmName("Spittr")
+3) Enabling remember-me: .rememberMe().tokenValiditySeconds(2419200).key("spittrKey"); include a remember-me parameter in the login page:
+<input id="remember_me" name="remember-me" type="checkbox"/>
+4) The token that’s stored in the cookie is made up of the username, password, an expiration date, and a private key—all encoded in an MD5 hash before being written to the cookie. 
+5) Enabling logout: <a href="/logout">Logout</a>; .logout().logoutSuccessUrl("/").logoutUrl("/signout")
+
+#Securing the view
+总而言之 (spring security - securing view)
+1) When rendering HTML to be served in the browser, you may want the view to reflect the security constraints and information.
+2) declare the JSP tag library: <%@ taglib prefix="security" uri="http://www.springframework.org/security/tags" %>
+2.1) <security:accesscontrollist>: Conditionally renders its body content if the user is granted authorities by an access control list
+2.2) <security:authentication>: Renders details about the current authentication. e,g, Hello <security:authentication property="principal.username" />!
+2.3) <security:authorize>: Conditionally renders its body content if the user is granted certain authorities or if a SpEL expression evaluates to true
+<sec:authorize access="hasRole('ROLE_SPITTER')">, <security:authorize access="isAuthenticated() and principal.username=='habuma'">
+3) restrict access based on url: <span sec:authorize-url="/admin">
+4) Spring Security for Thymeleaf: Thymeleaf’s security dialect offers attributes that mirror much of Spring Security’s tag library
+4.1) sec:authentication -  Renders properties of the authentication object. Similar to Spring Security’s <sec:authentication/> JSP tag.
+4.2) sec:authorize - Conditionally renders content based on evaluation of an expression. Similar to Spring Security’s <sec:authorize/> JSP tag.
+4.3) sec:authorize-acl - Conditionally renders content based on evaluation of an expression. Similar to Spring Security’s <sec:accesscontrollist/> JSP tag.
+4.4) sec:authorize-expr - An alias for the sec:authorize attribute.
+4.5) sec:authorize-url - Conditionally renders content based on evaluation of security rules associated with a given URL path. Similar to Spring Security’s
+					<sec:authorize/> JSP tag when using the url attribute.
+5)register the SpringSecurityDialect with the SpringTemplateEngine in your configuration: templateEngine.addDialect(new SpringSecurityDialect());
+6) declare the security namespace in the templates: xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+7) In thymeleaf template Hello <span sec:authentication="name">someone</span>; <span sec:authorize-url="/admin">
+
+10. Chapter 14 - Spring Security - securing methods
+总而言之， (securing methods)
+1) 3 ways to secure methods
+1.1) Spring Security’s own @Secured
+1.2) JSR-250’s @RolesAllowed
+1.3) Expression-driven annotations, with @PreAuthorize, @PostAuthorize, @PreFilter, and @PostFilter
+2) create method security class with @EnableGlobalMethodSecurity(securedEnabled=true) and extends GlobalMethodSecurityConfiguration
+3) When securedEnabled is true, a pointcut is created such that the Spring Security aspects will wrap bean methods that are annotated with @Secured.
+4) annotated method with @Secured: @Secured({"ROLE_SPITTER", "ROLE_ADMIN"}) public void addSpittle(Spittle spittle) {...}
+5) @EnableGlobalMethodSecurity(jsr250Enabled=true) and annotated method with @RolesAllowed
+6) using the standard @RolesAllowed annotation may have implications when used in the context of other frameworks or APIs that process that annotation.
+7) Using expression-driven annotations: Sometimes security constraints depend on more than just whether a user has privileges or not.
+7.1) @EnableGlobalMethodSecurity(prePostEnabled=true)
+7.2) @PreAuthorize： Restricts access to a method before invocation based on the result of evaluating an expression:
+- @PreAuthorize("(hasRole('ROLE_SPITTER') and #spittle.message.length() <= 140) or hasRole('ROLE_PREMIUM')") 
+7.3) @PostAuthorize Allows a method to be invoked, but throws a security exception if the expression evaluates to false: 
+- @PostAuthorize("returnObject.spitter.username == principal.username")
+7.4) @PostFilter Allows a method to be invoked, but filters the results of that method based on an expression
+- @PostFilter( "hasRole('ROLE_ADMIN') || filterObject.spitter.username == principal.username")
+7.5) @PreFilter Allows a method to be invoked, but filters input prior to entering the method
+- @PreFilter( "hasRole('ROLE_ADMIN') || filterObject.spitter.username == principal.username")
+8) permission evaluator: @PreFilter("hasPermission(targetObject, 'delete')"); public class SpittlePermissionEvaluator implements PermissionEvaluator {...
+	public boolean hasPermission(Authentication authentication, Object target, Object permission) {...}}
+9) register it with Spring Security for it to back the hasPermission() operation in the expression: expressionHandler.setPermissionEvaluator(new SpittlePermissionEvaluator());
+
+11. Chapter 10 - Spring JDBC
+总而言之 (spring jdbc datasource)
+1）Spring’s data-access philosophy is coding to interface
+2) Spring’s data-access exception: 1) providing a consistent exception hierarchy that’s used across all of its supported persistence options. 2)provides several data-access exceptions, each descriptive of the problem for which they’re thrown 3)all of those exceptions are rooted with DataAccessException, an unchecked exception. 4) you must use one of Spring’s supported data-access templates to take advantage of Spring’s data-access exceptions
+3) Spring separates the fixed and variable parts of the data-access process into two distinct classes: templates and callbacks.
+4) Configuring a data source: Spring-supported data access you use, you’ll likely need to configure a reference to a data source
+4.1) Data sources that are looked up by JNDI: using Java configuration, you can use JndiObjectFactoryBean to look up the DataSource from JNDI
+4.2) Data sources that pool connections: 1) Apache Commons DBCP (http://jakarta.apache.org/commons/dbcp), 2) c3p0 (http://sourceforge.net/projects/c3p0/)
+3) BoneCP (http://jolbox.com/). <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">, @Bean public BasicDataSource dataSource() {..}
+4.3) Data sources that are defined by a JDBC driver:
+4.4) embedded data source: public DataSource dataSource() { return new EmbeddedDatabaseBuilder()...build() }
+5) Using profiles to select a data source:	configure each of these data sources in different profiles: 
+	@Profile("development")
+	@Bean
+	public DataSource embeddedDataSource()
+
+总而言之 (#Using JDBC with Spring)
+1) there are 3 JDBC template classes: JdbcTemplate, NamedParameterJdbcTemplate, SimpleJdbcTemplate. JdbcTemplate should be used.
+2) create a jdbcTemplate bean, wiring a dataSource. @Bean public JdbcTemplate jdbcTemplate(DataSource dataSource)
+3) wire the jdbcTemplate bean into your repository and use it to access the database. 
+@Repository
+public class JdbcSpitterRepository implements SpitterRepository {
+	private JdbcOperations jdbcOperations;
+4) update: jdbcOperations.update(INSERT_SPITTER, spitter.getUsername()...}
+5) queryForObject: return jdbcOperations.queryForObject(SELECT_SPITTER_BY_ID, new SpitterRowMapper(), id);		
+6) private static final class SpitterRowMapper implements RowMapper<Spitter>
+
+#Declaring a Hibernate session factory
+- Spring SessionFactoryBean -> Hibernate SessionFactory -> Hibernate Session -> Respository -> DB
+- the main interface for working with Hibernate is org.hibernate.Session. The Session interface provides basic data-access functionality such as the ability to save, update, delete, and load objects from the database.
+- The standard way to get a reference to a Hibernate Session object is through an implementation of Hibernate’s SessionFactory interface. Among other
+things, SessionFactory is responsible for opening, closing, and managing Hibernate Sessions.
+- In Spring, the way to get a Hibernate SessionFactory is through one of Spring’s Hibernate sessionfactory beans. As of version 3.1, Spring comes with three sessionfactory beans to choose from:
+1) org.springframework.orm.hibernate3.LocalSessionFactoryBean (Hibernate 3.2 or higher + mapping in xml)
+@Bean
+public LocalSessionFactoryBean sessionFactory(DataSource dataSource) {
+	LocalSessionFactoryBean sfb = new LocalSessionFactoryBean();
+	sfb.setDataSource(dataSource);
+	sfb.setMappingResources(new String[] { "Spitter.hbm.xml" });
+	Properties props = new Properties();
+	props.setProperty("dialect", "org.hibernate.dialect.H2Dialect");
+	sfb.setHibernateProperties(props);
+	return sfb;
+}
+
+2) org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean (Hibernate 3.2 or higher + mapping using annotation)
+@Bean
+public AnnotationSessionFactoryBean sessionFactory(DataSource ds) {
+	AnnotationSessionFactoryBean sfb = new AnnotationSessionFactoryBean();
+	sfb.setDataSource(ds);
+	sfb.setPackagesToScan(new String[] { "com.habuma.spittr.domain" });
+	Properties props = new Properties();
+	props.setProperty("dialect", "org.hibernate.dialect.H2Dialect");
+	sfb.setHibernateProperties(props);
+	return sfb;
+}
+
+3) org.springframework.orm.hibernate4.LocalSessionFactoryBean (Hibernate 4) <Test> <Test Done>
+- this new session factory bean added in Spring 3.1 is like a mashup of the Hibernate 3 LocalSessionFactoryBean and AnnotationSessionFactoryBean. it can be configured for either XML-based mapping or annotation-based mapping.
+
+Here’s how you’d configure it for annotation-based mapping:
+@Bean
+public LocalSessionFactoryBean sessionFactory(DataSource dataSource) {
+	LocalSessionFactoryBean sfb = new LocalSessionFactoryBean();
+	sfb.setDataSource(dataSource);
+	sfb.setPackagesToScan(new String[] { "com.habuma.spittr.domain" });
+	Properties props = new Properties();
+	props.setProperty("dialect", "org.hibernate.dialect.H2Dialect");
+	sfb.setHibernateProperties(props);
+	return sfb;
+}
+
+- the dataSource and hibernateProperties properties specify where to find a database connection and what kind of database you’ll be dealing with. 
+- But instead of listing Hibernate mapping files, you can use the packagesToScan property to tell Spring to scan one or more packages, looking for domain classes that are annotated for persistence with Hibernate. This includes classes that are annotated with JPA’s @Entity or @MappedSuperclass and Hibernate’s own @Entity annotation.
+
+- you may also explicitly list all of your application’s persistent classes
+sfb.setAnnotatedClasses(
+	new Class<?>[] { Spitter.class, Spittle.class }
+);
+
+#Building Spring-free Hibernate
+- The best practice now, however, is to take advantage of Hibernate contextual sessions and not use HibernateTemplate at all.
+- wiring a Hibernate SessionFactory directly into your repository and using it to obtain a session
+@Repository
+public class HibernateSpitterRepository implements SpitterRepository {
+
+	private SessionFactory sessionFactory;
+
+	@Inject
+	public HibernateSpitterRepository(SessionFactory sessionFactory) {
+		this.sessionFactory = sessionFactory;		 
+	}
+	
+	private Session currentSession() {
+		return sessionFactory.getCurrentSession();
+	}
+	
+	public long count() {
+		return findAll().size();
+	}
+
+	public Spitter save(Spitter spitter) {
+		Serializable id = currentSession().save(spitter); 
+		return new Spitter((Long) id, 
+				spitter.getUsername(), 
+				spitter.getPassword(), 
+				spitter.getFullName(), 
+				spitter.getEmail(), 
+				spitter.isUpdateByEmail());
+	}
+
+	public Spitter findOne(long id) {
+		return (Spitter) currentSession().get(Spitter.class, id); 
+	}
+
+	public Spitter findByUsername(String username) {		
+		return (Spitter) currentSession() 
+				.createCriteria(Spitter.class) 
+				.add(Restrictions.eq("username", username))
+				.list().get(0);
+	}
+
+	public List<Spitter> findAll() {
+		return (List<Spitter>) currentSession() 
+				.createCriteria(Spitter.class).list(); 
+	}
+}
+- you’re using the @Inject annotation to have Spring automatically inject a SessionFactory into HibernateSpitterRepository’s sessionFactory property. 
+- in currentSession() method, you use that SessionFactory to get the "current transaction’s session".
+- PersistenceExceptionTranslationPostProcessor is a bean post-processor that adds an adviser to any bean that’s annotated with @Repository so that any platform-specific exceptions are caught and then rethrown as one of Spring’s unchecked data-access  exceptions.
+@Bean
+public BeanPostProcessor persistenceTranslation() {
+	return new PersistenceExceptionTranslationPostProcessor();
+}
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#Java Persistence API
+总而言之
+1) In spring, use container managed JPA
+2) LocalContainerEntityManagerFactoryBean == LocalSessionFactoryBean (1. set dataSource, 2, set packageToScan and 3. set hibernate properties or JpaVendor Adapter)
+3) EntityManagerFactory == SessionFactory 
+5) @PesistenceUnit == @Inject
+6) EntityManager == Session
+7) entityManagerFactory.createEntityManager() == sessionFactory.getCurrentSession()
+8) configure container managed JPA
+8.1) decalre jpa vendor adapter (set hibernate properties, or other adapter properties)
+8.2) decalre LocalContainerEntityManagerFactoryBean (1. set dataSource, 2, set packageToScan and 3. set JpaVendor Adapter)
+8.3) in @Respository class, inject EntityManagerFactory with @PesistenceUnit or inject EntityManager with @PersistenceContext
+8.4) em = entityManagerFactory.createEntityManager()
+8.5) em.save(), em.get(), em.findAll()...
+8.6) deaclre a PersistenceAnnotationBeanPostProcessor bean if <context:annotation-config> or <context:component-scan> is not used
+8.7) declare a PersistenceExceptionTranslationPostProcessor so that jpa exceptions can be translated into Spring’s unified data-access exceptions.
+8.8) declare transaction manager in configuration bean
+8.9) any jpa repository operation needs to be annotated with @Transactional
+9) configure hibernate
+9.1) declare HibernateSessionFactoryBean: 1. set dataSource, 2. packageToScan or mapper file locations 3. hibernateProperties properties
+9.2) in @Respository class, inject SessionFactory with @Inject
+9.3) session = sessionFactory.getCurrentSession()
+9.4) session.save(), session.get(), session.findAll()...
+9.5) deaclre a PersistenceAnnotationBeanPostProcessor bean if <context:annotation-config> or <context:component-scan> is not used
+9.6) declare a PersistenceExceptionTranslationPostProcessor so that jpa exceptions can be translated into Spring’s unified data-access exceptions.
+9.7) declare transaction manager in configuration bean
+9.8) any hibernate repository operation needs to be annotated with @Transactional
+
+总而言之 (spring data default methods)
+1）the db operation methods in repository are boilerplate，the domain types will be different, but the methods are fairly common across all kinds of repositories.
+2）Spring Data JPA lets you just writing the repository interface without the implementation.
+3）extends one of spring data interfaces: JpaRepository, CRUDRepository, PagingAndSortingRepository
+public interface SpitterRepository extends JpaRepository<Spitter, Long> {}
+4) JpaRepository is parameterized such that it knows this is a repository for persisting Spitter objects and that Spitters have an ID of type Long.
+5) JpaRepository inherits 18 methods for performing common persistence operations, such as saving, deleting, and finding by its ID.
+6) @EnableJpaRepositories in configuration class. @EnableJpaRepositories(basePackages="com.habuma.spittr.db")
+7) @EnableJpaRepositories scans its base package for any interfaces that extend Spring Data JPA’s Repository interface. 
+8) When it finds any interface extending Repository, it automatically (at application startup time) generates an implementation of that interface.
+
+总而言之 (Spring data method query)
+- if custom query other than the 18 default queries are needed, specify a method in the repository interface, use the method signature to indicate the implementation
+- Repository methodname = verb + subject(optional) + By + predicate. e.g. findByUsername, readSpittersByFirstnameOrLastnameOrderByLastname
+- verb: get, read, find, and count. get, read, and find verbs are synonymous
+- subject： optional and ignored except for sstarts with the "Distinct"
+- predicate: conditions that constrain the results. Each condition must reference a property and may also specify a comparison operation. 
+1) Spitter findByUsername(String username) //Spitter indicate return one object <Test> <Test Done>
+2) List<Spitter> readByFirstnameOrLastname(String first, String last);	//List indicates return a collection, firstname=? or lastname=? <Test> <Test Done>
+3) List<Spitter> readByFirstnameOrLastnameOrderByLastnameAsc(String first, String last); //Orderby
+4) List<Spitter> readByFirstnameOrLastnameOrderByLastnameAscFirstnameDesc(String first, String last); //orderby lastname and firstname
+5) List<Pet> findPetsByBreedIn(List<String> breed) //breed in List
+6) int countProductsByDiscontinuedTrue() //discounted=true
+7) List<Order> findByShippingDateBetween(Date start, Date end) //ShippingDate between start and end
+
+总而言之 (Spring Data JPA mix Spring JPA) <Test> <Test Done>
+1）In case query is too complex to expresss in method name or using @Query annotation, you can use mix the Impl class with Spring Data.
+2) define an interface with the needed methods: public interface SpitterSweeper{ int eliteSweep(); }
+3) Define a Impl class in ordinary spring JPA way. 
+public class SpitterRepositoryImpl implements SpitterSweeper {
+	@PersistenceContext
+	private EntityManager em;
+4) make sure SpitterSweeper interface method is declared in the SpitterRepository interface
+public interface SpitterRepository extends JpaRepository<Spitter, Long>, SpitterSweeper
+5) When Spring Data JPA generates the implementation for a repository interface, it also looks for a class whose name is the same as the interface’s name postfixed with Impl, i.e. SpitterRepositoryImpl. If the class exists, Spring Data JPA merges its methods with those generated by Spring Data JPA.
+6) you can configure the postfix to something other tahn Impl:
+@EnableJpaRepositories(basePackages="com.habuma.spittr.db", repositoryImplementationPostfix="Helper")
+
+13. MyBatis (自己总结的)
+# simple mapping
+1) Configuration class
+@Configuration
+@MapperScan(basePackages = "spittr.data.mybatis")	//scan for mapper
+public class MyBatisDataConfig {
+	//declare dataSource
+	
+	@Bean
+    public DataSourceTransactionManager transactionManager() {			//same transaction manager as spring jdbc
+        return new DataSourceTransactionManager(dataSource());
+    }
+
+    @Bean
+    public SqlSessionFactoryBean sqlSessionFactory() throws Exception {
+        SqlSessionFactoryBean sqlSessionFactoryBean = new SqlSessionFactoryBean();
+        sqlSessionFactoryBean.setDataSource(dataSource());
+        return sqlSessionFactoryBean;
+    }
+}
+
+- additional configuration can be applied to SqlSessionFactoryBean
+@Bean
+public SqlSessionFactoryBean sqlSessionFactory() throws Exception {
+    SqlSessionFactoryBean sqlSessionFactoryBean = new SqlSessionFactoryBean();
+    sqlSessionFactoryBean.setDataSource(dataSource());
+    sqlSessionFactoryBean.setTypeAliasesPackage("spittr.domain"); 
+    sqlSessionFactoryBean.setConfigLocation(new PathMatchingResourcePatternResolver().getResource("classpath:mybatis-config.xml"));
+    sqlSessionFactoryBean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:mapper/*.xml"));
+    return sqlSessionFactoryBean;
+}
+
+- package to scan for domain objects: sqlSessionFactoryBean.setTypeAliasesPackage("spittr.domain"); 
+
+- Set locations of MyBatis mapper files that are going to be merged into the SqlSessionFactory configuration at runtime:
+sqlSessionFactoryBean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:mapper/*.xml"))
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="org.seckill.dao.SeckillDao">
+	<update id="reduceNumber">
+		update 
+			seckill
+		set
+			number=number-1
+		where seckill_id=#{seckillId}
+		and start_time <![CDATA[ <= ]]> #{killTime}
+		and end_time >= #{killTime}
+		and number > 0;
+	</update>
+	
+	<select id="queryById" resultType="Seckill" parameterType="long">
+		select seckill_id,name,number,start_time, end_time, create_time
+		from seckill
+		where seckill_id = #{seckillId}	
+	</select>
+	
+	<select id="queryAll" resultType="Seckill">
+		select seckill_id,name,number,start_time, end_time, create_time
+		from seckill
+		order by create_time desc
+		limit #{offset}, #{limit}		
+	</select>
+</mapper>
+
+- Set the location of the MyBatisSqlSessionFactory config file: 
+sqlSessionFactoryBean.setConfigLocation(new PathMatchingResourcePatternResolver().getResource("classpath:mybatis-config.xml"));
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<settings>
+		<setting name="useGeneratedKeys" value="true"/>
+		<setting name="useColumnLabel" value="true"/>
+		<setting name="mapUnderscoreToCamelCase" value="true"/>	
+	</settings>
+</configuration>
+
+2) Define mapper interface
+public interface MyBatisSpitterMapper {
+
+    @Select("SELECT * FROM Spitter WHERE username=#{user}")
+    Spitter findByUsername(@Param("user") String username);
+    
+    @Select("select * from Spitter s where s.email like '%gmail.com'")
+    List<Spitter> findAllGmailSpitters();
+}
+
+- @Select, @Update, @Delete annotation followed by sql
+- @Param match the method parameter to sql parameter
+
+3) autowire mapper in Service class and execute the interface method:
+@Autowire
+MyBatisSpitterMapper myBatisSpitterMapper;
+List<Spitter> spitterList = myBatisSpitterMapper.findAllGmailSpitters();
+
+#complex mapping
+- If sql is complex or result set mapping to object is not straightforward, it is better to use mapper.xml file.
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="org.seckill.dao.SuccessKilledDao">
+	<insert id="insertSuccessKilled">
+		insert ignore into success_killed(seckill_id, user_phone, state)
+		values (#{seckillId},#{userPhone},0)
+	</insert>
+	<select id="queryByIdWithSeckill" resultType="SuccessKilled">
+		select 
+			sk.seckill_id,
+			sk.user_phone,
+			sk.create_time,
+			sk.state,
+			s.seckill_id "seckill.seckill_id",
+	 		s.name "seckill.name",
+	 		s.number "seckill.number",
+	 		s.start_time "seckill.start_time",
+	 		s.end_time "seckill.end_time",
+	 		s.create_time "seckill.create_time"	
+		from success_killed sk
+		inner join seckill s on sk.seckill_id = s.seckill_id
+		where sk.seckill_id = #{seckillId} 
+		and sk.user_phone = #{userPhone}	
+	</select>
+</mapper>
+
+- declare a SqlSessionFactoryBean with more configuration
+<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="configLocation" value="classpath:mybatis-config.xml"/>
+		<property name="typeAliasesPackage" value="org.seckill.entity"/>
+		<property name="mapperLocations" value="classpath:mapper/*.xml"/>	
+</bean>
+
+- typeAliasesPackage: SuccessKilled + org.seckill.entity = org.seckill.entity.SuccessKilled
+
+- declare a MapperScannerConfigurer bean scan basepackage for mapper class. 
+- can be replaced with MapperScan(basePackages="org.seckill.dao") if using java config
+<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+		<property name="basePackage" value="org.seckill.dao"/>
+</bean>
+
+- <property name="configLocation" value="classpath:mybatis-config.xml"/>
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<settings>
+		<setting name="useGeneratedKeys" value="true"/>				//??
+		<setting name="useColumnLabel" value="true"/>				//use column label to map to object field
+		<setting name="mapUnderscoreToCamelCase" value="true"/>		//first_name map to firstName
+	</settings>
+</configuration>
+
+#use mybatis-generator
+- compile time generator, generate code during build.
+- generate mapper xml + pojo domain object + mapper interface for each database table.
+- mapper interface contains 6 generic methods
+- mapper xml contains resultMap mapping to domain object and sql mapping to mapper interface methods.
+- If additional sql are needed, you can add method to mapper interface and add sql statement to the mapper xml.
+
+13. chapter 12 working with NoSQL database
+总而言之 (Spring Data Mongo configuration and MongoTemplate)
+1) documents is in denormalized structures, it collects the information into one place rather than spread the data across multiple tables, nodes, or entities.
+2) documents generally documents are standalone entities. Databases finely tuned to work with documents are known as document databases.
+3) configure a MongoClient bean: 
+@EnableMongoRepositories(basePackages="orders.db"); //Enable MongoDB repositories generation
+@Bean public MongoFactoryBean mongo() {...}; 			//MongoFactoryBean bean, like a dataSource
+@Bean public MongoOperations mongoTemplate(Mongo mongo) {...}	//MongoTemplate
+4) Annotating model types: @Document public class Order { @Id private String id; @Field("client") private String customer; ... }
+5) Inject mongoTemplate to DAO: @Autowired MongoOperations mongoOperations;
+6) execute db operations using mongoOperations:
+long orderCount = mongoOperations.getCollection("order").count();
+mongoOperations.save(order);
+String id = "599a6170b4d673ae450389d3";
+Order order = mongoOperations.findById(id, Order.class);
+List<Order> chucksOrders = mongoOperations.find(Query.query(Criteria.where("client").is("Chuck Wagon")), Order.class);
+List<Order> chucksWebOrders = mongoOperations.find(Query.query(Criteria.where("customer").is("Chuck Wagon").and("type").is("WEB")), Order.class);
+mongoOperations.remove(order);
+
+总而言之，（Spring Data MongoDB repository)
+1）enabled Spring Data MongoDB repositories with @EnableMongoRepositories
+2) create an interface and extend MongoRepository: public interface OrderRepository extends MongoRepository<Order, String> {}
+3) The MongoRepository interface has two parameters. The first is the type of @Document-annotated object that this repository deals with. The second is the type of the @Id-annotated property.
+4) OrderRepository extends MongoRepository, it transitively extends the Repository marker interface, any interface that extends Repository will have an implementation automatically generated at runtime.
+5) OrderRepository inherits several useful methods for CRUD operations on Order documents: count(), delete(), exists(), findAll(), FindOne(ID), save(S)...
+6) Inject OrderRepository into Service class and operate on db using OrderRepository
+- Order savedOrder = orderRepository.save(order);
+- Order foundOrder = orderRepository.findOne(savedOrder.getId());
+- orderRepository.delete(savedOrder.getId());
+
+总而言之 (Spring Data Mongo auto custom query + manual custom query)
+1）The provided CRUD operations are generally useful, but you may need the repository to provide methods beyond what comes out of the box. e.g. findByProperty not primary key id, conditional query...
+2) like Spring Data JPA, Spring Data MongoDB supports a method-naming convention that helps Spring Data to automatically generate implementations for the methods.
+3) create methods in OrderRepository interface following the method-naming convention, implementation will be generated automatically:
+public interface OrderRepository extends MongoRepository<Order, String> {
+	List<Order> findByCustomer(String c);
+	List<Order> findByCustomerLike(String c);
+	List<Order> findByCustomerAndType(String c, String t);
+	List<Order> findByCustomerLikeAndType(String c, String t);
+}
+4) Inject OrderRepository into Service class and operate on db using OrderRepository
+- List<Order> chucksOrders = orderRepository.findByCustomer("Chuck Wagon");
+- List<Order> chuckLikeOrders = orderRepository.findByCustomerLike("Chuck");
+- List<Order> chucksWebOrders = orderRepository.findByCustomerAndType("Chuck Wagon", "WEB");
+- List<Order> chucksPhoneOrders = orderRepository.findByCustomerAndType("Chuck Wagon", "PHONE");
+5) In case the method-naming convention becomes too complicated, you can explicitly write a query, for MongoDB, @Query takes a JSON query string instead of a JPA query.
+@Query("{'customer': 'Chuck Wagon', 'type' : ?0}")
+List<Order> findChucksOrders(String t);
+6) the type property is mapped to ?0. This indicates that the type property should be equal to the zeroth parameter to the query method. If there were more parameters, they could be referred to with ?1, ?2, and so forth.
+
+总而言之 (Spring Data Mongo - mixing custom impementation into auto generated repository)
+1) When db operation is so complex that method-naming convention and @Query annotation cannot meet the needs, you can use mixing repository
+2) create an intermediary interface that declares the custom methods:  
+public interface OrderOperations {
+	List<Order> findOrdersByType(String t);
+}
+3) create an implementation class for the custom methods: fall back to MongoOperations to use Query and Criteria.
+public class OrderRepositoryImpl implements OrderOperations {
+	@Autowired
+	private MongoOperations mongo;		//Inject MongoOperations 
+	
+	public List<Order> findOrdersByType(String t) {
+		String type = t.equals("NET") ? "WEB" : t;
+		Criteria where = Criteria.where("type").is(t);		//create query
+		Query query = Query.query(where);					
+		return mongo.find(query, Order.class);				//perform query
+	}
+}
+4) make automatic repository interface to extend the intermediary interface. 
+public interface OrderRepository extends MongoRepository<Order, String>, OrderOperations { ... }
+5) When Spring Data MongoDB generates the repository implementation, it scans the basePackage "spittr.data.mongo" and found OrderRepository which imeplemneted the MongoRepository interface, it will generate the implementation based on the method-naming convention or @Query, then it will look for OrderRepositary + Impl and mix it into the automatically generated implementation.
+6) you can configure Spring Data MongoDB to look for a class with a different suffix in its name:
+@EnableMongoRepositories(basePackages="orders.db", repositoryImplementationPostfix="Stuff")
+
+总而言之 (neo4j)
+1）graph databases store data in several fine-grained nodes that are connected with each other through relationships.
+2) A node in a graph database typically represents a concept in the database, having properties that describe the state of the node. Relationships connect
+two nodes and may carry properties of their own.
+3) because data is structured as a graph, it’s possible to traverse relationships to discover things about your data that would be difficult or even impossible with other kinds of databases.
+4) Spring Data Neo4j provides annotations for mapping Java types to nodes and relationships, template-oriented Neo4j access, and automatic generation of repository implementations.
+5) Configuring Spring Data Neo4j
+5.1) declare a GraphDatabaseService bean and enable automatic Neo4j repository generation
+@Configuration
+@EnableNeo4jRepositories(basePackages="orders.db")		//Enable automatic repositories
+public class Neo4jConfig extends Neo4jConfiguration {
+	public Neo4jConfig() {								//Set model base package
+		setBasePackage("orders");
+	}
+	
+	@Bean(destroyMethod="shutdown")
+	public GraphDatabaseService graphDatabaseService() {
+		return new GraphDatabaseFactory().newEmbeddedDatabase("/tmp/graphdb");		//Configure embedded database
+	}
+}
+5.2) Annotating graph entities
+*@NodeEntity: Declares a Java type as a node entity
+*@RelationshipEntity: Declares a Java type as a relationship entity
+*@StartNode: Declares a property as the start node of a relationship entity
+*@EndNode: Declares a property as the end node of a relationship entity
+@Fetch: Declares a property on an entity to be eagerly loaded
+*@GraphId: Declares a property as the ID field of an entity (the field must be a Long)
+@GraphProperty: Explicitly declares a property
+@GraphTraversal: Declares a property to automatically provide an iterable that’s built by following a graph traversal
+@Indexed: Declares a property to be indexed
+@Labels: Declares the labels for an @NodeEntity
+@Query: Declares a property to automatically provide an iterable that’s built by executing a given Cypher query
+@QueryResult: Declares a Java class or interface as being able to hold the results of a query
+*@RelatedTo: Declares a simple relationship between the current @NodeEntity and another @NodeEntity via a property
+@RelatedToVia: Declares a field on an @NodeEntity as referencing an
+@RelationshipEntity: that the node belongs to 
+@RelationshipType: Declares a field as the type of a relationship entity
+@ResultColumn: Declares a property on an @QueryResult-annotated type to capture a specific field from a query result
+5.3) autowire Neo4jTemplate and operate on Neo4j db:
+@Autowired 
+private Neo4jOperations neo4j;
+neo4j.count(Order.class) <Test> <Test Done>
+neo4j.save(order) <Test> <Test Failed> not in tx
+
+总而言之 #Creating automatic Neo4j repositories <Test>
+1) added @EnableNeo4jRepositories to your configuration
+2) write the Repository interfaces extends GraphRepository, Spring Data Neo4j will daefault generate implementation automatically:
+public interface OrderRepository extends GraphRepository<Order> {}
+3) GraphRepository is parameterized with Order, the type of entity that the repository works with.
+4) @Autowired private OrderRepository orderRepository;
+5) use OrderRepository to operate on neo4j db:
+	orderRepository.count();
+	Order savedOrder = orderRepository.save(order);
+	Order foundOrder = orderRepository.findOne(savedOrder.getId());
+6) following method naming convention, add additional methods to OrderRepository, Spring Data Neo4j will generate implementation automatically
+	orderRepository.deleteAll(	);
+	List<Order> chucksOrders = orderRepository.findByCustomer("Chuck Wagon"	);
+	List<Order> chuckLikeOrders = orderRepository.findByCustomerLike("Chuck.*"	);
+	List<Order> chucksWebOrders = orderRepository.findByCustomerAndType("Chuck Wagon", "WEB"	);
+	List<Order> chucksPhoneOrders = orderRepository.findByCustomerAndType("Chuck Wagon", "PHONE");
+	orderRepository.delete(savedOrder.getId());
+7) When neither the naming convention nor the @Query methods meet your needs, you always have the option of mixing in custom repository logic.
+7.1) start by defining an intermediary interface: public interface OrderOperations { List<Order> findSiAOrders(); }
+7.2) make OrderRepository to extend OrderOperations in addition to GraphRepository: 
+public interface OrderRepository extends GraphRepository<Order>, OrderOperations {...}
+7.3) write the implementation
+public class OrderRepositoryImpl implements OrderOperations {		
+	private final Neo4jOperations neo4j;
+	...
+}
+
+
+总而言之 #Working with key-value data in Redis
+1）Redis is a special kind of database known as a key-value store. key-value stores share a lot in common with hash maps. To call them persistent hash maps would not be too great of an oversimplification.
+2）configure the connection factory as a bean
+@Bean
+public RedisConnectionFactory redisCF() { 
+	return new JedisConnectionFactory();
+}
+3）configure a RedisTemplate
+@Bean
+public RedisTemplate<String, Product> redisTemplate(RedisConnectionFactory cf) {
+	RedisTemplate<String, Product> redis = new RedisTemplate<String, Product>();
+	redis.setConnectionFactory(cf);
+	return redis;
+}
+4) saving, fetching, and deleting key-value entries. <Test> <Test Done>
+4.1) sub-APIs for working with simple values
+redis.opsForValue().set(product.getSku(), product);
+Product found = redis.opsForValue().get(product.getSku());
+4.2) sub-APIs for working with list
+redis.opsForList().rightPush("cart", product);
+redis.opsForList().rightPush("cart", product2);
+redis.opsForList().rightPush("cart", product3);
+redis.opsForList().size("cart").longValue();
+Product first = redis.opsForList().leftPop("cart");
+Product last = redis.opsForList().rightPop("cart");
+List<Product> products = redis.opsForList().range("cart", 2, 12);
+4.3) sub-APIs for working with set
+redis.opsForSet().add("cart", product);
+redis.opsForSet().size("cart").longValue();
+Set<Product> diff = redis.opsForSet().difference("cart1", "cart2");
+Set<Product> union = redis.opsForSet().union("cart1", "cart2");
+Set<Product> isect = redis.opsForSet().intersect("cart1", "cart2");
+Product random = redis.opsForSet().randomMember("cart1");
+4.4) sub-APIs for working with operations bound to a given key.
+BoundListOperations<String, Product> cart = redis.boundListOps("cart");
+cart.rightPush(product);
+cart.rightPush(product2);
+cart.rightPush(product3);
+Product first = cart.leftPop();
+Product last = cart.rightPop();
+
+5) Redis key and value serializers
+5.1) When an entry is saved to the "Redis key-value store", both the key and the value are serialized using a "Redis serializer". 
+- domain object nedds to mark with Serializable interface, this is not required by ConcurrentHashMap and EhCache. 
+- private static final long serialVersionUID = 1L; for what??
+- all of these serializers implement the RedisSerializer interface, you can always create your own serializer.
+	GenericToStringSerializer—Serializes using a Spring conversion service
+	JacksonJsonRedisSerializer—Serializes objects to JSON using Jackson 1
+	Jackson2JsonRedisSerializer—Serializes objects to JSON using Jackson 2
+	JdkSerializationRedisSerializer—Uses Java serialization (used by RedisTemplate, keys and values are serialized through Java.)
+	OxmSerializer—Serializes using marshalers and unmarshalers from Spring’s O/X mapping, for XML serialization
+	StringRedisSerializer—Serializes String keys and values (used by StringRedisTemplate by default)
+
+5.2) suppose that when using RedisTemplate, you want to serialize Product values to JSON with String keys. <Test> <Test Done>
+- set RedisTemplate to always use StringRedisSerializer when serializing key values. 
+- also specify that it should use Jackson2JsonRedisSerializer only when serializing Product values.
+@Bean
+public RedisTemplate<String, Product>redisTemplate(RedisConnectionFactory cf) {
+	RedisTemplate<String, Product> redis = new RedisTemplate<String, Product>();
+	redis.setConnectionFactory(cf);
+	redis.setKeySerializer(new StringRedisSerializer());
+	redis.setValueSerializer(new Jackson2JsonRedisSerializer<Product>(Product.class));
+	return redis;
+}
+
+Chapter 13 - Caching data
+总而言之
+1）Caching is a way to store frequently needed information so that it’s readily available when needed.
+2）Spring doesn’t implement a cache solution, it offers declarative support for caching that integrates with several popular caching implementations.
+3) Cache managers enables integration with one of several popular caching implementations.
+4) Spring 3.1 comes with five cache-manager implementations: SimpleCacheManager, NoOpCacheManager, ConcurrentMapCacheManager, CompositeCacheManager, 	EhCacheCacheManager
+5) Spring 3.2 introduced another cache manager for working with JCache (JSR-107) based cache providers.
+6) Spring Data offers two more cache managers: RedisCacheManager (from Spring Data Redis), GemfireCacheManager (from Spring Data GemFire)
+7) ConcurrentMapCacheManager is a simple cache manager uses a java.util.concurrent.ConcurrentHashMap as its cache store. Its simplicity makes it a tempting choice for development, testing, or basic applications.
+7.1）Enable caching using ConcurrentMapCacheManager <Test> <Test Done>
+@Configuration
+@EnableCaching												//Enable caching
+public class CachingConfig {
+	@Bean
+	public CacheManager cacheManager() {					//Declare a cache manager
+		return new ConcurrentMapCacheManager();
+	}
+}
+8) Ehcache is one of the most popular cache providers, Spring offer a cache manager EhCacheCacheManager that integrates with Ehcache. <Test> <Test Done> 
+8.1) configure EhCacheCacheManager bean
+@Configuration
+@EnableCaching
+public class CachingConfig {
+	@Bean
+	public EhCacheCacheManager cacheManager(CacheManager cm) {		//Configure EhCacheCacheManager, inject an Ehcache CacheManager
+		return new EhCacheCacheManager(cm);
+	}
+	
+	@Bean
+	public EhCacheManagerFactoryBean ehcache() {												//EhCacheManagerFactoryBean, generates an Ehcache CacheManager
+		EhCacheManagerFactoryBean ehCacheFactoryBean = new EhCacheManagerFactoryBean();
+		ehCacheFactoryBean.setConfigLocation(new ClassPathResource("com/habuma/spittr/cache/ehcache.xml"));
+		return ehCacheFactoryBean;
+}
+
+8.2) configure Echache, ehcache.xml
+<ehcache>
+	<cache name="spittleCache" maxBytesLocalHeap="50m" timeToLiveSeconds="100">
+	</cache>
+</ehcache>
+
+9) Spring Data Redis offers RedisCacheManager, an implementation of CacheManager. RedisCacheManager works with a Redis server via a RedisTemplate: <Test> <Test Done>
+@Configuration
+@EnableCaching
+public class CachingConfig {
+	@Bean
+	public CacheManager cacheManager(RedisTemplate redisTemplate) {
+		return new RedisCacheManager(redisTemplate);
+	}
+	
+	@Bean
+	public JedisConnectionFactory redisConnectionFactory() {
+		JedisConnectionFactory jedisConnectionFactory =
+		new JedisConnectionFactory();
+		jedisConnectionFactory.afterPropertiesSet();
+		return jedisConnectionFactory;
+	}
+	
+	@Bean
+	public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory redisCF) {
+		RedisTemplate<String, String> redisTemplate = new RedisTemplate<String, String>();
+		redisTemplate.setConnectionFactory(redisCF);
+		redisTemplate.afterPropertiesSet();
+		return redisTemplate;
+	}
+}
+
+10) CompositeCacheManager is configured with one or more cache managers and iterates over them all as it tries to find a previously cached value. create a CompositeCacheManager bean that iterates over a JCacheCacheManager, an EhCacheCacheManager, and a RedisCacheManager. <Test> <Test Done>
+@Bean
+public CacheManager cacheManager(net.sf.ehcache.CacheManager cm, javax.cache.CacheManager jcm) {
+	CompositeCacheManager cacheManager = new CompositeCacheManager();
+	List<CacheManager> managers = new ArrayList<CacheManager>();
+	managers.add(new JCacheCacheManager(jcm));
+	managers.add(new EhCacheCacheManager(cm))
+	managers.add(new RedisCacheManager(redisTemplate()));
+	cacheManager.setCacheManagers(managers);
+	return cacheManager;
+}
+
+11) Spring+Hibernate+Ehcache integration <Test> <Failed> paritialy, everytime the session open, if will fire the sql at least once.
+- 大量数据流动是web应用性能问题常见的原因，而缓存被广泛的用于优化数据库应用。cache被设计为通过保存从数据库里load的数据来减少应用和数据库之间的数据流动。数据库访问只有当检索的数据不在cache里可用时才必要。
+- hibernate可以用两种不同的对象缓存：first-level cache 和 second-level cache。first-level cache和Session对象关联，而second-level cache是和Session Factory对象关联。
+- hibernate默认使用基于每个事务的first-level cache。Hibernate用first-level cache主要是减少在一个事务内的sql查询数量。 例如，如果一个对象在同一个事务内被修改多次， hibernate将只生成一个包括所有修改的 UPDATE SQL语句。
+- second-level cache在Session Factory级的不同事务之间保持load的对象，这些对象对整个应用可用，不只是对当前用户正在运行的查询。这样，每次查询将返回已经load在缓存 里的对象，避免一个或更多潜在的数据库事务。 
+11.1) HibernateSessionFactoryBean
+@Bean
+public LocalSessionFactoryBean sessionFactory(DataSource dataSource) {
+    LocalSessionFactoryBean sfb = new LocalSessionFactoryBean();
+    sfb.setDataSource(dataSource);
+    sfb.setPackagesToScan(new String[] { "spittr.domain" });
+    Properties props = new Properties();
+    props.setProperty("dialect", "org.hibernate.dialect.H2Dialect");
+    props.setProperty("hibernate.cache.use_second_level_cache", "true");
+    props.setProperty("hibernate.cache.use_query_cache", "true");
+    props.setProperty("hibernate.cache.region.factory_class", "org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory");
+    props.setProperty("hibernate.show_sql", "true");
+    sfb.setHibernateProperties(props);
+    return sfb;
+}
+
+总而言之 (caching annotation)
+1）Spring’s caching annotations.
+1.1) @Cacheable:  Indicates that Spring should look in a cache for the method’s return value before invoking the method. If the value is found, the cached value is returned. If not, then the method is invoked and the return value is put in the cache.
+1.2) @CachePut: Indicates that Spring should put the method’s return value in a cache. The cache isn’t checked prior to method invocation, and the method is always invoked.
+1.3) @CacheEvict: Indicates that Spring should evict one or more entries from a cache.
+1.4) @Caching: A grouping annotation for applying multiples of the other caching annotations at once.
+
+2) @Cacheable and @CachePut share a common set of attributes:
+value: String[]: The name(s) of the cache(s) to use
+condition: String: A SpEL expression that, if it evaluates to false, results in caching not being applied to the method call 
+key: String: A SpEL expression to calculate a custom cache key
+unless: String: A SpEL expression that, if it evaluates to true, prevents the return value from being put in the cache
+
+3) @Cacheable - simple form <Test> <Test Done>
+@Cacheable("spittleCache")
+public Spittle findOne(long id) {
+	try {
+		return jdbcTemplate.queryForObject(
+			SELECT_SPITTLE_BY_ID,
+			new SpittleRowMapper(),
+			id);
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+}
+
+4) Both @Cacheable and @CachePut have a key attribute that lets you replace the default key with one derived from a SpEL expression. Spring exposes several pieces of metadata that come in handy when you’re writing SpEL expressions for caching:
+#root.args: The arguments passed in to the cached method, as an array
+#root.caches: The caches this method is executed against, as an array
+#root.target: The target object
+#root.targetClass: The target object’s class; a shortcut for #root.target.class
+#root.method: The cached method
+#root.methodName: The cached method’s name; a shortcut for #root.method.name
+#result: The return value from the method call (not available with @Cacheable)
+#Argument: The name of any method argument (such as #argName) or argument index (such as #a0 or #p0) 
+
+5) @CachePut with custom key 	<Test> <Test Done>
+@CachePut(value="spittleCache", key="#result.id")
+Spittle save(Spittle spittle)
+
+6) unless attribute:  prevent an object from being placed in the cache, but the cache is still searched when the method is called, and if a match is found, it’s returned. suppose you don’t want to cache any Spittle objects whose message property contains the text “NoCache”: <Test> <Test Done>
+@Cacheable(value="spittleCache" unless="#result.message.contains('NoCache')") 	
+Spittle findOne(long id);
+
+7) condition attribute: if condition’s expression evaluates to false, then caching is disabled for the duration of the method invocation. The cache isn’t searched, nor is the return value placed in the cache. suppose you don’t want caching to be applied to any Spittle whose ID is less than 10. <Test> <Test Done>
+@Cacheable(value="spittleCache", unless="#result.message.contains('NoCache')", condition="#id >= 10")
+Spittle findOne(long id);
+
+8) if an @CacheEvict annotated method is called, one or more entries are removed from the cache. Unlike @Cacheable and @CachePut, @CacheEvict can be used on void methods. <Test> <Test Done>
+@CacheEvict("spittleCache")
+void remove(long spittleId);
+
+9) @CacheEvict attributes:
+value: String[]: The name(s) of the cache(s) to use.
+key: String: A SpEL expression to calculate a custom cache key.
+condition: String: A SpEL expression that, if it evaluates to false, results in caching not being applied to the method call.
+allEntries: boolean: If true, all entries in the specified cache(s) should be removed.
+beforeInvocation: boolean: If true, the entries are removed from the cache before the method is invoked. If false (the default), the entries are removed after a successful method invocation.
+
+10) XML config:
+<aop:config>
+	<aop:advisor advice-ref="cacheAdvice" pointcut= "execution(* com.habuma.spittr.db.SpittleRepository.*(..))"/> 	//Bind cache advice to a pointcut
+</aop:config>
+
+<cache:advice id="cacheAdvice">
+	<cache:caching cache="spittleCache" >
+		<cache:cacheable method="findRecent" />					//Make cacheable
+		<cache:cacheable method="findOne" />					//Make cacheable
+		<cache:cacheable method="findBySpitterId" />			//Make cacheable
+		<cache:cache-put method="save" key="#result.id" />		//Populate cache on save
+		<cache:cache-evict method="remove" />					//Remove from cache
+	</cache:caching>
+</cache:advice>
+
+Chapter 15 Working with remote services
+总而言之 （Spring remoting basics）
+1）Remoting is a conversation between a client application and a service. 
+2) remote procedure call (RPC) is a remote call from client to a remote service, On the surface, an RPC is similar to a call to a method on a local object. Both are synchronous operations, blocking execution in the calling code until the called procedure is complete.
+3) Spring supports RPC via several remoting technologies.
+3.1) Remote Method Invocation(RMI) - Accessing/exposing Java-based services when network constraints such as firewalls aren’t a factor.
+3.2) Hessian or Burlap - Accessing/exposing Java-based services over HTTP when network constraints are a factor. Hessian is a binary protocol, whereas Burlap is XML-based 
+3.3) HTTP invoker - Accessing/exposing Spring-based services when network constraints are a factor and you desire Java serialization over XML or proprietary
+serialization.
+3.4) JAX-RPC and JAX-WS - Accessing/exposing platform-neutral, SOAP-based web services.
+3.5) JMS
+4) common remoting machnism:
+4.1) Server side: In all models, services can be configured into your application as Spring-managed beans, and exported as remote services using remote exporters.
+4.2) Client side: The client makes calls to the proxy as if the proxy were providing the service functionality. The proxy communicates with the remote service on behalf of the client. It handles the details of connecting and making remote calls to the remote service.
+4.3) Exception: if the call to the remote service results in a java.rmi.RemoteException, the proxy handles that exception and rethrows it as an unchecked RemoteAccessException.
+4.4) any beans passed to or returned from remote calls may need to implement java.io.Serializable
+
+总而言之，#Exposing remote services with Hessian and Burlap
+1) Hessian and Burlap are two solutions enable lightweight remote services over HTTP. Each aims to simplify web services by keeping both its API and its communication protocols as simple as possible.
+2) Hessian, like RMI, uses binary messages to communicate between client and service. But unlike other binary remoting technologies (such as RMI), the binary message is portable to languages other than Java, including PHP, Python, C++, and C#.
+3) Burlap is an XML-based remoting technology, which automatically makes it portable to any language that can parse XML. Unlike other XML-based remoting technologies (such as SOAP and XML-RPC), Burlap’s message structure is as simple as possible and doesn’t require an external definition language (such as WSDL or IDL).
+4) The only difference is that Hessian messages are binary and Burlap messages are XML. Because Hessian messages are binary, they’re more bandwidth-friendly. If human readability is important to you (for debugging purposes), Burlap’s XML messages may be preferable.
+4) Server side: 
+4.1) configure a HessianServiceExporter. 
+@Autowired
+SpittleService spittleService;
+@Bean
+public HessianServiceExporter hessianExportedSpitterService(SpitterService service) {
+	HessianServiceExporter exporter = new HessianServiceExporter();
+	exporter.setService(spittleService);
+	exporter.setServiceInterface(SpittleService.class);
+	return exporter;
+}
+4.2) Configure a URL handler in your Spring configuration to dispatch Hessian service URLs to the appropriate Hessian service bean.
+- requests to /spittle.service will ultimately be handled by the hessianExportedSpitterService bean (which is a proxy to SpitterServiceImpl).
+- mappings.setProperty("/**", "defaultServletHttpRequestHandler") is to direct routing request to static resources to Servlet container's default servlet.
+@Bean
+public HandlerMapping httpInvokerMapping() {
+    SimpleUrlHandlerMapping mapping = new SimpleUrlHandlerMapping();
+    Properties mappings = new Properties();
+    mappings.setProperty("/**", "defaultServletHttpRequestHandler");
+    mappings.setProperty("/spittle.service", "hessianExportedSpitterService");
+    mapping.setMappings(mappiangs);
+    return mapping;
+}
+
+4.3) for the purposes of handling Hessian services, that DispatcherServlet needs a servlet mapping that catches *.service URLs, if you’re configuring DispatcherServlet by extending AbstractDispatcherServletInitializer or AbstractAnnotationConfigDispatcherServletInitializer:
+@Override
+protected String[] getServletMappings() {
+	return new String[] { "/", "*.service" };
+}
+4.4) @Import(HessianServiceConfig.class) in WebConfig
+
+5) Client Side:
+5.1) the only difference between wiring the client side of an RMI-based service that of a Hessian-based service is to use HessianProxyFactoryBean instead of RmiProxyFactoryBean.
+@Bean
+public HessianProxyFactoryBean spitterService() {
+	HessianProxyFactoryBean proxy = new HessianProxyFactoryBean();
+	proxy.setServiceUrl("http://localhost:8080/spittle.service");
+	proxy.setServiceInterface(SpittleService.class);
+	return proxy;
+}
+5.2) In RemotingClientTest: @ContextConfiguration(classes= HessianClientConfig.class)
+
+@Configuration标注在类上，相当于把该类作为spring的xml配置文件中的<beans>，作用为：配置spring容器(应用上下文)
+@Bean标注在方法上(返回某个实例的方法)，等价于spring的xml配置文件中的<bean>，作用为：注册bean对象
+
+6) Burlap <Test> <Test Done>
+6.1) Service Side:
+@Configuration
+@ComponentScan(basePackages = "spittr.service")
+public class BurlapServiceConfig {
+    @Autowired
+    SpittleService spittleService;
+
+    @Bean
+    public BurlapServiceExporter burlapExportedSpittleService() {
+        BurlapServiceExporter exporter = new BurlapServiceExporter();
+        exporter.setService(spittleService);
+        exporter.setServiceInterface(SpittleService.class);
+        return exporter;
+    }
+
+    @Bean
+    public HandlerMapping httpInvokerMapping() {
+        SimpleUrlHandlerMapping mapping = new SimpleUrlHandlerMapping();
+        Properties mappings = new Properties();
+        mappings.setProperty("/**", "defaultServletHttpRequestHandler");
+        mappings.setProperty("spittle.service", "burlapExportedSpittleService");
+        mapping.setMappings(mappings);
+        return mapping;
+    }
+}
+6.2) Client side:
+@Configuration
+public class BurlapClientConfig {
+    @Bean
+    public BurlapProxyFactoryBean spittleService() {
+        BurlapProxyFactoryBean proxy = new BurlapProxyFactoryBean();
+        proxy.setServiceUrl("http://localhost:8080/spittle.service");
+        proxy.setServiceInterface(SpittleService.class);
+        return proxy;
+    }
+}
+
+7) Hessian and Burlap vs. RMI
+7.1) Because both Hessian and Burlap are based on HTTP, they don’t suffer from the same firewall issues as RMI.
+7.2) But RMI has both Hessian and Burlap beat when it comes to serializing objects that are sent in RPC messages. Whereas Hessian and Burlap both use a proprietary serialization mechanism, RMI uses Java’s own serialization mechanism. If your data model is complex, the Hessian/Burlap serialization model may not be sufficient.
+总而言之 (Spring HttpInvoker) <Test> <Test Done>
+1）Spring’s HTTP invoker offers RPC over HTTP (like Hessian/Burlap) while at the same time using Java serialization of objects (like RMI).
+2) Create Service interface and ServiceImpl
+3) Server side:
+3.1) Exposing beans as HTTP services
+@Autowired
+SpittleService spittleService;
+
+@Bean
+public HttpInvokerServiceExporter httpExportedSpittleService(SpittleService spittleService) {
+    HttpInvokerServiceExporter exporter = new HttpInvokerServiceExporter();
+    exporter.setService(spittleService);
+    exporter.setServiceInterface(SpittleService.class);
+    return exporter;
+}
+3.2) set up a URL handler to map an HTTP URL to the service
+@Bean
+public HandlerMapping httpInvokerMapping() {
+    SimpleUrlHandlerMapping mapping = new SimpleUrlHandlerMapping();
+    Properties mappings = new Properties();
+    mappings.setProperty("/spittle.service", "httpExportedSpittleService");
+    mapping.setMappings(mappings);
+    return mapping;
+}
+4) Client side:
+4.1) HttpInvokerProxyFactoryBean is a proxy factory bean that produces a proxy for remoting with a Spring-specific HTTP-based protocol.
+@Bean
+public HttpInvokerProxyFactoryBean spittleService() {
+    HttpInvokerProxyFactoryBean proxy = new HttpInvokerProxyFactoryBean();
+    proxy.setServiceUrl("http://localhost:8080/spittle.service");
+    proxy.setServiceInterface(SpittleService.class);
+    return proxy;
+}
+5) 注意： <mvc:default-servlet-handler/>自己创建的SimpleUrlHandlerMapping导致后来我们自定义的SimpleUrlHandlerMapping失效(应该是没有引用), 出现404错误，正常情况下直接输入endpoint会出500错误。 xml config可以通过调换次序解决，java config整合defaultHandler和ExportedService到SimpleUrlHandlerMapping中解决:
+@Bean
+public DefaultServletHttpRequestHandler defaultServletHttpRequestHandler() {
+    return new DefaultServletHttpRequestHandler();
+}
+
+@Bean
+public HandlerMapping httpInvokerMapping() {
+    SimpleUrlHandlerMapping mapping = new SimpleUrlHandlerMapping();
+    Properties mappings = new Properties();
+    mappings.setProperty("/spittle.service", "httpExportedSpittleService");
+    mappings.setProperty("/**", "defaultServletHttpRequestHandler");
+    mapping.setMappings(mappings);
+    return mapping;
+}
+
+总而言之 (Spring Web Services) <Test>
+1) at the center of SOA is the idea that applications can and should be designed to lean on a common set of core services instead of reimplementing the same functionality for each application.
+2) Spring supports publishing and consuming SOAP web services using the "Java API for XML Web Services" (JAX-WS)
+3) Creating Spring-enabled JAX-WS endpoints:
+3.1) Spring provides a JAX-WS service exporter, SimpleJaxWsServiceExporter.  but it may not be the best choice in all situations.
+3.2) SimpleJaxWsServiceExporter requires that the JAX-WS runtime support publishing of endpoints to a specified address.
+3.3) The JAX-WS runtime that ships with Sun’s JDK 1.6 is compatible with SimpleJaxWsServiceExporter, but other JAX-WS implementations including the reference implementation of JAX-WS may not.
+3.4) If you’ll be deploying to a JAX-WS runtime that doesn’t support publishing to a specified address, you’ll have write your JAX-WS endpoints in a more conventional way.
+4) AUTOWIRING JAX-WS ENDPOINTS IN SPRING 
+4.1) In JAX-WS programming model, a class that’s annotated with @WebService is considered a web service endpoint, and its methods—annotated with @WebMethod—are the operations.
+4.2) if the endpoint’s lifecycle is managed by the JAX-WS runtime and not by Spring, extending SpringBeanAutowiringSupport to wiring JAX-WS endpoints is 
+@WebService(serviceName="SpitterService")
+public class SpitterServiceEndpoint extends SpringBeanAutowiringSupport {		//Enable autowiring
+	@Autowired
+	SpitterService spitterService;						//Autowire SpitterService
+	
+	@WebMethod
+	public void addSpittle(Spittle spittle) {			//Delegate to SpitterService
+		spitterService.saveSpittle(spittle);
+	}
+	
+	@WebMethod
+	public void deleteSpittle(long spittleId) {			//Delegate to SpitterService
+		spitterService.deleteSpittle(spittleId);
+	}
+	
+	@WebMethod
+	public List<Spittle> getRecentSpittles(int spittleCount) {			//Delegate to SpitterService
+		return spitterService.getRecentSpittles(spittleCount);
+	}
+	
+	@WebMethod
+	public List<Spittle> getSpittlesForSpitter(Spitter spitter) {			//Delegate to SpitterService
+		return spitterService.getSpittlesForSpitter(spitter);
+	}
+}
+4.3) EXPORTING STANDALONE JAX-WS ENDPOINTS
+- But under the right circumstances, it’s possible to export a Spring-managed bean as a JAX-WS endpoint.
+- Spring’s SimpleJaxWsServiceExporter publishes all beans annotated with JAX-WS annotations as service endpoints in a JAX-WS runtime.
+@Bean
+public SimpleJaxWsServiceExporter jaxWsExporter() {
+	return new SimpleJaxWsServiceExporter();
+}
+- Because SimpleJaxWsServiceEndpoint’s base address defaults to http://localhost:8080/, and SpitterServiceEndpoint is annotated with @Web-
+Service (serviceName="SpitterService"), the matchup of these two beans results in a web service at http://localhost:8080/SpitterService.
+- you can set the base address to something else:
+@Bean
+public SimpleJaxWsServiceExporter jaxWsExporter() {
+	SimpleJaxWsServiceExporter exporter = new SimpleJaxWsServiceExporter();
+	exporter.setBaseAddress("http://localhost:8888/services/");
+}
+4.4) Client side:
+@Bean
+public JaxWsPortProxyFactoryBean spitterService() {
+	JaxWsPortProxyFactoryBean proxy = new JaxWsPortProxyFactoryBean();
+	proxy.setWsdlDocument("http://localhost:8080/services/SpitterService?wsdl");
+	proxy.setServiceName("spitterService");
+	proxy.setPortName("spitterServiceHttpPort");
+	proxy.setServiceInterface(SpitterService.class);
+	proxy.setNamespaceUri("http://spitter.com");
+	return proxy;
+}
+- The wsdlDocumentUrl property identifies the location of the remote web service’s definition file. 
+- JaxWsPortProxyFactoryBean will use the WSDL available at that URL to construct a proxy to the service.
+- The proxy that’s produced by JaxWsPortProxyFactoryBean will implement the SpitterService interface, as specified by the serviceInterface property.
+- You can usually determine the values for the remaining three properties by looking at the service’s WSDL
+<wsdl:definitions targetNamespace="http://spitter.com">
+	...
+	<wsdl:service name="spitterService">
+		<wsdl:port name="spitterServiceHttpPort" binding="tns:spitterServiceHttpBinding">
+			...
+		</wsdl:port>
+	</wsdl:service>
+</wsdl:definitions>
+- the namespaceUri property specifies the namespace of the service. the namespace helps JaxWsPortProxyFactoryBean locate the service definition in the WSDL.
+- port and service names is in the <wsdl:port> and <wsdl:service> elements, usually available in the targetNamespace attribute of the <wsdl:definitions> element.
+Chapter 17 Messaging in Spring
+总而言之 (messaging model)
+1）Asynchronous messaging is a way of "indirectly" sending messages from one application to another "without waiting" for a response.
+2）Spring supports message-driven POJOs(MDP): a way to receive messages that resembles EJB’s message-driven beans (MDBs).
+3) message brokers and destinations: 
+3.1) When an application sends a message, it hands it off to a message broker. A message broker is analogous to the post office. The message broker ensures that the message is delivered to the specified destination, leaving the sender free to go about other business. 
+3.2) asynchronous message are addressed with a destination. Destinations are like mailboxes where the messages are placed until someone comes to pick them up.
+6) two types of destination: queues and topics. 
+7) Each of these is associated with a specific messaging model: either point-to-point (for queues) or publish/subscribe (for topics).
+8) POINT-TO-POINT MESSAGING: 
+8.1) each message has exactly one sender and one receiver
+8.2) A message queue decouples a message sender from the message receiver. Although a queue may have several receivers, each message is picked up by exactly one receiver.
+8.3) Because the message is removed from the queue as it’s delivered, it’s guaranteed that the message will be delivered to only one receiver.
+9) PUBLISH-SUBSCRIBE MESSAGING:
+9.1) Unlike queues, a topic message may be delivered to many topic subscribers.
+9.2) In the publish/subscribe messaging model, messages are sent to a topic. As with queues, many receivers may be listening to a topic.
+9.3) But unlike with queues, where a message is delivered to exactly one receiver, all subscribers to a topic receive a copy of the message
+10) benefits of asynchronous messaging: no waiting/decouple from the interface of the service/decouple from the location of the service/decouple from availability of the service/guranteed delivery, service implementation flexibility/service clustering
+11) disavantage: additional components(message brokers) to develop and maintiain, time sequence of messages
+
+总而言之 (configure JMS broker and destination)
+1）The Java Message Service (JMS) is a Java standard that defines a common API for working with message brokers.
+2）JMS standardize proprietary API of different message broker via a common interface in much the same way that JDBC does to database
+3) Spring supports JMS through a template-based abstraction known as JmsTemplate and message-driven POJOs
+3.1) JmsTemplate makes it easy to send messages across queues and topics from the producer side and to receive those messages on the consumer side.
+3.2) message-driven POJOs is simple Java objects that react to messages arriving on a queue or topic in an asynchronous fashion
+4) Setting up a message broker in Spring: 
+4.1) ActiveMQ is a great open source message broker, downloaded ActiveMQ, unzip it to your local hard drive. 
+4.2) In the lib directory of the unzipped distribution, you’ll find activemq-core-5.9.1.jar. This is the JAR file you’ll need to add to the application’s classpath to be able to use ActiveMQ’s API.
+4.3) Under the bin directory, you’ll find subdirectories for various operating systems. In those, you’ll find scripts that you can use to start ActiveMQ.
+5) CREATING A CONNECTION FACTORY, By default, ActiveMQ broker is listening at port 61616 on localhost.
+<bean id="connectionFactory" class="org.apache.activemq.spring.ActiveMQConnectionFactory" />
+<bean id="connectionFactory" class="org.apache.activemq.spring.ActiveMQConnectionFactory" p:brokerURL="tcp://localhost:61616"/>
+6) DECLARING AN ACTIVEMQ MESSAGE DESTINATION
+- In addition to a connection factory, you need a destination for the messages to be passed to. The destination can be either a queue or a topic, depending on the needs of the application. 
+- In either case, the constructor is given the name of the queue, as it’s known to the message broker—spitter.topic in this case.
+<bean id="queue" class="org.apache.activemq.command.ActiveMQQueue" c:_="spitter.queue" />
+<bean id="topic" class="org.apache.activemq.command.ActiveMQTopic" c:_="spitter.queue" />
+7) Using amq namesapce:
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jms="http://www.springframework.org/schema/jms"
+	xmlns:amq="http://activemq.apache.org/schema/core"
+	xsi:schemaLocation="http://activemq.apache.org/schema/core
+	http://activemq.apache.org/schema/core/activemq-core.xsd
+	http://www.springframework.org/schema/jms
+	http://www.springframework.org/schema/jms/spring-jms.xsd
+	http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd">
+		
+	<amq:connectionFactory id="connectionFactory" brokerURL="tcp://localhost:61616"/>
+	<amq:queue id="spittleQueue" physicalName="spittle.alert.queue" />				//the physicalName attribute sets the name of the message channel.
+	<amq:topic id="spittleTopic" physicalName="spittle.alert.topic" />
+</beans>
+
+总而言之 JmsTemplate
+1）unlike conventional (non-Spring) JMS, JmsTemplate takes care of creating a connection, obtaining a session, and ultimately sending or receiving messages. This leaves you to focus your development efforts on constructing the message to send or processing messages that are received.
+2) JmsTemplate can handle any clumsy JMSException that may be thrown along the way. If a JMSException is thrown in the course of working with JmsTemplate, JmsTemplate will catch it and rethrow it as one of the unchecked subclasses of Spring’s own JmsException.
+3) declare it as a bean in the Spring configuration file.
+<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate" c:_-ref="connectionFactory" />
+Because JmsTemplate needs to know how to get connections to the message broker, you must set the connectionFactory property with a reference to the bean that implements JMS’s ConnectionFactory interface.
+4) use jmsTemplate to send message: <Test> <Test Done>
+4.1) To support sending spittle alerts asynchronously with the creation of spittles, let’s introduce AlertService to the Spittr application:
+public interface AlertService {
+	void sendSpittleAlert(Spittle spittle);
+}
+4.2) AlertServiceImpl is an implementation of the AlertService interface that uses an injected JmsOperations (the interface that JmsTemplate implements) to send Spittle objects to a message queue to be processed at some later time.
+public class AlertServiceImpl implements AlertService {
+	
+	private JmsOperations jmsOperations;
+	
+	@Autowired
+	public AlertServiceImpl(JmsOperations jmsOperatons) {			//Inject JMS template
+		this.jmsOperations = jmsOperations;
+	}
+	
+	public void sendSpittleAlert(final Spittle spittle) {
+		jmsOperations.send("spittle.alert.queue", new MessageCreator() {			//Send message //Specify destination
+			public Message createMessage(Session session) throws JMSException {
+					return session.createObjectMessage(spittle);					//Create message
+			}
+		}
+		);
+	}
+}
+- The first parameter to JmsOperations’ send() method is the name of the JMS destination to which the message will be sent.
+- When the send() method is called, JmsTemplate deals with obtaining a JMS connection and session and sends the message on behalf of the sender
+- The message is constructed using a MessageCreator, implemented here as an anonymous inner class. In MessageCreator’s createMessage() method, you ask for an
+object message from the session, giving it the Spittle object from which to build the object message.
+
+5) set default destination <Test> <Test Done>
+5.1) in the case of AlertServiceImpl, you’ll always be sending the spittle message to the same destination, you can wire a default destination into JmsTemplate:
+<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate" c:_-ref="connectionFactory" p:defaultDestinationName="spittle.alert.queue" />
+5.2) or you can instead wire in a reference to a queue or destination bean that you declared earlier:
+<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate" c:_-ref="connectionFactory" p:defaultDestination-ref="spittleTopic" />
+5.3) Now the call to JmsOperations’ send() method can be simplified slightly by removing the first parameter:
+jmsOperations.send(new MessageCreator() {
+	...
+	}
+);
+
+6)CONVERTING MESSAGES WHEN SENDING <Test> <Test Failed>
+6.1) In addition to the send() method, JmsTemplate offers convertAndSend().
+public void sendSpittleAlert(Spittle spittle) {
+	jmsOperations.convertAndSend(spittle);
+}
+6.2) spring uses an implementation of MessageConverter to converting objects to Messages.
+public interface MessageConverter {
+	Message toMessage(Object object, Session session) throws JMSException, MessageConversionException;
+	Object fromMessage(Message message) throws JMSException, MessageConversionException;
+}
+MappingJacksonMessageConverter/MappingJackson2MessageConverter/MarshallingMessageConverter/SimpleMessageConverter
+6.3) if you want to work with JSON messages, you can declare a MappingJacksonMessageConverter bean: <Test> <Test Failed>
+<bean id="messageConverter" class="org.springframework.jms.support.converter.MappingJacksonMessageConverter" />
+- Then you can wire it into JmsTemplate like this:
+<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate" c:_-ref="connectionFactory" p:defaultDestinationName="spittle.alert.queue"
+	p:messageConverter-ref="messageConverter" />
+
+总而言之 jms consumer
+1) call JmsOperations’ receive() method to consume a message: <Test> <Test Done>
+public Spittle receiveSpittleAlert() {
+	try {
+		ObjectMessage receivedMessage = (ObjectMessage) jmsOperations.receive("spittle.alert.queue");	//Receive message
+		return (Spittle) receivedMessage.getObject();													//Get object
+		} catch (JMSException jmsException) {
+			throw JmsUtils.convertJmsAccessException(jmsException);										//Throw converted exception
+		}
+}
+2) receive and convert: <Test> <Test Done>
+public Spittle retrieveSpittleAlert() {
+	return (Spittle) jmsOperations.receiveAndConvert();
+}
+3) The big downside of consuming messages with JmsTemplate is that both the receive() and receiveAndConvert() methods are synchronous.  This means the receiver must wait patiently for the message to arrive, because those methods will block until a message is available (or until a timeout condition occurs).
+4) Message-driven POJOs(MDP), CREATING A MESSAGE LISTENER
+public class SpittleAlertHandler {
+	public void handleSpittleAlert(Spittle spittle) {
+		// ... implementation goes here...
+	}
+}
+
+5) CONFIGURING MESSAGE LISTENERS, empowering a POJO with message-receiving abilities by configuring it as a message listener in Spring. 
+- Spring’s jms namespace provides everything you need to do that. 
+5.1) First, declare the handler as a <bean>:
+<bean id="spittleHandler" class="com.habuma.spittr.alerts.SpittleAlertHandler" />
+5.2) Then, to turn SpittleAlertHandler into a message-driven POJO, you can declare the bean to be a message listener:
+<jms:listener-container connection-factory="connectionFactory">
+	<jms:listener destination="spitter.alert.queue" ref="spittleHandler" method="handleSpittleAlert" />
+</jms:listener-container>
+5.3) A message-listener container is a special bean that watches a JMS destination, waiting for a message to arrive. Once a message arrives, the bean retrieves the message and passes it on to any message listeners that are interested.
+- The <jms:listener> element is used to identify a bean and a method that should handle incoming messages.
+
+5.4) above config doesn't work. please see following working config: <Test> <Test Done>
+<bean id="messageListener" class="org.springframework.jms.listener.adapter.MessageListenerAdapter">
+    <constructor-arg>
+        <bean class="spittr.messaging.jms.alerts.SpittleAlertHandler"/>
+    </constructor-arg>
+    <property name="defaultListenerMethod" value="handleSpittleAlert"/>
+</bean>
+
+<bean id="jmsContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+    <property name="connectionFactory" ref="connectionFactory"/>
+    <property name="destination" ref="spittleTopic"/>
+    <property name="messageListener" ref="messageListener" />
+</bean>
+
+总而言之 (JMS over RPC) <Test> <Test Done>
+1）message-based RPC can be used to make remote calls that use JMS as a transport.
+2) To support message-based RPC, Spring offers JmsInvokerServiceExporter for exporting beans as message-based services and JmsInvokerProxyFactoryBean for clients to consume those services.
+3) EXPORTING JMS-BASED SERVICES
+3.1) To demonstrate how JmsInvokerServiceExporter works, consider AlertServiceImpl.
+public class AlertServiceImpl implements AlertService {
+    public Spittle sendSpittleAlert(final Spittle spittle) {
+        System.out.println("email send for " + spittle);
+        return spittle;
+    }
+}
+
+3.2) implement the AlertService interface,
+public interface AlertService {
+    Spittle sendSpittleAlert(Spittle spittle);
+}
+
+3.3) Server side: in jms-rpc-service.xml, configure a JmsInvokerServiceExporter, refer AlertService :
+<bean id="alertServiceExporter" class="org.springframework.jms.remoting.JmsInvokerServiceExporter"
+          p:service-ref="alertService"
+          p:serviceInterface="spittr.messaging.rpc.alerts.AlertService" />
+
+<bean id="alertService" class="spittr.messaging.rpc.alerts.AlertServiceImpl"/>
+
+3.4) declare a messageListener bean ref to alertServiceExporter. i.e. a JmsInvokerServiceExporter:
+<bean id="messageListener" class="org.springframework.jms.listener.adapter.MessageListenerAdapter">
+    <constructor-arg ref="alertServiceExporter"/>
+</bean>
+
+<!-- and this is the message listener container -->
+<bean id="jmsContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+    <property name="connectionFactory" ref="connectionFactory"/>
+    <property name="destination" ref="spittleQueue"/>
+    <property name="messageListener" ref="messageListener" />
+</bean>
+
+3.5) define a ServiceRunner, System.in.read() is just a way to keep ServiceRunner thread alive:
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations="classpath:jms-rpc-service.xml")
+public class AlertServiceRunner {
+    @Test
+    public void runService() {
+        try {
+            System.in.read();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+4) Client side: 
+4.1) define a JmsInvokerProxyFactoryBean to access the service.
+<bean id="alertService" class="org.springframework.jms.remoting.JmsInvokerProxyFactoryBean"
+          p:connectionFactory-ref="connectionFactory"
+          p:queue-ref="spittleQueue"
+          p:serviceInterface="spittr.messaging.rpc.alerts.AlertService" />
+4.2) define client test runner:
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = "classpath:jms-rpc-client.xml")
+public class AlertServiceClient {
+
+    @Autowired
+    AlertService alertService;
+
+    @Test
+    public void testRPCoverJMS() {
+        Spittle spittle = new Spittle(1L, null, "Hello", new Date());
+        Spittle returnSpittle = alertService.sendSpittleAlert(spittle);
+        System.out.println(returnSpittle);
+    }
+
+    public static void main(String[] args) throws IOException {
+        ApplicationContext context = new ClassPathXmlApplicationContext("classpath:jms-rpc-client.xml");
+        AlertService alertService = context.getBean(AlertService.class);
+        for (;;) {
+            System.out.print("Please input spittle message: ");
+            Scanner scanner = new Scanner(System.in);
+            String message = scanner.nextLine();
+            Spittle spittle = new Spittle(1L, null, message, new Date());
+            Spittle returnSpittle = alertService.sendSpittleAlert(spittle);
+            System.out.println(returnSpittle);
+        }
+    }
+}
+
+总而言之，JMS over RPC java config
+1) Server Side: 
+@Configuration
+@ComponentScan(basePackages = "spittr.service")
+public class JMSServiceConfig {
+    @Autowired
+    SpittleService spittleService;
+
+    @Bean
+    public JmsInvokerServiceExporter exporter() {
+        JmsInvokerServiceExporter exporter = new JmsInvokerServiceExporter();
+        exporter.setService(spittleService);
+        exporter.setServiceInterface(SpittleService.class);
+        return exporter;
+    }
+
+    @Bean
+    public MessageListenerAdapter messageListener() {
+        return new MessageListenerAdapter(exporter());
+    }
+
+    @Bean
+    public DefaultMessageListenerContainer jmsContainer() {
+        DefaultMessageListenerContainer jmsContainer = new DefaultMessageListenerContainer();
+        jmsContainer.setConnectionFactory(connectionFactory());
+        jmsContainer.setDestination(spittleQueue());
+        jmsContainer.setMessageListener(messageListener());
+        return jmsContainer;
+    }
+
+    @Bean
+    public ConnectionFactory connectionFactory() {
+        ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory();
+        connectionFactory.setBrokerURL("tcp://localhost:61616");
+        return connectionFactory;
+    }
+
+
+    @Bean
+    public Queue spittleQueue() {
+        return new org.apache.activemq.command.ActiveMQQueue("spittle.alert.queue");
+    }
+
+    @Bean
+    public Topic spittleTopic() {
+        return new org.apache.activemq.command.ActiveMQTopic("spittle.alert.topic");
+    }
+}
+2) Client side: 
+@Configuration
+public class JMSClientConfig {
+    @Bean
+    public JmsInvokerProxyFactoryBean spittleService() {
+        JmsInvokerProxyFactoryBean proxy = new JmsInvokerProxyFactoryBean();
+        proxy.setConnectionFactory(connectionFactory());
+        proxy.setQueue(spittleQueue());
+        proxy.setServiceInterface(SpittleService.class);
+        return proxy;
+    }
+    @Bean
+    public ConnectionFactory connectionFactory() {
+        ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory();
+        connectionFactory.setBrokerURL("tcp://localhost:61616");
+        return connectionFactory;
+    }
+    @Bean
+    public Queue spittleQueue() {
+        return new ActiveMQQueue("spittle.alert.queue");
+    }
+    @Bean
+    public Topic spittleTopic() {
+        return new ActiveMQTopic("spittle.alert.topic");
+    }
+}
+3) ServiceRunner and ClientTest are the same as RMI, except for configuration classes references.
+4) Service and ServiceImpl are the same as RMI.
+
+#Messaging with AMQP
+- AMQP offers several advantages over JMS. AMQP goes beyond the Java language and platform
+- First, AMQP defines a wire-level protocol for messaging, whereas JMS defines an API specification. 
+- JMS’s API specification ensures that all JMS implementations can be used through a common API but doesn’t mandate that messages sent by one JMS implementation can be consumed by a different JMS implementation. 
+- AMQP’s wire-level protocol, on the other hand, specifies the format that messages will take when en route between the producer and consumer. Consequently, AMQP is more interoperable than JMS—not only across different AMQP implementations, but also across languages and platforms.
+- Another significant advantage of AMQP over JMS is that AMQP has a much more flexible and transparent messaging model.
+- With JMS, there are only two messaging models to choose from: point-to-point and publish/subscribe.
+- but AMQP enables you to route messages in a number of ways, and it does this by decoupling the message producer from the queue(s) in which the messages will be placed.
+- Spring AMQP is an extension to the Spring Framework that enables AMQP-style messaging in Spring applications. As you’ll see, Spring AMQP provides an API that makes working with AMQP remarkably similar to Spring’s JMS abstraction.
+
+# introduction
+- In JMS, there are just three primary participants: the message producer, the message consumer(s), and a channel (either a queue or a topic) to carry the message between producers and consumers.
+- In JMS, the channel helps to decouple the producer from the consumer, but both are still coupled to the channel.
+- The channel has the double duty of relaying messages and determining how those messages will be routed; queues route using a point-to-point algorithm, and topics route in publish/subscribe fashion.
+- *In contrast, AMQP producers don’t publish directly to a queue. Instead, AMQP introduces a new level of indirection between the producer and any queues that will carry the message: the exchange.
+- a message producer publishes a message to an exchange. The exchange, which is bound to one or more queues, routes the message to the queue(s). Consumers pull messages from the queue and process them.
+- the exchange isn’t a pass-through mechanism to a queue. AMQP defines four different types of exchanges, each with a different routing algorithm that decides whether to place a message in a queue.
+- Depending on an exchange’s algorithm, it may consider the message’s routing key and/or arguments and compare those with the routing key and arguments of the binding between the exchange and a queue. (A routing key can be loosely thought of as the To address in an email, specifying the intended recipient.)
+
+- The four standard types of AMQP exchanges are as follows:
+1) Direct—A message will be routed to a queue if its routing key is a direct match for the routing key of the binding.
+2) Topic—A message will be routed to a queue if its routing key is a wildcard match for the routing key of the binding.
+3) Headers—A message will be routed to a queue if the headers and values in its table of arguments match those in the binding’s table of arguments. A special
+header named x-match can specify whether all values must match or if any can match.
+4) Fanout—A message will be routed to all queues that are bound to the exchange, regardless of the routing key or headers/values in the table of arguments.
+
+- producers publish to an exchange with a routing key; consumers retrieve from a queue.
+
+#Configuring Spring for AMQP messaging
+- RabbitMQ is a popular open source message broker that implements AMQP. Spring AMQP comes ready with RabbitMQ support, including a RabbitMQ connection factory, template, and Spring configuration namespace. www.rabbitmq.com/download.html
+- The easiest way to configure a RabbitMQ connection factory is to use the rabbit configuration namespace provided by Spring AMQP
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/rabbit"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/rabbit
+		http://www.springframework.org/schema/rabbit/spring-rabbit-1.0.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd">
+	
+	<connection-factory id="connectionFactory" /> 			//RabbitMQ connection factory		
+
+</beans:beans>
+- Although it’s optional, in this case I’ve decided to declare the rabbit namespace as the primary namespace in the configuration and demote the beans namespace to being a secondary namespace.
+- That’s because I anticipate declaring more rabbits than beans in this configuration and would rather prefix the few bean elements with beans: and leave the rabbit elements prefix-less.
+- By default, the connection factory will assume that the RabbitMQ server is listening on localhost at post 5672 and that the username and password are both guest. in production:
+
+<connection-factory id="connectionFactory"
+	host="${rabbitmq.host}"
+	port="${rabbitmq.port}"
+	username="${rabbitmq.username}"
+	password="${rabbitmq.password}" />
+
+#DECLARING QUEUES, EXCHANGES, AND BINDINGS
+- with JMS, the routing behavior of queues and topics is established by the specification, 
+- AMQP routing is richer and more flexible and thus depends on you to define the queues and exchanges and how they’re bound to each other.
+- Spring AMQP’s rabbit namespace includes several elements for lazily creating queues, exchanges, and the bindings between them.
+<queue>: Creates a queue.
+<fanout-exchange>: Creates a fanout exchange.
+<header-exchange>: Creates a headers exchange.
+<topic-exchange>: Creates a topic exchange.
+<direct-exchange>: Creates a direct exchange.
+<bindings> <binding/> </bindings>: The <bindings> element defines a set of one or more <binding> elements. The <binding> element creates a binding between an exchange and a queue.
+- <admin> element creates a RabbitMQ administrative component that automatically creates (in the RabbitMQ broker, if they don’t already exist) any queues, exchanges, and bindings declared
+- declare a queue named spittle.alert.queue:
+<admin connection-factory="connectionFactory"/> 
+<queue id="spittleAlertQueue" name="spittle.alerts" />
+- there’s a default direct exchange with no name, and all queues are bound to that exchange with a routing key that’s the same as the queue’s name.
+- With this simple configuration, you could send messages to the no-name exchange and specify a routing key of spittle.alert.queue to have messages routed to the queue.
+- Essentially, this re-creates a JMSstyle point-to-point model.
+- to have a message routed to multiple queues with no regard for the routing key, you can configure a fanout exchange and several queues
+<admin connection-factory="connectionFactory" /> 
+<queue name="spittle.alert.queue.1" > 
+<queue name="spittle.alert.queue.2" > 
+<queue name="spittle.alert.queue.3" > 
+<fanoutexchange name="spittle.fanout"> 
+	<bindings> 
+		<binding queue="spittle.alert.queue.1" /> 
+		<binding queue="spittle.alert.queue.2" /> 
+		<binding queue="spittle.alert.queue.3" /> 
+	</bindings> 
+</fanoutexchange>
+
+#Sending messages with RabbitTemplate
+- Spring AMQP provides RabbitTemplate to eliminate boilerplate associated with sending and receiving messages with RabbitMQ.
+<template id="rabbitTemplate" connection-factory="connectionFactory" />
+- inject the template bean into AlertServiceImpl and use it to send a Spittle.
+public class AlertServiceImpl implements AlertService {
+	private RabbitTemplate rabbit;
+	@Autowired
+	public AlertServiceImpl(RabbitTemplate rabbit) {
+		this.rabbit = rabbit;
+	}
+	public void sendSpittleAlert(Spittle spittle) {
+		rabbit.convertAndSend("spittle.alert.exchange", "spittle.alerts", spittle);
+	}
+}
+- passes in three parameters: the name of the exchange, the routing key, and the object to be sent.
+- leave out the exchange name when calling convertAndSend():
+rabbit.convertAndSend("spittle.alerts", spittle);
+- leave out both the exchange name and routing key:
+rabbit.convertAndSend(spittle);
+- When the exchange name or the exchange name and routing key are left out of the parameter list, RabbitTemplate uses its default exchange name and routing key.
+- you can configure different defaults using the exchange and routing-key attributes on the <template>
+<template id="rabbitTemplate" connection-factory="connectionFactory" exchange="spittle.alert.exchange" routing-key="spittle.alerts" />
+- you can use the lower-level send() method to send an org.springframework.amqp.core.Message object
+Message helloMessage = new Message("Hello World!".getBytes(), new MessageProperties());
+rabbit.send("hello.exchange", "hello.routing", helloMessage);
+- convertAndSend() convert an object to a Message with the assistance of a message converter. The default message converter is SimpleMessageConverter, which is suitable for working with Strings, Serializable instances, and byte arrays. 
+- Spring AMQP provides a few other message converters that you might find useful, including some for working with JSON and XML data.
+
+#Receiving AMQP messages
+#RECEIVING MESSAGES WITH RABBITTEMPLATE
+- fetch a Message object from the queue:
+Message message = rabbit.receive("spittle.alert.queue");
+- you can configure a default queue for receiving messages:
+<template id="rabbitTemplate" connection-factory="connectionFactory" exchange="spittle.alert.exchange" routing-key="spittle.alerts" queue="spittle.alert.queue" />
+Message message = rabbit.receive();
+
+Spittle spittle = (Spittle) rabbit.receiveAndConvert("spittle.alert.queue");
+Spittle spittle = (Spittle) rabbit.receiveAndConvert();			//fall back on the template’s default queue name:
+- Calls to both receive() and receiveAndConvert() return immediately, possibly with a null if no messages are waiting in the queue. That leaves it up to you to manage any polling and threading necessary to monitor the queue.
+- Instead of synchronously polling and waiting for messages to arrive, Spring AMQP offers message-driven POJO support
+
+#DEFINING MESSAGE-DRIVEN AMQP POJOS
+- define the POJO
+public class SpittleAlertHandler {
+	public void handleSpittleAlert(Spittle spittle) {
+		// ... implementation goes here ...
+	}
+}
+- declare SpittleAlertHandler as a bean
+<bean id="spittleListener" class="com.habuma.spittr.alert.SpittleAlertHandler" />
+- declare a listener container and a listener to call on SpittleAlertHandler when a message arrives.
+<listener-container connection-factory="connectionFactory">
+	<listener ref="spittleListener" method="handleSpittleAlert" queue-names="spittle.alert.queue" />
+</listener-container>
+- using the queue-names attribute, you can list as many queue names as you want, separated with commas.
+- Another way of specifying the queues to listen on is to reference the queue beans you declared with the <queue> element.
+<listener-container connection-factory="connectionFactory">
+	<listener ref="spittleListener" method="handleSpittleAlert" queues="spittleAlertQueue" />
+</listener-container>
+- alert queue redeclared with an ID:
+<queue id="spittleAlertQueue" name="spittle.alert.queue" />
+
+- messaging is about asynchronous communication between applications. using WebSocket enables asynchronous communication between a browser-based client and a server
+
+Chapter 18 Messaging with WebSocket and STOMP
+- Asynchronous messaging is a common form of communication between applications. But when one of those applications is running in a web
+browser, something a little different is needed.
+- WebSocket is a protocol providing full-duplex communication across a single socket. It enables, among other things, asynchronous messaging between a web
+browser and a server. Being full-duplex means that the server can send messages to the browser as well as the browser sending messages to the server.
+- Spring 4.0 introduced support for WebSocket communication, including:
+	A low-level API for sending and receiving messages
+	A higher-level API for handling messages in Spring MVC controllers
+	A messaging template for sending messages
+	SockJS support to cope with the lack of WebSocket support in browsers, servers, and proxies
+
+#Working with Spring’s low-level WebSocket API
+- a WebSocket is just a communication channel between two applications. An application on one end of the WebSocket sends a message, and the other end handles that message.
+- Because it’s full-duplex, either end can send messages and either end can handle messages.
+- A JavaScript client in the browser opens a connection to the server, and the server sends updates to the browser on that connection. This is
+generally more efficient and more natural than the historically common alternative of polling the server for updates.
+- To handle messages in Spring with low-level WebSocket support, you must write a class that implements WebSocketHandler:
+public interface WebSocketHandler {
+	void afterConnectionEstablished(WebSocketSession session) 	throws Exception;
+	void handleMessage(WebSocketSession session, WebSocketMessage<?> message) throws Exception;
+	void handleTransportError(WebSocketSession session, Throwable exception) throws Exception;
+	void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception;
+	boolean supportsPartialMessages();
+}
+
+- Rather than implement WebSocketHandler directly, it’s easier to extend AbstractWebSocketHandler, an abstract implementation of WebSocketHandler
+public class MarcoHandler extends AbstractWebSocketHandler {
+	private static final Logger logger = LoggerFactory.getLogger(MarcoHandler.class);
+	protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+		logger.info("Received message: " + message.getPayload());
+		Thread.sleep(2000);
+		session.sendMessage(new TextMessage("Polo!"));
+	}
+}
+- three additional methods defined by AbstractWebSocketHandler:
+	handleBinaryMessage()
+	handlePongMessage()
+	handleTextMessage()
+- handling the establishment and closing of connections：
+public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+	logger.info("Connection established");
+}
+@Override
+public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+	logger.info("Connection closed. Status: " + status);
+}
+- configure it so that Spring will dispatch messages to it. In Spring’s Java configuration, this involves annotating a configuration class with @EnableWebSocket and implementing the WebSocketConfigurer interface,
+@EnableWebSocket
+public class WebSocketConfig implements WebSocketConfigurer {
+	@Override
+	public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+		registry.addHandler(marcoHandler(), "/marco");								//Map MarcoHandler to “/marco”
+	}
+	@Bean
+	public MarcoHandler marcoHandler() {				//Declare MarcoHandler bean
+		return new MarcoHandler();
+	}
+}
+- In xml config: take advantage of the websocket namespace
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:websocket="http://www.springframework.org/schema/websocket"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/websocket
+		http://www.springframework.org/schema/websocket/spring-websocket.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd">
+		
+		<websocket:handlers>
+			<websocket:mapping handler="marcoHandler" path="/marco" />
+		</websocket:handlers>
+		<bean id="marcoHandler" class="marcopolo.MarcoHandler" />
+</beans>
+
+- client side: JavaScript that opens a native WebSocket and uses it to volley messages to the server.
+var url = 'ws://' + window.location.host + '/websocket/marco';
+var sock = new WebSocket(url);						//Open WebSocket
+sock.onopen = function() {
+	console.log('Opening');							//Handle open event
+	sayMarco();
+};
+sock.onmessage = function(e) {						//Handle message
+	console.log('Received message: ', e.data);
+	setTimeout(function(){sayMarco()}, 2000);
+};
+sock.onclose = function() {							//Handle close event
+	console.log('Closing');
+};
+function sayMarco() {
+	console.log('Sending Marco!');
+	sock.send("Marco!");							//Send message
+}
+
+- the URL is prefixed with “ws://”, indicating a basic WebSocket connection. If it were a secure WebSocket connection, the protocol prefix would have been “wss://”.
+- the WebSocket’s onopen, onmessage, and onclose events mirror MarcoHandler’s afterConnectionEstablished(), handleTextMessage(), and afterConnectionClosed() methods.
+- onopen event is given a function that calls sayMarco() to send the “Marco!” message on the WebSocket.
+- a call to sock.close() will put an end to the madness. The server could also close the connection, or the browser could navigate away from the page, and the
+connection will be closed. once the connection goes down, the onclose event will be fired.
+- If you were to build the code and deploy it to a servlet container, it "might" even work.
+
+#Coping with a lack of WebSocket support
+- WebSocket is a relatively new specification. Even though it was standardized by the end of 2011, it still doesn’t have consistent support in web browsers and application servers.
+- Firefox and Chrome have had full support for WebSocket for quite a while, but other browsers have only recently started to support WebSocket.
+- minimum versions of several popular browsers that support WebSocket:
+	Internet Explorer: 10.0
+	Firefox: 4.0 (partial), 6.0 (full)
+	Chrome: 4.0 (partial), 13.0 (full)
+	Safari: 5.0 (partial), 6.0 (full)
+	Opera: 11.0 (partial), 12.10 (full)
+	iOS Safari: 4.2 (partial), 6.0 (full)
+	Android Browser: 4.4
+- server support also limited:
+	GlassFish
+	Tomcat 8
+- trouble in the middle. Firewall proxies generally block anything but HTTP traffic. They’re not configured (yet) to allow WebSocket communication.
+- WebSocket fallback is the specialty of SockJS. SockJS is a WebSocket emulator that mirrors the WebSocket API on the surface, but under the covers is clever enough to choose another form of communication when WebSocket isn’t available.
+- SockJS will always favor WebSocket first, but if WebSocket isn’t an option, it will determine the best available option
+XHR streaming
+XDR streaming
+iFrame event source
+iFrame HTML file
+XHR polling
+XDR polling
+iFrame XHR polling
+JSONP polling
+- SockJS lets you develop to a consistent programming model as if WebSocket support were ubiquitous, and it handles the fallback plans under the covers.
+- enable SockJS communication on the server side, you can simply ask for it in the Spring configuration:
+@Override
+public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+	registry.addHandler(marcoHandler(), "/marco").withSockJS();
+}
+- calling withSockJS() on the WebSocketHandlerRegistration returned from the call to addHandler(), you’re saying that you want SockJS to be enabled, and
+for its fallbacks to go into effect if WebSocket can’t be used.
+- in xml config:
+<websocket:handlers>
+	<websocket:mapping handler="marcoHandler" path="/marco" />
+	<websocket:sockjs />
+</websocket:handlers>
+
+- To use SockJS on the client, you’ll need to be sure to load the SockJS client library.
+- load it from the SockJS CDN with a <script> tag like this:
+<script src="http://cdn.sockjs.org/sockjs-0.3.min.js"></script>
+
+#Resolving web resources with WebJars
+- using WebJars to resolve JavaScript libraries as part of the project’s Maven or Gradle build, just like any other dependency.
+- To support that, set up a resource handler in the Spring MVC configuration to resolve requests where the path starts with /webjars/** from the WebJars standard path:
+@Override
+public void addResourceHandlers(ResourceHandlerRegistry registry) {
+	registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
+}
+- With that resource handler in effect, I can load the SockJS library in a web page with the following <script> tag:
+<script th:src="@{/webjars/sockjs-client/0.3.4/sockjs.min.js}"></script>
+- Notice that this particular <script> tag comes from a Thymeleaf template and takes advantage of the @{...} expression to calculate the full context-relative URL path for the JavaScript file.
+- only two lines from must be changed to use SockJS:
+var url = 'marco';
+var sock = new SockJS(url);
+- The first change you can make is to the URL. SockJS deals in URLs with the http:// or https:// scheme instead of ws:// and wss://.
+- you can use relative URLs, keeping you from having to derive the fully qualified URL.
+- In this case, if the page containing the JavaScript was at http://localhost:8080/websocket, the simple marco path given will result in a connection to http://localhost:8080/websocket/marco.
+- The key change you must make, however, is to create an instance of SockJS instead of WebSocket. Because SockJS mimics WebSocket as closely as possible, the rest of the code can remain the same.
+- WebSocket enables browser-server communication, and SockJS offers fallback communication when WebSocket isn’t supported
+- But in either case, this form of communication is too low-level for practical use. Let’s see how you can layer STOMP (Simple Text Oriented Messaging Protocol) on top of WebSocket to add proper messaging semantics to browser-server communication.
+
+#Working with STOMP messaging
+- HTTP protocol addresses the minute details of how a web browser makes a request and how a web server responds to that request. As a result, most
+developers never write code that deals with low-level TCP socket communication.
+- Working directly with WebSocket (or SockJS) is a lot like developing a web application using only TCP sockets. Without a higher-level wire protocol, it’s up to you to define the semantics of the messages being sent between applications. And you’d need to be sure that both ends of the connection agreed on those semantics.
+- Just as HTTP layers a request-response model on top of TCP sockets, STOMP layers a frame-based wire format to define messaging semantics on top of WebSocket.
+- Much like HTTP requests and responses, STOMP frames are comprised of a command, one or more headers, and a payload.
+SEND
+destination:/app/marco
+content-length:20
+
+{\"message\":\"Marco!\"}
+
+- the STOMP command is SEND, indicating that something is being sent. 
+- It’s followed by two headers: one indicates the destination where the message should be sent, and the other communicates the size of the payload. 
+- Following a blank line, the frame concludes with the payload; in this case, a JSON message.
+- destination header indicates STOMP is a messaging protocol, very much like JMS or AMQP
+- Messages are published to destinations that may, in fact, be backed by real message brokers.
+- On the other end, message handlers can listen to those destinations to receive the messages sent.
+- In the context of WebSocket communication, a browser-based JavaScript application may publish a message to a destination that’s handled by a server-side component. 
+- A server-side component may publish a message to a destination to be received by the JavaScript client.
+- Spring provides for STOMP-based messaging with a programming model based on Spring MVC. 
+- handling STOMP messages in a Spring MVC controller isn’t much different from handling HTTP requests.
+
+#Enabling STOMP messaging
+- annotate controller methods with @MessageMapping to handle STOMP messages within Spring MVC in a way very similar to how @RequestMapping-annotated methods handle HTTP requests.
+- Unlike @RequestMapping, @MessageMapping isn’t enabled by the @EnableWebMvc annotation
+- Spring’s web messaging is built around a message broker, you must configure a message broker and some basic destination details.
+
+@Configuration
+@EnableWebSocketMessageBroker
+	public class WebSocketStompConfig extends AbstractWebSocketMessageBrokerConfigurer {
+	@Override
+	public void registerStompEndpoints(StompEndpointRegistry registry) {
+		registry.addEndpoint("/marcopolo").withSockJS();
+	}
+	@Override
+	public void configureMessageBroker(MessageBrokerRegistry registry) {
+		registry.enableSimpleBroker("/queue", "/topic");
+		registry.setApplicationDestinationPrefixes("/app");
+	}
+}
+
+- @EnableWebSocketMessageBroker indicates that this configuration class is not only configuring WebSocket, but it’s configuring broker-based STOMP messaging.
+- overrides the registerStompEndpoints() method to register /marcopolo as a STOMP endpoint.
+- This path is distinct from any destination path that you might send or receive messages from. It’s the endpoint that a client would connect to before
+subscribing to or publishing to a destination path.
+- WebSocketStompConfig also configures a simple message broker by overriding the configureMessageBroker() method. This method is optional. If you don’t override it, you’ll get a simple in-memory message broker configured to handle messages prefixed with /topic.
+- When a message arrives, the destination prefix will determine how the message is handled.
+- the application destinations are prefixed with /app and the broker destinations are prefixed with either /topic or /queue.
+- A message headed for an application destination is routed directly to an @MessageMapping-annotated controller method.
+- Messages destined for the broker, including any messages resulting from values returned by @MessageMapping-annotated methods, are routed to the broker
+and are ultimately sent out to clients subscribed to those destinations.
+
+#ENABLING A STOMP BROKER RELAY
+- For a production application, you’ll probably want to back your WebSocket messaging with a real STOMP-enabled broker, such as RabbitMQ or ActiveMQ.
+- Once the broker is ready, you can replace the default inmemory broker with a STOMP broker relay by overriding the configureMessageBroker() method like this:
+@Override
+public void configureMessageBroker(MessageBrokerRegistry registry) {
+	registry.enableStompBrokerRelay("/topic", "/queue");
+	registry.setApplicationDestinationPrefixes("/app");
+}
+- By default, the STOMP broker relay assumes that the broker is listening on port 61613 of localhost and that the client username and password are both “guest”. If your STOMP broker is on another server or is configured with different client credentials
+@Override
+public void configureMessageBroker(MessageBrokerRegistry registry) {
+	registry.enableStompBrokerRelay("/topic", "/queue")
+		.setRelayHost("rabbit.someotherserver")
+		.setRelayPort(62623)
+		.setClientLogin("marcopolo")
+		.setClientPasscode("letmein01");
+	registry.setApplicationDestinationPrefixes("/app", "/foo");
+}
+
+#Handling STOMP messages from the client
+- A method annotated with @MessageMapping can handle messages as they arrive at a specified destination
+@Controller
+public class MarcoController {
+	private static final Logger logger = LoggerFactory.getLogger(MarcoController.class);
+	
+	@MessageMapping("/marco")							//Handle messages for /app/marco destination
+	public void handleShout(Shout incoming) {
+		logger.info("Received message: " + incoming.getMessage());
+	}
+}
+
+- Because handleShout() accepts a Shout parameter, the payload of the STOMP message will be converted into a Shout using one of Spring’s message converters.
+
+public class Shout {
+	private String message;
+	public String getMessage() {
+		return message;
+	}
+	public void setMessage(String message) {
+		this.message = message;
+	}
+}
+
+- Spring can convert message payloads to Java types using one of a few message converters.
+ByteArrayMessageConverter： Converts a message with a MIME type of application/octet-stream to and from byte[]
+MappingJackson2MessageConverter： Converts a message with a MIME type of application/json to and from a Java object
+StringMessageConverter Converts a message with a MIME type of text/plain to and from String
+- Assuming that the message handled by handleShout() has a content type of application/json (which is probably a safe guess given that Shout is neither a byte[] nor a String), the MappingJackson2MessageConverter will be tasked with converting the JSON message into a Shout object.
+- Just like its HTTP-oriented counterpart, MappingJackson2HttpMessageConverter, MappingJackson2MessageConverter delegates much of its work to the underlying Jackson 2 JSON processor.
+- By default, Jackson will use reflection to map JSON properties to Java object properties. you can influence how the conversion takes place by annotating the Java type with Jackson annotations.
+
+#PROCESSING SUBSCRIPTIONS
+- Any method that’s annotated with @SubscribeMapping will be invoked, much like @MessagingMapping methods, when a STOMP subscription message arrives.
+- It’s important to understand that just like @MessageMapping methods, @SubscribeMapping methods receive their messages via AnnotationMethodMessageHandler
+- the configuration in listing 18.5, that means that @SubscribeMapping methods can only handle messages for destinations that are prefixed with /app.
+- The primary use case for @SubscribeMapping is to implement a request-reply pattern. In the request-reply pattern, the client subscribes to a destination expecting a one-time response at that destination.
+@SubscribeMapping({"/marco"})
+public Shout handleSubscription() {
+	Shout outgoing = new Shout();
+	outgoing.setMessage("Polo!");
+	return outgoing;
+}
+
+#WRITING THE JAVASCRIPT CLIENT
+- some JavaScript client code that might connect to the /marcopolo endpoint and send a “Marco!” message.
+var url = 'http://' + window.location.host + '/stomp/marcopolo';
+var sock = new SockJS(url);											//Create SockJS connection
+var stomp = Stomp.over(sock);										//Create STOMP client
+var payload = JSON.stringify({ 'message': 'Marco!' });
+stomp.connect('guest', 'guest', function(frame) {					//Connect to STOMP endpoint
+	stomp.send("/marco", {}, payload);								//Send message
+});
+
+- you never use SockJS directly. Instead you construct an instance of the STOMP client by calling Stomp.over(sock). This effectively wraps SockJS to send STOMP messages over the WebSocket connection.
+- The second parameter passed to send() is a map of headers to be included in the STOMP frame;
+
+#Sending messages to the client
+- WebSocket is often viewed as a way that a server can send data to the browser without being in response to an HTTP request.
+- How can you communicate with the browser-based client using Spring and WebSocket/STOMP? Spring offers two ways to send data to a client:
+1） As a side-effect of handling a message or subscription
+2） Using a messaging template
+
+#SENDING A MESSAGE AFTER HANDLING A MESSAGE
+@MessageMapping("/marco")
+public Shout handleShout(Shout incoming) {
+	logger.info("Received message: " + incoming.getMessage());
+	Shout outgoing = new Shout();
+	outgoing.setMessage("Polo!");
+	return outgoing;
+}
+
+- By simply returning an object, a handler method can also be a sender method. When an @MessageMapping-annotated method has a return value, the returned object will be converted (via a message converter) and placed into the payload of a STOMP frame and published to the broker.
+
+- By default, the frame will be published to the same destination that triggered the handler method, but with /topic as the prefix. In the case of handleShout(), that means that the returned Shout object will be written to the payload of a STOMP frame and published to the /topic/marco destination.
+- But you can override the destination by annotating the method with @SendTo:
+@MessageMapping("/marco")
+@SendTo("/topic/shout")
+public Shout handleShout(Shout incoming) {
+	logger.info("Received message: " + incoming.getMessage());
+	Shout outgoing = new Shout();
+	outgoing.setMessage("Polo!");
+	return outgoing;
+}
+- The handleShout() method now sends a message in response to having received a message. In a similar way, an @SubscribeMapping-annotated method can send a message in reply to a subscription.
+@SubscribeMapping("/marco")
+public Shout handleSubscription() {
+	Shout outgoing = new Shout();
+	outgoing.setMessage("Polo!");
+	return outgoing;
+}
+
+#SENDING A MESSAGE FROM ANYWHERE
+- @MessageMapping and @SubscribeMapping offer a simple way to send messages as a consequence of receiving a message or handling a subscription. 
+- But Spring’s SimpMessagingTemplate makes it possible to send messages from anywhere in an application, even without having received a message first.
+- Rather than force the user to refresh the page, you can have the home page subscribe to a STOMP topic to receive a live feed of Spittle updates as they’re created.
+- Within the home page, you need to add the following JavaScript chunk:
+<script>
+	var sock = new SockJS('spittr');
+	var stomp = Stomp.over(sock);
+	stomp.connect('guest', 'guest', function(frame) {
+		console.log('Connected');
+		stomp.subscribe("/topic/spittlefeed", handleSpittle);
+	});
+	function handleSpittle(incoming) {
+		var spittle = JSON.parse(incoming.body);
+		console.log('Received: ', spittle);
+		var source = $("#spittle-template").html();
+		var template = Handlebars.compile(source);
+		var spittleHtml = template(spittle);
+		$('.spittleList').prepend(spittleHtml);
+	}
+</script>
+
+Handlebars template is defined in a separate <script> tag as follows:
+<script id="spittle-template" type="text/x-handlebars-template">
+	<li id="preexist">
+		<div class="spittleMessage">{{message}}</div>
+		<div>
+			<span class="spittleTime">{{time}}</span>
+			<span class="spittleLocation">({{latitude}}, {{longitude}})</span>
+		</div>
+	</li>
+</script>
+
+- On the server, you can use SimpMessagingTemplate to publish any newly created Spittle as a message to the /topic/spittlefeed topic.
+@Service
+public class SpittleFeedServiceImpl implements SpittleFeedService {
+	private SimpMessageSendingOperations messaging;
+	@Autowired
+	public SpittleFeedServiceImpl(SimpMessageSendingOperations messaging) {			//Inject messaging template
+		this.messaging = messaging;
+	}
+	public void broadcastSpittle(Spittle spittle) {
+		messaging.convertAndSend("/topic/spittlefeed", spittle);					//Send message
+	}
+}
+
+- As a side-effect of configuring Spring’s STOMP support, there’s already a SimpMessageTemplate bean in the Spring application context
+- When you publish a message to a STOMP topic with convertAndSend() or as a result of a handler method, any client subscribed to that topic will receive the message.
+
+#Working with user-targeted messages
+- Up to this point, the messages you’ve sent and received were between a client (in a web browser) and the server. The user of that client hasn’t been taken into account. 
+- When an @MessageMapping-annotated method is invoked, you know that a message has been received, but not who it’s from.
+- Similarly, if you don’t know who the user is, then any messages sent will go to all clients that have subscribed to the topic that the message is carried on; there’s no way to send that message to a specific user.
+- If you know who the user is, however, it becomes possible to deal with messages associated with a user, not just those associated with a client.
+- three ways to take advantage of an authenticated user when messaging with Spring and STOMP:
+1） The @MessageMapping and @SubscribeMapping methods can receive a Principal for the authenticated user.
+2） Values returned from the @MessageMapping, @SubscribeMapping, and @MessageException methods can be sent as messages to the authenticated user.
+3） The SimpMessagingTemplate can send messages to a specific user.
+
+#Working with user messages in a controller
+- two ways that a controller’s @MessageMapping or @SubscribeMapping method can be user-aware in processing messages. 
+- By simply asking for a Principal as a parameter to a handler method, the handler method can know who the user is
+- a handler method can be annotated with @SendToUser to indicate that its return value should be sent in a message to the authenticated user’s client (and to
+that client only).
+- By posting the Spittle as a STOMP message, you can take full advantage of the asynchronous nature of STOMP messaging.
+@MessageMapping("/spittle")
+@SendToUser("/queue/notifications")
+public Notification handleSpittle(Principal principal, SpittleForm form) {
+	Spittle spittle = new Spittle(principal.getName(), form.getText(), new Date());
+	spittleRepo.save(spittle);
+	return new Notification("Saved Spittle");
+}
+- Because this method is annotated with @MessageMapping, it will be invoked whenever a message arrives on the /app/spittle destination. 
+- The SpittleForm will be created from that message and, assuming that the user is authenticated, the Principal will also be derived from headers in the STOMP frame.
+- The @SendToUser annotation specifies that the returned Notification should be sent as a message to the /queue/notifications destination.
+- Consider this line of JavaScript that subscribes to a user-specific destination:
+stomp.subscribe("/user/queue/notifications", handleNotifications);
+- destinations that are prefixed with /user are handled in a special way. Rather than flowing through AnnotationMethodMessageHandler (like an application message), or through SimpleBrokerMessageHandler or StompBrokerRelayMessageHandler (like a broker message), /user messages flow through UserDestinationMessageHandler
+- UserDestinationMessageHandler’s primary job is to reroute user messages to a destination that’s unique to the user.
+- In the case of a subscription, it derives the target destination by removing the /user prefix and adding a suffix that’s based on the user’s session.
+- For instance, a subscription to /user/queue/notifications may end up being rerouted to a destination named /queue/notifications-user6hr83v6t.
+- handleSpittle() is annotated with @SendToUser("/queue/ notifications"). This new destination is prefixed with /queue, which is one of the prefixes
+that your StompBrokerRelayMessageHandler (or SimpleBrokerMessageHandler) is configured to handle, so the message will go there next. As it turns out, the client subscribed to that destination, so the client will receive the Notification message.
+- The @SendToUser annotation and a Principal parameter are very useful when working within a controller method.
+
+#Sending messages to a specific user
+- In addition to convertAndSend(), SimpMessagingTemplate also offers convertAndSendToUser(). As its name suggests, the convertAndSendToUser() method enables
+you to send messages that target a specific user.
+- if the Spittle text includes “@jbauer”, then you should send a message to the client where a user with the username “jbauer” is logged in.
+@Service
+public class SpittleFeedServiceImpl implements SpittleFeedService {
+	private SimpMessagingTemplate messaging;
+	private Pattern pattern = Pattern.compile("\\@(\\S+)");
+	@Autowired
+	public SpittleFeedServiceImpl(SimpMessagingTemplate messaging) {
+		this.messaging = messaging;
+	}
+	public void broadcastSpittle(Spittle spittle) {
+		messaging.convertAndSend("/topic/spittlefeed", spittle);
+		Matcher matcher = pattern.matcher(spittle.getMessage());
+		if (matcher.find()) {
+			String username = matcher.group(1);
+			messaging.convertAndSendToUser(username, "/queue/notifications", new Notification("You just got mentioned!"));
+		}
+	}
+
+}
+- if the given Spittle object’s message contains what appears to be a username (that is, any text that begins with “@”), a new Notification
+will be sent to a destination named /queue/notifications. Therefore, if the Spittle has a message that contains “@jbauer”, the Notification will be published to the /user/jbauer/queue/notifications destination.
+
+#Handling message exceptions
+- In Spring MVC, if an exception occurs during request handling, an @ExceptionHandler method will be given an opportunity to deal with the exception
+- you can annotate a controller method with @MessageExceptionHandler to handle exceptions thrown in an @MessageMapping method.
+@MessageExceptionHandler
+public void handleExceptions(Throwable t) {
+	logger.error("Error handling message: " + t.getMessage());
+}
+- can declare a specific exception type that it should handle as a parameter:
+@MessageExceptionHandler(SpittleException.class)
+public void handleExceptions(Throwable t) {
+	logger.error("Error handling message: " + t.getMessage());
+}
+- Or you can specify several exception types to be handled as an array parameter:
+@MessageExceptionHandler({SpittleException.class, DatabaseException.class})
+public void handleExceptions(Throwable t) {
+	logger.error("Error handling message: " + t.getMessage());
+}
+
+-reply with an error:
+@MessageExceptionHandler(SpittleException.class)
+@SendToUser("/queue/errors")
+public SpittleException handleExceptions(SpittleException e) {
+	logger.error("Error handling message: " + e.getMessage());
+	return e;
+}
+
+- UserDestinationMessageHandler will reroute the message to a destination unique to the user.
+- Spring’s WebSocket support includes a low-level API that lets you work with raw WebSocket connections.
+- Unfortunately, WebSocket support is not ubiquitous among web browsers, servers, and proxies. Therefore, Spring also supports SockJS, a protocol that falls back to alternative communication schemes when WebSocket doesn’t work.
+- Spring also offers a higher-level programming model for handling WebSocket messages using the STOMP wire-level protocol.
+- In this higher-level model, STOMP messages are handled in Spring MVC controllers, similarly to how HTTP messages are handled.
+
+Chapter 19 Sending email with Spring
+
+总而言之 (Spring email configuration and simple/rich email/velocity template)
+1）Configuring a mail sender bean. a MailSender implementation sends email by connecting with an email server. Spring comes with one implementation of the MailSender interface, JavaMailSenderImpl, which uses the JavaMail API to send email.
+@Configuration
+@ComponentScan(basePackages = "spittr.mail")
+@PropertySource("classpath:mailserver.properties")
+public class MailConfig {
+
+    @Bean
+    public JavaMailSender mailSender(Environment env) {
+        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        mailSender.setHost(env.getProperty("mailserver.host"));
+        mailSender.setPort(Integer.parseInt(env.getProperty("mailserver.port")));
+        mailSender.setUsername(env.getProperty("mailserver.username"));
+        mailSender.setPassword(env.getProperty("mailserver.password"));
+        return mailSender;
+    }
+}
+2) mailserver.properties
+mailserver.host=smtp.163.com
+mailserver.port=25
+mailserver.username=13928882387@163.com
+mailserver.password=Wen0304dw
+
+2) wire MailSender and send a simple email <Test> <Test Done>
+public interface SpittleMailService {
+    void sendSimpleSpittleEmail(String to, Spittle spittle);
+}
+
+@Service
+public class SpittleMailServiceImpl implements SpittleMailService{
+    @Autowired
+    JavaMailSender mailSender;
+
+    public void sendSimpleSpittleEmail(String to, Spittle spittle) {
+        SimpleMailMessage message = new SimpleMailMessage();		    //Construct message
+        String spitterName = spittle.getSpitter().getFullName();
+//        message.setFrom("noreply@spitter.com");
+        message.setFrom("13928882387@163.com");	//Address email
+        message.setTo(to);
+        message.setSubject("New spittle from " + spitterName);
+        message.setText(spitterName + " says: " + spittle.getText());   //Set message text
+        mailSender.send(message);			                             //Send email
+    }
+}
+3) send email with attachment <Test> <Test Done>
+3.1) - Sending email messages with attachments using MimeMessageHelper, which wraps cumbersome javax.mail.internet.MimeMessage api 
+public void sendSpittleEmailWithAttachment(String to, Spittle spittle) throws MessagingException {
+	MimeMessage message = mailSender.createMimeMessage();
+	MimeMessageHelper helper = new MimeMessageHelper(message, true);		//true indicates that this is to be a multipart message.
+	String spitterName = spittle.getSpitter().getFullName();
+	helper.setFrom("noreply@spitter.com");
+	helper.setTo(to);
+	helper.setSubject("New spittle from " + spitterName);
+	helper.setText(spitterName + " says: " + spittle.getText());
+	ClassPathResource couponImage = new ClassPathResource("/collateral/coupon.jpg");	
+	helper.addAttachment("Coupon.png", couponImage);
+	mailSender.send(message);
+}
+- using Spring’s ClassPathResource to load coupon.jpg from within the application’s classpath, pass that resource in as a parameter
+4) Sending email with rich content, key is to set the message’s text as HTML. <Test> <Test Done>
+public void sendRichSpitterEmail(String to, Spittle spittle) throws MessagingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true);
+        helper.setFrom("13928882387@163.com");
+        helper.setTo(to);
+        helper.setSubject("New spittle from " + spittle.getSpitter().getFullName());
+        helper.setText("<html><body><img src='cid:spitterLogo'>" +
+                "<h1>" + spittle.getSpitter().getFullName() + " says...</h1>" +
+                "<i>" + spittle.getText() + "</i>" +
+                "</body></html>", true);
+        ClassPathResource image = new ClassPathResource("/collateral/spittr_logo_50.png");
+        helper.addInline("spitterLogo", image);			//embed the logo image in the email message, <img src='cid:spitterLogo'>
+        mailSender.send(message);
+}
+5) The problem with constructing an email message using string concatenation is that it’s not clear what the resulting message will look like. What you need is a way to express the email layout in a template close to what the resulting HTML, and then transform that template into a String to be passed into the setText() method on the message helper.
+6) Constructing email messages with Velocity <Test> <Test Done>
+- Apache Velocity is a general-purpose templating engine from Apache. 
+- Velocity has been used for all kinds of things, including code generation and as an alternative to JSP. It can also be used to format rich email messages
+6.1) declare a VelocityEngine bean and wire into SpitterEmailServiceImpl.
+@Bean
+public VelocityEngineFactoryBean velocityEngine() {			//VelocityEngineFactoryBean produces a VelocityEngine in the Spring application context.
+	VelocityEngineFactoryBean velocityEngine = new VelocityEngineFactoryBean();
+	Properties props = new Properties();
+	props.setProperty("resource.loader", "class");
+	props.setProperty("class.resource.loader.class", ClasspathResourceLoader.class.getName());		//load Velocity templates from the classpath
+	velocityEngine.setVelocityProperties(props);	
+	return velocityEngine;
+}
+
+7) Wire the Velocity engine and use VelocityEngineUtils from Spring to merge a Velocity template and model data into a String.
+public void sendRichSpittleEmailGeneratedByVelocity(String to, Spittle spittle) throws MessagingException, VelocityException {
+    MimeMessage message = mailSender.createMimeMessage();
+    MimeMessageHelper helper = new MimeMessageHelper(message, true);
+    helper.setFrom("13928882387@163.com");
+    helper.setTo(to);
+    helper.setSubject("New spittle from " + spittle.getSpitter().getFullName());
+    Map<String, Object> model = new HashMap<>();
+    model.put("spitterName", spittle.getSpitter().getFullName());
+    model.put("spittleText", spittle.getText());
+    String emailText = VelocityEngineUtils.mergeTemplateIntoString(velocityEngine, "mail/emailTemplate.vm", model);
+    helper.setText(emailText, true);
+    ClassPathResource image = new ClassPathResource("/collateral/spittr_logo_50.png");
+    helper.addInline("spitterLogo", image);
+    mailSender.send(message);
+}
+
+8) The template is sitting at the email folder of the classpath in a file called emailTemplate.vm:
+<html>
+	<body>
+		<img src='cid:spitterLogo'>
+		<h1>${spitterName} says...</h1>
+		<i>${spittleText}</i>
+	</body>
+</html>
+
+总而言之 (Using Thymeleaf to create email messages)
+1）Thymeleaf is an attractive templating engine for HTML because it enables you to create WYSIWYG templates.
+2）Unlike JSP and Velocity, Thymeleaf templates don’t contain any special tag libraries or unusual markup. This makes it easy for template designers to use any HTML tools to display:
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+	<body>
+		<img src="spitterLogo.png" th:src='cid:spitterLogo'>
+		<h4><span th:text="${spitterName}">Craig Walls</span> says...</h4>
+		<i><span th:text="${spittleText}">Hello there!</span></i>
+	</body>
+</html>
+- model attributes are referenced with ${} notation and confined to values of attribute
+3) Update SpringTemplateEngine bean’s configuration: the Thymeleaf engine is the same SpringTemplateEngine bean that you configured for constructing web views in Spring MVC.
+3.1) declare a ClassLoaderTemplateResolver: SpringTemplateEngine bean used in Spring MVC is only configured to resolve templates from the servlet context. Your email templates will need to be resolved from the classpath.
+@Bean
+public ClassLoaderTemplateResolver emailTemplateResolver() {
+    ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
+    resolver.setPrefix("mail/"); //indicating that Thymeleaf templates is in the mail directory rooted at the classpath root
+    resolver.setTemplateMode("HTML5");
+    resolver.setCharacterEncoding("UTF-8");
+    resolver.setOrder(1);
+    return resolver;
+}
+3.2) because now you have two template resolvers, you need to indicate the order, the ClassLoaderTemplateResolver bean has its order as 1. Tweak the ServletContextTemplateResolver configuration, setting its order to 2:
+@Bean
+public ServletContextTemplateResolver webTemplateResolver() {
+    ServletContextTemplateResolver resolver = new ServletContextTemplateResolver();
+    resolver.setPrefix("/WEB-INF/templates/");
+    resolver.setTemplateMode("HTML5");
+    resolver.setCharacterEncoding("UTF-8");
+    resolver.setOrder(2);
+    return resolver;
+}
+3.3) change the SpringTemplateEngine bean’s configuration to use both of your template resolvers:
+@Bean
+public SpringTemplateEngine templateEngine(Set<ITemplateResolver> resolvers) {
+	SpringTemplateEngine engine = new SpringTemplateEngine();
+	engine.setTemplateResolvers(resolvers);
+	return engine;
+}
+4) Using Thymeleaf to generate and send HTML email messages is similar to what you did with Velocity:
+@Override
+public void sendRichSpittleEmailGeneratedByThymleaf(String to, Spittle spittle) throws MessagingException {
+    MimeMessage message = mailSender.createMimeMessage();
+    MimeMessageHelper helper = new MimeMessageHelper(message, true);
+    helper.setFrom("13928882387@163.com");
+    helper.setTo(to);
+    helper.setSubject("New spittle from " + spittle.getSpitter().getFullName());
+    Context ctx = new Context();
+    ctx.setVariable("spitterName", spittle.getSpitter().getFullName());
+    ctx.setVariable("spittleText", spittle.getText());
+    String emailText = thymeleaf.process("emailTemplate.html", ctx);		//use Thymeleaf engine process the tempalte
+    System.out.println(emailText);
+    helper.setText(emailText, true);
+    ClassPathResource image = new ClassPathResource("/collateral/spittr_logo_50.png");
+    helper.addInline("spitterLogo", image);
+    mailSender.send(message);
+}
+
+4.2) email template file must be named emailTemplate.html and reside in the mail directory relative to the root of the classpath.
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+	<body>
+		<img src='cid:spitterLogo'/>
+		<h4><span th:text="${spitterName}">Craig Walls</span> says...</h4>
+		<i><span th:text="${spittleText}">Hello there!</span></i>
+	</body>
+</html>
+
+
+Chapter 21 - Simplifying Spring development with Spring Boot
+总而言之 （Spring Boot Introduction)
+1) Spring Boot is a new way to build Spring applications with "little or no explicit configuration".  
+2) A "new development model" "on top of Spring".
+3) Spring Boot's four main features:
+3.1) Spring Boot starters: aggregate common groupings of dependencies into single dependencies in Maven or Gradle build.
+3.2) Autoconfiguration: leverages Spring 4’s support for conditional configuration to make reasonable guesses about the beans your application needs and automatically configure them.
+3.3) Command-line interface (CLI): takes advantage of the Groovy programming language along with autoconfiguration to further simplify Spring application development.
+3.4) Actuator: adds certain management features to a Spring Boot application.
+4) starter dependencies example:
+4.1) traditional way of building a project using Web MVC, jdbc and Thymleaf will require following dependecies:
+dependencies {
+	compile("org.springframework:spring-web:4.0.6.RELEASE")
+	compile("org.springframework:spring-webmvc:4.0.6.RELEASE")
+	compile("com.fasterxml.jackson.core:jackson-databind:2.2.2")
+	compile("org.springframework:spring-jdbc:4.0.6.RELEASE")
+	compile("org.springframework:spring-tx:4.0.6.RELEASE")
+	compile("com.h2database:h2:1.3.174")
+	compile("org.thymeleaf:thymeleaf-spring4:2.1.2.RELEASE")
+}
+4.2) using the prepackaged dependencies from Spring Boot starters:
+dependencies {
+	compile("org.springframework.boot:spring-boot-starter-web:1.1.4.RELEASE")
+	compile("org.springframework.boot:spring-boot-starter-jdbc:1.1.4.RELEASE")
+	compile("com.h2database:h2:1.3.174")
+	compile("org.thymeleaf:thymeleaf-spring4:2.1.2.RELEASE")
+}
+- Aside from making the dependency list shorter, you can feel confident that the versions of dependencies provided by the starters are compatible with each other.
+4.3) Spring Boot starter dependencies aggregate commonly needed dependency groupings into single project dependencies.
+- spring-boot-starter: spring-boot, spring-boot-autoconfigure, spring-boot-starter-logging (base starter)
+- spring-boot-starter-logging: jcl-over-slf4j, jul-to-slf4j, log4j-over-slf4j, logback-classic
+- spring-boot-starter-web: spring-boot-starter, spring-boot-starter-tomcat, jackson-databind, spring-web, spring-webmvc
+- spring-boot-starter-tomcat: tomcat-embed-core, tomcat-embed-logging-juli
+- spring-boot-starter-jdbc: spring-boot-starter, spring-jdbc, tomcat-jdbc, spring-tx
+- spring-boot-starter-data-jpa: spring-boot-starter, spring-bootstarter-jdbc, spring-boot-starter-aop, spring-core, Hibernate EntityManager, spring-orm, -ring-data-jpa, springaspects
+- spring-boot-starter-security: spring-boot-starter, spring-security-config, spring-security-web, spring-aop, spring-beans, spring-context, spring-core,
+-ring-expression, spring-web
+- spring-boot-starter-test: spring-boot-starter-logging, spring-boot, junit, mockito-core, hamcrest-library, spring-test
+- spring-boot-starter-data-rest: spring-boot-starter, spring-bootstarter-web, Jackson annotations, Jackson databind, spring-core, spring-tx, spring-data-rest-webmvc
+- spring-boot-starter-batch: spring-boot-starter, HSQLDB, spring-jdbc, spring-batch-core, spring-core
+.....
+4.4) Taking advantage of Maven’s and Gradle’s "transitive dependency resolution", the starters declare several dependencies in their own pom.xml file. 
+- When you add one of these starter dependencies to your Maven or Gradle build, the starter’s dependencies are resolved transitively. 
+- And those dependencies may have dependencies of their own. A single starter could transitively pull in dozens of other dependencies. many of the starters reference other starters. 
+- And most of the starters reference spring-boot-starter, which is essentially a base starter (although it references the logging starter).
+5) #Autoconfiguration
+- Spring Boot autoconfiguration cuts down on the amount of Spring configuration.
+- by considering other factors in your application and making assumptions about what Spring configuration you’ll need.
+- for example, when Spring Boot detects that 1)"Thymeleaf is on the classpath", it will assume that you want to use Thymeleaf for Spring MVC views and will automatically configure a ThymeleafViewResolver, a SpringTemplateEngine, and a TemplateResolver.
+- Spring Boot starters can trigger autoconfiguration. When you add the web starter to your project’s build, it will transitively pull in Spring MVC dependencies. When Spring Boot’s web autoconfiguration detects 2)"Spring MVC in the classpath", it will automatically configure several beans to support Spring MVC, including view resolvers, resource handlers, and message converters (among others).
+6) Spring Boot CLI
+- The Spring Boot CLI takes the magic provided by Spring Boot starters and autoconfiguration and spices it up a little with Groovy.
+- It reduces the Spring development process to the point where you can run one or more Groovy scripts through a CLI and see it run.
+- In the course of running the application, the CLI will also automatically import Spring types and resolve dependencies.
+- One of the most interesting examples used to illustrate Spring Boot CLI is contained in the following Groovy script:
+@RestController
+class Hi {
+	@RequestMapping("/")
+	String hi() {
+		"Hi!"
+	}
+}
+- Eliminate the unnecessary whitespace and you get this 64-character one-liner:
+@RestController class Hi{@RequestMapping("/")String hi(){"Hi!"}}
+- If you have the Spring Boot CLI installed, you can run it with the following command line:
+$ spring run Hi.groovy
+7) Actuator provides
+7.1) Management endpoints (the most immediately useful and interesting features of the Actuator)
+7.2) Sensible error handling and a default mapping for an /error endpoint
+7.3) An /info endpoint that can communicate information about an application
+7.4) An audit events framework when Spring Security is in play
+
+总而言之 (Building web tier with Spring Boot) <Test> <Test Done>
+1) Create build file
+1.1) The Gradle build file for the Contacts application
+buildscript {
+	repositories {
+		mavenLocal()
+	}
+	
+	dependencies {
+			classpath("org.springframework.boot:spring-boot-gradle-plugin:1.1.4.RELEASE")
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'spring-boot'			//Use the Spring Boot plugin
+
+jar {								//Build a JAR file
+	baseName = 'contacts'
+	version = '0.1.0'
+}
+repositories {
+	mavenCentral()
+}
+dependencies {		//Dependencies will go here
+}
+task wrapper(type: Wrapper) {
+	gradleVersion = '1.8'
+}
+- the build includes a buildscript dependency on the Spring Boot Gradle plugin. this will help produce an executable uber-JAR file that contains all of the application’s dependencies.
+1.2) The Maven build file for the Contacts application
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+		http://maven.apache.org/xsd/maven-4.0.0.xsd">
+		
+		<modelVersion>4.0.0</modelVersion>
+		
+		<groupId>com.habuma</groupId>
+		<artifactId>contacts</artifactId>
+		<version>0.1.0</version>
+		<packaging>jar</packaging>			//Build a JAR file
+		
+		<parent>
+			<groupId>org.springframework.boot</groupId>				//Inherit from Spring Boot starter parent
+			<artifactId>spring-boot-starter-parent</artifactId>
+			<version>1.1.4.RELEASE</version>
+		</parent>
+
+	<dependencies>							//Dependencies will go here
+	</dependencies>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>			//Use the Spring Boot plugin
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+</project>
+- Similar to the Gradle build, pom.xml makes use of the Spring Boot Maven plugin. This plugin is the Maven counterpart to the Gradle plugin and enables the build to produce an executable uber-JAR file.
+- unlike the Gradle build, this Maven build has a parent project. By basing your project’s Maven build on the Spring Boot starter parent, you get the benefit of Maven dependency management, and you won’t have to explicitly declare version numbers for many of your project dependencies. The versions will be inherited from the parent.
+2) create the standard project structure for Maven- and Gradle-based projects:
+$ tree
+.
+├── build.gradle
+├── pom.xml
+└── src
+	└── main
+		├── java
+		│ 	└── contacts
+		│ 	├── Application.java
+		│ 	├── Contact.java
+		│ 	├── ContactController.java
+		│ 	└── ContactRepository.java
+		└── resources
+			├── schema.sql
+			├── static
+			│ └── style.css
+			└── templates
+			└── home.html
+- maven and grable use the same standard project structure, the only difference is the build.grable and pom.xml
+3) Building web tier
+3.1) web tier dependency, add Spring MVC as a dependency in your build.
+compile("org.springframework.boot:spring-boot-starter-web")
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+- because the Spring Boot parent project specifies the version for the web starter dependency, there’s no need to explicitly specify it in the project’s build.gradle or pom.xml.
+3.2) Building controller
+- ContactController handles basic web requests for the Contacts application
+- Although Spring Boot gets involved when it comes to managing build dependencies and minimizing Spring configuration, the programming model is the same
+@Controller
+@RequestMapping("/")
+public class ContactController {
+	private ContactRepository contactRepo;
+	@Autowired
+	public ContactController(ContactRepository contactRepo) {		//Inject ContactRepository
+		this.contactRepo = contactRepo;
+	}
+	@RequestMapping(method=RequestMethod.GET)						//Handle GET /
+	public String home(Map<String,Object> model) {
+		List<Contact> contacts = contactRepo.findAll();
+		model.put("contacts", contacts);
+	return "home";
+	}
+	@RequestMapping(method=RequestMethod.POST)						//Handle POST /
+	public String submit(Contact contact) {
+		contactRepo.save(contact);
+		return "redirect:/";
+	}
+}
+3.3) Contact is a simple domain type.
+public class Contact {
+	private Long id;					//properties
+	private String firstName;
+	private String lastName;
+	private String phoneNumber;
+	private String emailAddress;
+	...									//Accessor methods
+}
+3.4) Creating the view
+3.4.1) add Thymeleaf’s Spring 4 module to the build
+Gradle:
+compile("org.thymeleaf:thymeleaf-spring4")
+Maven:
+<dependency>
+	<groupId>org.thymeleaf</groupId>
+	<artifactId>thymeleaf-spring4</artifactId>
+</dependency>
+3.4.2) define home.html, a Thymeleaf template that defines the home view. 
+- because the autoconfigured template resolver will look for Thymeleaf templates under a directory named "templates" (by convention) relative to the root of the classpath, you’ll need to place home.html in the Maven or Gradle project at src/main/resources/templates.
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+	<head>
+		<title>Spring Boot Contacts</title>
+		<link rel="stylesheet" th:href="@{/style.css}" />		//Load stylesheet
+	</head>
+	<body>
+		<h2>Spring Boot Contacts</h2>
+		<form method="POST">									//New contact form
+			<label for="firstName">First Name:</label>
+			<input type="text" name="firstName"></input><br/>
+			<label for="lastName">Last Name:</label>
+			<input type="text" name="lastName"></input><br/>
+			<label for="phoneNumber">Phone #:</label>
+			<input type="text" name="phoneNumber"></input><br/>
+			<label for="emailAddress">Email:</label>
+			<input type="text" name="emailAddress"></input><br/>
+			<input type="submit"></input>
+		</form>
+		<ul th:each="contact : ${contacts}">				//Render list of contacts
+			<li>
+				<span th:text="${contact.firstName}">First</span>
+				<span th:text="${contact.lastName}">Last</span> :
+				<span th:text="${contact.phoneNumber}">phoneNumber</span>,
+				<span th:text="${contact.emailAddress}">emailAddress</span>
+			</li>
+		</ul>
+	</body>
+</html>
+4) static artifacts
+4.1) When Spring Boot’s web autoconfiguration is automatically configuring beans for Spring MVC, those beans include a resource handler that maps /**
+to several resource locations. (by convention)
+	/META-INF/resources/
+	/resources/
+	/static/
+	/public/
+- In a conventional Maven/Gradle-built application, you’d typically put static content at src/main/webapp so that it would be placed at the root of the WAR file that the build produces. When building a WAR file with Spring Boot, that’s still an option. 
+- in order to satisfy the Thymeleaf template’s reference to /style.css, you need to create a file named style.css at one of the following locations:
+	/META-INF/resources/style.css
+	/resources/style.css
+	/static/style.css
+	/public/style.css
+
+4.2) put style.css in /public: 
+body {
+	background-color: #eeeeee;
+	font-family: sans-serif;
+}
+label {
+	display: inline-block;
+	width: 120px;
+	text-align: right;
+}
+
+总而言之 (Building persistence tier using Spring Boot)	<Test> <Test Done>
+1) use the H2 database and JDBC (using Spring’s JdbcTemplate) to keep things simple.
+2) add dependency:
+compile("org.springframework.boot:spring-boot-starter-jdbc")
+compile("com.h2database:h2")
+
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-jdbc</artifactId>
+</dependency>
+<dependency>
+	<groupId>com.h2database</groupId>
+	<artifactId>h2</artifactId>
+</dependency>
+3) ContactRepository works with an injected JdbcTemplate to read and write Contact objects from the database.
+@Repository
+public class ContactRepository {
+	private JdbcTemplate jdbc;
+	@Autowired
+	public ContactRepository(JdbcTemplate jdbc) {
+		this.jdbc = jdbc;
+	}
+	public List<Contact> findAll() {		//Query for contacts
+		return jdbc.query("select id, firstName, lastName, phoneNumber, emailAddress from contacts order by lastName",
+			new RowMapper<Contact>() {
+					public Contact mapRow(ResultSet rs, int rowNum) throws SQLException {
+					Contact contact = new Contact();
+					contact.setId(rs.getLong(1));
+					contact.setFirstName(rs.getString(2));
+					contact.setLastName(rs.getString(3));
+					contact.setPhoneNumber(rs.getString(4));
+					contact.setEmailAddress(rs.getString(5));
+					return contact;
+			}
+		});
+	}
+	public void save(Contact contact) {
+		jdbc.update("insert into contacts (firstName, lastName, phoneNumber, emailAddress) values (?, ?, ?, ?)",		//Insert a contact
+		contact.getFirstName(), contact.getLastName(),
+		contact.getPhoneNumber(), contact.getEmailAddress());
+	}
+}
+- When Spring Boot detects that Spring’s JDBC module and H2 are on the classpath, autoconfiguration kicks in and automatically configures a JdbcTemplate bean and an H2 DataSource bean. 
+4) create db schema:
+create table contacts (
+	id identity,
+	firstName varchar(30) not null,
+	lastName varchar(50) not null,
+	phoneNumber varchar(13),
+	emailAddress varchar(30)
+);
+- If, by convention, you name this SQL file as schema.sql and place it at the root of the classpath (that is, in src/main/resources in the Maven or Gradle project), it will be found and loaded when the application starts up.
+
+总而言之 (Run spring boot application) <Test> <Test Done>
+1) Spring Boot’s autoconfiguration feature eliminates most or all of the configuration. 
+2) you need a special class that bootstraps the Spring Boot application:
+@ComponentScan
+@EnableAutoConfiguration
+public class Application {
+	public static void main(String[] args) {
+		SpringApplication.run(Application.class, args);
+	}
+}
+- Application is annotated with @ComponentScan to enable component scanning. 
+- annotated with @EnableAutoConfiguration, which turns on Spring Boot’s autoconfiguration feature.
+- Application has a main() method. main() method can run spring boot applications as a standalone application, "SpringApplication.run(Application.class, args)" in main() tells Spring Boot to run using the configuration in Application itself and any arguments that were given on the command line.
+3) build the project. 
+$ gradle build 
+- Gradle build the project into build/libs/contacts-0.1.0.jar:
+$ mvn package
+- Maven build the artifact in the target folder.
+4) Run from command line (Gradle example), running the application from the command line is a valid option, even for production applications
+$ java -jar build/libs/contacts-0.1.0.jar
+5) building and deploying WAR file (an executable WAR) <Test> <Test Failed>
+5.1) In the Gradle build, add the following line to apply the “war” plugin:
+apply plugin: 'war'
+- change the “jar” configuration to a “war” configuration. This essentially comes down to replacing a “j” with a “w”:
+war {
+	baseName = 'contacts'
+	version = '0.1.0'
+}
+5.2) In the case of a Maven-built project, simply change the packaging from “jar” to “war”:
+<packaging>war</packaging>
+5.3) Now you can rebuild the project and find contacts-0.1.0.war in the build directory. That WAR file is deployable to any web container that supports Servlet 3.0.
+5.4) you can still run the application from the command line like this: $ java -jar build/libs/contacts-0.1.0.war
+
+#Going Groovy with the Spring Boot CLI
+总而言之 (Groovy and Spring Boot CLI) <Test> <Test Done>
+1) Groovy is a much simpler programming language than Java. you can write Groovy code without things like: 	semicolons, modifiers such as public and private, setter and getter methods for properties, return keyword to return values from methods
+2) Writing code in Groovy and run with Spring Boot’s CLI, then Spring Boot can take advantage of Groovy’s simplicity to further simplify Spring development. 
+3) the schema.sql, style.css, and home.html files will remain unchanged, you’ll need to convert the three Java classes to Groovy.
+4) The Spring Boot CLI is its own bootstrapper, so you won’t need the Application class you created before.
+5) The Maven and Gradle build files can go away too, since you’ll be running uncompiled Groovy files through the CLI.
+6) project structure:
+$ tree
+.
+├── Contact.groovy
+├── ContactController.groovy
+├── ContactRepository.groovy
+├── schema.sql
+├── static
+│ 	└── style.css
+└── templates
+	└── home.html
+7) writing Groovy controller:
+@Grab("thymeleaf-spring4")							//Grab Thymeleaf dependency
+@Controller
+@RequestMapping("/")
+class ContactController {
+	@Autowired 
+	ContactRepository contactRepo 					//Inject ContactRepository
+	@RequestMapping(method=RequestMethod.GET)		//Handle GET /
+	String home(Map<String,Object> model) {
+		List<Contact> contacts = contactRepo.findAll()
+		model.putAll([contacts: contacts])
+		"home"
+	}
+	@RequestMapping(method=RequestMethod.POST)		//Handle POST /
+		String submit(Contact contact) {
+		contactRepo.save(contact)
+		"redirect:/"
+	}
+}
+8) As a consequence of this auto-dependency/auto-import feature of the CLI, your controller class doesn’t need any imports. 
+8.1) Groovy imports a number of packages and classes by default: java.io.*, java.lang.*, 	java.math.BigDecimal, java.math.BigInteger, java.net.*, java.util.*, groovy.lang.*, groovy.util.*
+8.2) when you run the application, the Spring Boot CLI will try to compile these Groovy classes using the Groovy compiler. And because those types aren’t imported, it will fail. 
+- The CLI will recognize that the failures were due to missing Spring types, and it will take two steps to fix that problem. It will first fetch the Spring Boot web starter dependency and transitively all of its dependencies and add them to the classpath. (That’s right, it will download and add JARs to the
+classpath.), Then it will add the necessary packages to the Groovy compiler’s list of default imports and try to compile the code again.
+9) there are some limits to the CLI’s capabilities. Although it knows how to resolve many Spring dependencies and automatically add imports for many Spring
+types (as well as a handful of other libraries), it won’t automatically resolve and import everything.
+- The choice to use Thymeleaf templates, for example, is an opt-in choice. So you must explicitly ask for it with an @Grab annotation in the code.
+- by adding the @Grab annotation and asking for Thymeleaf, you triggered autoconfiguration to configure the beans necessary to support Thymeleaf templates
+in Spring MVC.
+10) the Contact class in Groovy:
+class Contact {
+	long id
+	String firstName
+	String lastName
+	String phoneNumber
+	String emailAddress
+}
+11) When written in Groovy, ContactRepository is much more succinct.
+@Grab("h2")
+import java.sql.ResultSet
+class ContactRepository {
+	@Autowired
+	JdbcTemplate jdbc
+	
+	List<Contact> findAll() {
+		jdbc.query(
+			"select id, firstName, lastName, phoneNumber, emailAddress from contacts order by lastName",
+			new RowMapper<Contact>() {
+				Contact mapRow(ResultSet rs, int rowNum) {
+				new Contact(id: rs.getLong(1), firstName: rs.getString(2),
+				lastName: rs.getString(3), phoneNumber: rs.getString(4),
+				emailAddress: rs.getString(5))
+			}
+		})
+	}
+	void save(Contact contact) {
+		jdbc.update(
+			"insert into contacts (firstName, lastName, phoneNumber, emailAddress) values (?, ?, ?, ?)",
+			contact.firstName, contact.lastName,
+			contact.phoneNumber, contact.emailAddress)
+	}
+}
+- Aside from the obvious improvements from Groovy syntax, this new ContactRepository class takes advantage of Spring Boot CLI’s auto-import feature to automatically import JdbcTemplate and RowMapper.
+- the JDBC starter dependency is automatically resolved when the CLI sees that you’re using those types.
+- you still had to import ResultSet. 
+- And because Spring Boot doesn’t know which database you want to use, you must use @Grab to ask for the H2 database.
+12) Running the Spring Boot CLI
+- You could either run it as an executable JAR or WAR file from the command line, 
+- or you could deploy a WAR file to a servlet container.
+- 3rd option: You can run the application directly by passing the Groovy source code through the CLI. with the CLI, there’s no need to build the application into a JAR or WAR file first. 
+
+12.1) INSTALLING THE CLI
+12.1.1)To install Spring Boot CLI using GVM, enter this command:
+$ gvm install springboot
+12.1.2) If you’re on OS X, you can use Homebrew to install Spring Boot CLI:
+$ brew tap pivotal/tap
+$ brew install springboot
+12.1.3) download and install manually, config env variable, SPRING_HOME and path %SPRING_HOME%/bin 
+12.1.4) check the installation:
+$ spring --version
+
+12.2) RUNNING THE CONTACTS APPLICATION WITH THE CLI
+- To run an application with the Spring Boot CLI, you type spring run in the command line, followed by one or more Groovy files that should be run through the CLI. For example, if your application only has a single Groovy class, you can run it like this:
+$ spring run Hello.groovy
+- If your application has several Groovy class files, you can run them using wildcards like this:
+$ spring run *.groovy
+- if those Groovy class files are in one or more subdirectories, you can use Ant-style wildcards to recursively seek for Groovy classes:
+$ spring run **/*.groovy 
+
+总而言之，#Gaining application insight with the Actuator
+1) Spring Boot Actuator does adds several helpful management endpoints to a Spring Boot-based application. These endpoints include
+	GET /autoconfig—Explains the decisions made by Spring Boot when applying autoconfiguration
+	GET /beans—Catalogs the beans that are configured for the running application
+	GET /configprops—Lists all properties available for configuring the properties of beans in the application with their current values
+	GET /dump—Lists application threads, including a stack trace for each thread
+	GET /env—Lists all environment and system property variables available to the application context
+	GET /env/{name}—Displays the value for a specific environment or property variable
+	GET /health—Displays the current application health
+	GET /info—Displays application-specific information
+	GET /metrics—Lists metrics concerning the application, including running counts of requests against certain endpoints
+	GET /metrics/{name}—Displays metrics for a specific application metric key
+	POST /shutdown—Forcibly shuts down the application
+	GET /trace—Lists metadata concerning recent requests served through the application, including request and response headers
+2) enable the actuator, you simply add the actuator starter dependency to your project.
+@Grab("spring-boot-starter-actuator")
+compile("org.springframework.boot:spring-boot-starter-actuator")
+<dependency>
+	<groupId> org.springframework.boot</groupId>
+	<artifactId>spring-boot-actuator</carlsbad>
+</dependency>
+3) point your browser to any of those management endpoints for more information. see all of the beans in the Spring application context:
+$ curl http://localhost:8080/beans
+
+- /autoconfig endpoint shows how Spring Boot’s autoconfiguration works. The JSON produced by this endpoint display the decisions that Spring Boot made when autoconfiguring beans. 
+$ curl http://localhost:8080/autoconfig
+
+- the report has two sections: one for negative matches and one for positive matches. 
+- The negative matches section shown here indicates that the AOP and Spring Batch autoconfiguration weren’t applied because the requisite classes weren’t
+found on the classpath. 
+- Under the positive matches section, you can see that as a result of SpringTemplateEngine being found on the classpath, the Thymeleaf autoconfiguration
+goes into effect.
+- You can also see that the default template resolver, view resolver, and template engine beans will be autoconfigured unless you have already
+explicitly configured those beans. Moreover, the default view resolver bean will only be autoconfigured if the Servlet class is found on the classpath.
