@@ -7878,6 +7878,1130 @@ public SpringTemplateEngine templateEngine(Set<ITemplateResolver> resolvers) {
 }
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+Chapter 21 - Simplifying Spring development with Spring Boot
+总而言之 （Spring Boot Introduction)
+1) Spring Boot is a new way to build Spring applications with "little or no explicit configuration".  
+2) A "new development model" "on top of Spring".
+3) Spring Boot's four main features:
+3.1) Spring Boot starters: aggregate common groupings of dependencies into single dependencies in Maven or Gradle build.
+3.2) Autoconfiguration: leverages Spring 4’s support for conditional configuration to make reasonable guesses about the beans your application needs and automatically configure them.
+3.3) Command-line interface (CLI): takes advantage of the Groovy programming language along with autoconfiguration to further simplify Spring application development.
+3.4) Actuator: adds certain management features to a Spring Boot application.
+4) starter dependencies example:
+4.1) traditional way of building a project using Web MVC, jdbc and Thymleaf will require following dependecies:
+dependencies {
+	compile("org.springframework:spring-web:4.0.6.RELEASE")
+	compile("org.springframework:spring-webmvc:4.0.6.RELEASE")
+	compile("com.fasterxml.jackson.core:jackson-databind:2.2.2")
+	compile("org.springframework:spring-jdbc:4.0.6.RELEASE")
+	compile("org.springframework:spring-tx:4.0.6.RELEASE")
+	compile("com.h2database:h2:1.3.174")
+	compile("org.thymeleaf:thymeleaf-spring4:2.1.2.RELEASE")
+}
+4.2) using the prepackaged dependencies from Spring Boot starters:
+dependencies {
+	compile("org.springframework.boot:spring-boot-starter-web:1.1.4.RELEASE")
+	compile("org.springframework.boot:spring-boot-starter-jdbc:1.1.4.RELEASE")
+	compile("com.h2database:h2:1.3.174")
+	compile("org.thymeleaf:thymeleaf-spring4:2.1.2.RELEASE")
+}
+- Aside from making the dependency list shorter, you can feel confident that the versions of dependencies provided by the starters are compatible with each other.
+4.3) Spring Boot starter dependencies aggregate commonly needed dependency groupings into single project dependencies.
+- spring-boot-starter: spring-boot, spring-boot-autoconfigure, spring-boot-starter-logging (base starter)
+- spring-boot-starter-logging: jcl-over-slf4j, jul-to-slf4j, log4j-over-slf4j, logback-classic
+- spring-boot-starter-web: spring-boot-starter, spring-boot-starter-tomcat, jackson-databind, spring-web, spring-webmvc
+- spring-boot-starter-tomcat: tomcat-embed-core, tomcat-embed-logging-juli
+- spring-boot-starter-jdbc: spring-boot-starter, spring-jdbc, tomcat-jdbc, spring-tx
+- spring-boot-starter-data-jpa: spring-boot-starter, spring-bootstarter-jdbc, spring-boot-starter-aop, spring-core, Hibernate EntityManager, spring-orm, -ring-data-jpa, springaspects
+- spring-boot-starter-security: spring-boot-starter, spring-security-config, spring-security-web, spring-aop, spring-beans, spring-context, spring-core,
+-ring-expression, spring-web
+- spring-boot-starter-test: spring-boot-starter-logging, spring-boot, junit, mockito-core, hamcrest-library, spring-test
+- spring-boot-starter-data-rest: spring-boot-starter, spring-bootstarter-web, Jackson annotations, Jackson databind, spring-core, spring-tx, spring-data-rest-webmvc
+- spring-boot-starter-batch: spring-boot-starter, HSQLDB, spring-jdbc, spring-batch-core, spring-core
+.....
+4.4) Taking advantage of Maven’s and Gradle’s "transitive dependency resolution", the starters declare several dependencies in their own pom.xml file. 
+- When you add one of these starter dependencies to your Maven or Gradle build, the starter’s dependencies are resolved transitively. 
+- And those dependencies may have dependencies of their own. A single starter could transitively pull in dozens of other dependencies. many of the starters reference other starters. 
+- And most of the starters reference spring-boot-starter, which is essentially a base starter (although it references the logging starter).
+5) #Autoconfiguration
+- Spring Boot autoconfiguration cuts down on the amount of Spring configuration.
+- by considering other factors in your application and making assumptions about what Spring configuration you’ll need.
+- for example, when Spring Boot detects that 1)"Thymeleaf is on the classpath", it will assume that you want to use Thymeleaf for Spring MVC views and will automatically configure a ThymeleafViewResolver, a SpringTemplateEngine, and a TemplateResolver.
+- Spring Boot starters can trigger autoconfiguration. When you add the web starter to your project’s build, it will transitively pull in Spring MVC dependencies. When Spring Boot’s web autoconfiguration detects 2)"Spring MVC in the classpath", it will automatically configure several beans to support Spring MVC, including view resolvers, resource handlers, and message converters (among others).
+6) Spring Boot CLI
+- The Spring Boot CLI takes the magic provided by Spring Boot starters and autoconfiguration and spices it up a little with Groovy.
+- It reduces the Spring development process to the point where you can run one or more Groovy scripts through a CLI and see it run.
+- In the course of running the application, the CLI will also automatically import Spring types and resolve dependencies.
+- One of the most interesting examples used to illustrate Spring Boot CLI is contained in the following Groovy script:
+@RestController
+class Hi {
+	@RequestMapping("/")
+	String hi() {
+		"Hi!"
+	}
+}
+- Eliminate the unnecessary whitespace and you get this 64-character one-liner:
+@RestController class Hi{@RequestMapping("/")String hi(){"Hi!"}}
+- If you have the Spring Boot CLI installed, you can run it with the following command line:
+$ spring run Hi.groovy
+7) Actuator provides
+7.1) Management endpoints (the most immediately useful and interesting features of the Actuator)
+7.2) Sensible error handling and a default mapping for an /error endpoint
+7.3) An /info endpoint that can communicate information about an application
+7.4) An audit events framework when Spring Security is in play
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- Spring Boot is a new way to build Spring applications with little or no explicit configuration.
+- Spring Boot is arguably the most exciting thing to happen to Spring since the Spring Framework was first created.
+- It layers a completely "new development model" "on top of Spring", taking away much of the tedium of developing applications with Spring.
+
+#Introducing Spring Boot
+four main features:
+1) Spring Boot starters: aggregate common groupings of dependencies into single dependencies that can be added to a project’s Maven or Gradle build.
+2) Autoconfiguration: leverages Spring 4’s support for conditional configuration to make reasonable guesses about the beans your application needs and automatically configure them.
+3) Command-line interface (CLI): takes advantage of the Groovy programming language along with autoconfiguration to further simplify Spring application development.
+4) Actuator: adds certain management features to a Spring Boot application.
+
+#Adding starter dependencies
+- Spring Boot starters aggregate the various dependencies of an application into a single dependency.
+- traditional way of building a project using Web MVC, jdbc and Thymleaf will require following dependecies:
+dependencies {
+	compile("org.springframework:spring-web:4.0.6.RELEASE")
+	compile("org.springframework:spring-webmvc:4.0.6.RELEASE")
+	compile("com.fasterxml.jackson.core:jackson-databind:2.2.2")
+	compile("org.springframework:spring-jdbc:4.0.6.RELEASE")
+	compile("org.springframework:spring-tx:4.0.6.RELEASE")
+	compile("com.h2database:h2:1.3.174")
+	compile("org.thymeleaf:thymeleaf-spring4:2.1.2.RELEASE")
+}
+- Fortunately, Gradle makes it possible to express dependencies succinctly (than Maven does). 
+- Even so, a lot of work went into creating this list, and more will go into maintaining it. How can you know if these dependencies will play
+well together? As the application grows and evolves, dependency management will become even more challenging. 
+
+- using the prepackaged dependencies from Spring Boot starters:
+dependencies {
+	compile("org.springframework.boot:spring-boot-starter-web:1.1.4.RELEASE")
+	compile("org.springframework.boot:spring-boot-starter-jdbc:1.1.4.RELEASE")
+	compile("com.h2database:h2:1.3.174")
+	compile("org.thymeleaf:thymeleaf-spring4:2.1.2.RELEASE")
+}
+- Spring Boot’s web and JDBC starters replaced several of the finergrained dependencies. 
+- You still need to include the H2 and Thymeleaf dependencies, but the other dependencies are rolled up into the starter dependencies.
+- Aside from making the dependency list shorter, you can feel confident that the versions of dependencies provided by the starters are compatible with each other.
+
+- Spring Boot starter dependencies aggregate commonly needed dependency groupings into single project dependencies.
+1) spring-boot-starter: spring-boot, spring-boot-autoconfigure, spring-boot-starter-logging (base starter)
+2) spring-boot-starter-logging: jcl-over-slf4j, jul-to-slf4j, log4j-over-slf4j, logback-classic
+3) spring-boot-starter-web: spring-boot-starter, spring-boot-starter-tomcat, jackson-databind, spring-web, spring-webmvc
+4) spring-boot-starter-tomcat: tomcat-embed-core, tomcat-embed-logging-juli
+5) spring-boot-starter-jdbc: spring-boot-starter, spring-jdbc, tomcat-jdbc, spring-tx
+6) spring-boot-starter-data-jpa: spring-boot-starter, spring-bootstarter-jdbc, spring-boot-starter-aop, spring-core, Hibernate EntityManager, spring-orm, spring-data-jpa, springaspects
+7) spring-boot-starter-security: spring-boot-starter, spring-security-config, spring-security-web, spring-aop, spring-beans, spring-context, spring-core,
+spring-expression, spring-web
+8) spring-boot-starter-test: spring-boot-starter-logging, spring-boot, junit, mockito-core, hamcrest-library, spring-test
+9) spring-boot-starter-data-rest: spring-boot-starter, spring-bootstarter-web, Jackson annotations, Jackson databind, spring-core, spring-tx, spring-data-rest-webmvc
+10) spring-boot-starter-batch: spring-boot-starter, HSQLDB, spring-jdbc, spring-batch-core, spring-core
+.....
+
+- Taking advantage of Maven’s and Gradle’s transitive dependency resolution, the starters declare several dependencies in their own pom.xml file. 
+- When you add one of these starter dependencies to your Maven or Gradle build, the starter’s dependencies are resolved transitively. 
+- And those dependencies may have dependencies of their own. A single starter could transitively pull in dozens of other dependencies.
+- many of the starters reference other starters. 
+- And most of the starters reference spring-boot-starter, which is essentially a base starter (although it references the logging starter).
+
+#Autoconfiguration
+- Whereas Spring Boot starters cut down the size of your build’s dependency list
+- Spring Boot autoconfiguration cuts down on the amount of Spring configuration.
+- by considering other factors in your application and making assumptions about what Spring configuration you’ll need.
+- As an example, recall from chapter 6 (listing 6.4) that you’ll need at least three beans to enable Thymeleaf templates as views in Spring MVC: a ThymeleafViewResolver, a SpringTemplateEngine, and a TemplateResolver.
+- With Spring Boot autoconfiguration, however, all you need to do is add Thymeleaf to the project’s classpath. (how about an email template will also use Thymleaf template and require its own configuration?)
+- When Spring Boot detects that 1)"Thymeleaf is on the classpath", it will assume that you want to use Thymeleaf for Spring MVC views and will automatically configure those three beans.
+- Spring Boot starters can trigger autoconfiguration. For instance, all you need to do to use Spring MVC in your Spring Boot application is to add the "web starter as a dependency" in the build.
+- When you add the web starter to your project’s build, it will transitively pull in Spring MVC dependencies. When Spring Boot’s web autoconfiguration
+detects 2)"Spring MVC in the classpath", it will automatically configure several beans to support Spring MVC, including view resolvers, resource handlers, and message converters (among others).
+
+#The Spring Boot CLI
+- The Spring Boot CLI takes the magic provided by Spring Boot starters and autoconfiguration and spices it up a little with Groovy.
+- It reduces the Spring development process to the point where you can run one or more Groovy scripts through a CLI and see it run.
+- In the course of running the application, the CLI will also automatically import Spring types and resolve dependencies.
+- One of the most interesting examples used to illustrate Spring Boot CLI is contained in the following Groovy script:
+@RestController
+class Hi {
+	@RequestMapping("/")
+	String hi() {
+		"Hi!"
+	}
+}
+- that is a complete (albeit simple) Spring application that can be executed through the Spring Boot CLI.
+- Eliminate the unnecessary whitespace and you get this 64-character one-liner:
+@RestController class Hi{@RequestMapping("/")String hi(){"Hi!"}}
+
+- If you have the Spring Boot CLI installed, you can run it with the following command line:
+$ spring run Hi.groovy
+
+#The Actuator
+useful features to a Spring Boot project:
+1) Management endpoints
+2) Sensible error handling and a default mapping for an /error endpoint
+3) An /info endpoint that can communicate information about an application
+4) An audit events framework when Spring Security is in play
+- the management endpoints are the most immediately useful and interesting features of the Actuator
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#Building an application with Spring Boot 
+总而言之 (Building web tier with Spring Boot) <Test> <Test Done>
+1) Create build file
+1.1) The Gradle build file for the Contacts application
+buildscript {
+	repositories {
+		mavenLocal()
+	}
+	
+	dependencies {
+			classpath("org.springframework.boot:spring-boot-gradle-plugin:1.1.4.RELEASE")
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'spring-boot'			//Use the Spring Boot plugin
+
+jar {								//Build a JAR file
+	baseName = 'contacts'
+	version = '0.1.0'
+}
+repositories {
+	mavenCentral()
+}
+dependencies {		//Dependencies will go here
+}
+task wrapper(type: Wrapper) {
+	gradleVersion = '1.8'
+}
+- the build includes a buildscript dependency on the Spring Boot Gradle plugin. this will help produce an executable uber-JAR file that contains all of the application’s dependencies.
+1.2) The Maven build file for the Contacts application
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+		http://maven.apache.org/xsd/maven-4.0.0.xsd">
+		
+		<modelVersion>4.0.0</modelVersion>
+		
+		<groupId>com.habuma</groupId>
+		<artifactId>contacts</artifactId>
+		<version>0.1.0</version>
+		<packaging>jar</packaging>			//Build a JAR file
+		
+		<parent>
+			<groupId>org.springframework.boot</groupId>				//Inherit from Spring Boot starter parent
+			<artifactId>spring-boot-starter-parent</artifactId>
+			<version>1.1.4.RELEASE</version>
+		</parent>
+
+	<dependencies>							//Dependencies will go here
+	</dependencies>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>			//Use the Spring Boot plugin
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+</project>
+- Similar to the Gradle build, pom.xml makes use of the Spring Boot Maven plugin. This plugin is the Maven counterpart to the Gradle plugin and enables the build to produce an executable uber-JAR file.
+- unlike the Gradle build, this Maven build has a parent project. By basing your project’s Maven build on the Spring Boot starter parent, you get the benefit of Maven dependency management, and you won’t have to explicitly declare version numbers for many of your project dependencies. The versions will be inherited from the parent.
+2) create the standard project structure for Maven- and Gradle-based projects:
+$ tree
+.
+├── build.gradle
+├── pom.xml
+└── src
+	└── main
+		├── java
+		│ 	└── contacts
+		│ 	├── Application.java
+		│ 	├── Contact.java
+		│ 	├── ContactController.java
+		│ 	└── ContactRepository.java
+		└── resources
+			├── schema.sql
+			├── static
+			│ └── style.css
+			└── templates
+			└── home.html
+- maven and grable use the same standard project structure, the only difference is the build.grable and pom.xml
+3) Building web tier
+3.1) web tier dependency, add Spring MVC as a dependency in your build.
+compile("org.springframework.boot:spring-boot-starter-web")
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+- because the Spring Boot parent project specifies the version for the web starter dependency, there’s no need to explicitly specify it in the project’s build.gradle or pom.xml.
+3.2) Building controller
+- ContactController handles basic web requests for the Contacts application
+- Although Spring Boot gets involved when it comes to managing build dependencies and minimizing Spring configuration, the programming model is the same
+@Controller
+@RequestMapping("/")
+public class ContactController {
+	private ContactRepository contactRepo;
+	@Autowired
+	public ContactController(ContactRepository contactRepo) {		//Inject ContactRepository
+		this.contactRepo = contactRepo;
+	}
+	@RequestMapping(method=RequestMethod.GET)						//Handle GET /
+	public String home(Map<String,Object> model) {
+		List<Contact> contacts = contactRepo.findAll();
+		model.put("contacts", contacts);
+	return "home";
+	}
+	@RequestMapping(method=RequestMethod.POST)						//Handle POST /
+	public String submit(Contact contact) {
+		contactRepo.save(contact);
+		return "redirect:/";
+	}
+}
+3.3) Contact is a simple domain type.
+public class Contact {
+	private Long id;					//properties
+	private String firstName;
+	private String lastName;
+	private String phoneNumber;
+	private String emailAddress;
+	...									//Accessor methods
+}
+3.4) Creating the view
+3.4.1) add Thymeleaf’s Spring 4 module to the build
+Gradle:
+compile("org.thymeleaf:thymeleaf-spring4")
+Maven:
+<dependency>
+	<groupId>org.thymeleaf</groupId>
+	<artifactId>thymeleaf-spring4</artifactId>
+</dependency>
+3.4.2) define home.html, a Thymeleaf template that defines the home view. 
+- because the autoconfigured template resolver will look for Thymeleaf templates under a directory named "templates" (by convention) relative to the root of the classpath, you’ll need to place home.html in the Maven or Gradle project at src/main/resources/templates.
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+	<head>
+		<title>Spring Boot Contacts</title>
+		<link rel="stylesheet" th:href="@{/style.css}" />		//Load stylesheet
+	</head>
+	<body>
+		<h2>Spring Boot Contacts</h2>
+		<form method="POST">									//New contact form
+			<label for="firstName">First Name:</label>
+			<input type="text" name="firstName"></input><br/>
+			<label for="lastName">Last Name:</label>
+			<input type="text" name="lastName"></input><br/>
+			<label for="phoneNumber">Phone #:</label>
+			<input type="text" name="phoneNumber"></input><br/>
+			<label for="emailAddress">Email:</label>
+			<input type="text" name="emailAddress"></input><br/>
+			<input type="submit"></input>
+		</form>
+		<ul th:each="contact : ${contacts}">				//Render list of contacts
+			<li>
+				<span th:text="${contact.firstName}">First</span>
+				<span th:text="${contact.lastName}">Last</span> :
+				<span th:text="${contact.phoneNumber}">phoneNumber</span>,
+				<span th:text="${contact.emailAddress}">emailAddress</span>
+			</li>
+		</ul>
+	</body>
+</html>
+4) static artifacts
+4.1) When Spring Boot’s web autoconfiguration is automatically configuring beans for Spring MVC, those beans include a resource handler that maps /**
+to several resource locations. (by convention)
+	/META-INF/resources/
+	/resources/
+	/static/
+	/public/
+- In a conventional Maven/Gradle-built application, you’d typically put static content at src/main/webapp so that it would be placed at the root of the WAR file that the build produces. When building a WAR file with Spring Boot, that’s still an option. 
+- in order to satisfy the Thymeleaf template’s reference to /style.css, you need to create a file named style.css at one of the following locations:
+	/META-INF/resources/style.css
+	/resources/style.css
+	/static/style.css
+	/public/style.css
+
+4.2) put style.css in /public: 
+body {
+	background-color: #eeeeee;
+	font-family: sans-serif;
+}
+label {
+	display: inline-block;
+	width: 120px;
+	text-align: right;
+}
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- The Gradle build file for the Contacts application
+buildscript {
+	repositories {
+		mavenLocal()
+	}
+	
+	dependencies {
+			classpath("org.springframework.boot:spring-boot-gradle-plugin:1.1.4.RELEASE")
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'spring-boot'			//Use the Spring Boot plugin
+
+jar {								//Build a JAR file
+	baseName = 'contacts'
+	version = '0.1.0'
+}
+repositories {
+	mavenCentral()
+}
+dependencies {		//Dependencies will go here
+	...
+}
+task wrapper(type: Wrapper) {
+	gradleVersion = '1.8'
+}
+
+- the build includes a buildscript dependency on the Spring Boot Gradle plugin. this will help produce an executable uber-JAR file that contains all of the application’s dependencies.
+
+- The Maven build file for the Contacts application
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+		http://maven.apache.org/xsd/maven-4.0.0.xsd">
+		
+		<modelVersion>4.0.0</modelVersion>
+		
+		<groupId>com.habuma</groupId>
+		<artifactId>contacts</artifactId>
+		<version>0.1.0</version>
+		<packaging>jar</packaging>			//Build a JAR file
+		
+		<parent>
+			<groupId>org.springframework.boot</groupId>				//Inherit from Spring Boot starter parent
+			<artifactId>spring-boot-starter-parent</artifactId>
+			<version>1.1.4.RELEASE</version>
+		</parent>
+
+	<dependencies>							//Dependencies will go here
+	</dependencies>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>			//Use the Spring Boot plugin
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+</project>
+
+- Similar to the Gradle build, this Maven pom.xml file makes use of the Spring Boot Maven plugin. This plugin is the Maven counterpart to the Gradle plugin and enables the build to produce an executable uber-JAR file.
+- Also notice that unlike the Gradle build, this Maven build has a parent project. 
+- By basing your project’s Maven build on the Spring Boot starter parent, you get the benefit of Maven dependency management, 
+- and you won’t have to explicitly declare version numbers for many of your project dependencies. The versions will be inherited from the parent.
+- Following the standard project structure for Maven- and Gradle-based projects, the project will be structured like this when you’re finished:
+$ tree
+.
+├── build.gradle
+├── pom.xml
+└── src
+	└── main
+		├── java
+		│ 	└── contacts
+		│ 		├── Application.java
+		│ 		├── Contact.java
+		│ 		├── ContactController.java
+		│ 		└── ContactRepository.java
+		└── resources
+			├── schema.sql
+			├── static
+			│ 	└── style.css
+			└── templates
+				└── home.html
+- maven and grable use the same standard project structure, the only difference is the build.grable and pom.xml
+
+#Handling requests
+- Since you’re going to develop the web layer of the application with Spring MVC, you’re going to need to add Spring MVC as a dependency in your build.
+- Gradle dependency:
+compile("org.springframework.boot:spring-boot-starter-web")
+- Maven dependencies:
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+
+- because the Spring Boot parent project specifies the version for the web starter dependency, there’s no need to explicitly specify it in the project’s build.gradle or pom.xml.
+
+#Building controller
+- ContactController handles basic web requests for the Contacts application
+@Controller
+@RequestMapping("/")
+public class ContactController {
+	private ContactRepository contactRepo;
+	@Autowired
+	public ContactController(ContactRepository contactRepo) {		//Inject ContactRepository
+		this.contactRepo = contactRepo;
+	}
+	@RequestMapping(method=RequestMethod.GET)						//Handle GET /
+	public String home(Map<String,Object> model) {
+		List<Contact> contacts = contactRepo.findAll();
+		model.put("contacts", contacts);
+	return "home";
+	}
+	@RequestMapping(method=RequestMethod.POST)						//Handle POST /
+	public String submit(Contact contact) {
+		contactRepo.save(contact);
+		return "redirect:/";
+	}
+}
+- Although Spring Boot gets involved when it comes to managing build dependencies and minimizing Spring configuration, the programming model is the same when it comes to writing much of your application logic
+
+- Contact is a simple domain type.
+public class Contact {
+	private Long id;					//properties
+	private String firstName;
+	private String lastName;
+	private String phoneNumber;
+	private String emailAddress;
+	...									//Accessor methods
+}
+
+#Creating the view
+- add Thymeleaf’s Spring 4 module to the build
+Gradle:
+compile("org.thymeleaf:thymeleaf-spring4")
+
+Maven:
+<dependency>
+	<groupId>org.thymeleaf</groupId>
+	<artifactId>thymeleaf-spring4</artifactId>
+</dependency>
+- Keep in mind that by simply adding Thymeleaf to the project’s classpath, you’re setting Spring Boot autoconfiguration in motion.
+- When the application is run, Spring Boot will detect that Thymeleaf is in the classpath and will automatically configure the view resolver, template resolver, and template engine beans necessary to use Thymeleaf with Spring MVC.
+
+- define home.html, a Thymeleaf template that defines the home view.
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+	<head>
+		<title>Spring Boot Contacts</title>
+		<link rel="stylesheet" th:href="@{/style.css}" />		//Load stylesheet
+	</head>
+	<body>
+		<h2>Spring Boot Contacts</h2>
+		<form method="POST">									//New contact form
+			<label for="firstName">First Name:</label>
+			<input type="text" name="firstName"></input><br/>
+			<label for="lastName">Last Name:</label>
+			<input type="text" name="lastName"></input><br/>
+			<label for="phoneNumber">Phone #:</label>
+			<input type="text" name="phoneNumber"></input><br/>
+			<label for="emailAddress">Email:</label>
+			<input type="text" name="emailAddress"></input><br/>
+			<input type="submit"></input>
+		</form>
+		<ul th:each="contact : ${contacts}">				//Render list of contacts
+			<li>
+				<span th:text="${contact.firstName}">First</span>
+				<span th:text="${contact.lastName}">Last</span> :
+				<span th:text="${contact.phoneNumber}">phoneNumber</span>,
+				<span th:text="${contact.emailAddress}">emailAddress</span>
+			</li>
+		</ul>
+	</body>
+</html>
+
+- need to be careful to name and place it correctly in your project. 
+- Because the logical view name returned is home, the template file should be named home.html. 
+- And because the autoconfigured template resolver will look for Thymeleaf templates under a directory named templates relative to the root of the classpath,
+you’ll need to place home.html in the Maven or Gradle project at src/main/resources/templates.
+
+#Adding static artifacts
+- In the case of Spring Boot, it’s worth mentioning how Spring Boot deals with static content.
+- When Spring Boot’s web autoconfiguration is automatically configuring beans for Spring MVC, those beans include a resource handler that maps /**
+to several resource locations.
+	/META-INF/resources/
+	/resources/
+	/static/
+	/public/
+- In a conventional Maven/Gradle-built application, you’d typically put static content at src/main/webapp so that it would be placed at the root of the WAR file that the build produces.
+- When building a WAR file with Spring Boot, that’s still an option. But you also have the option of placing static content at one of the four locations mapped to the resource handler.
+- in order to satisfy the Thymeleaf template’s reference to /style.css, you need to create a file named style.css at one of the following locations:
+	/META-INF/resources/style.css
+	/resources/style.css
+	/static/style.css
+	/public/style.css
+- The choice is up to you. I tend to put static content in /public
+- put style.css in /public: 
+body {
+	background-color: #eeeeee;
+	font-family: sans-serif;
+}
+label {
+	display: inline-block;
+	width: 120px;
+	text-align: right;
+}
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+总而言之 (Building persistence tier using Spring Boot)	<Test> <Test Done>
+1) use the H2 database and JDBC (using Spring’s JdbcTemplate) to keep things simple.
+2) add dependency:
+compile("org.springframework.boot:spring-boot-starter-jdbc")
+compile("com.h2database:h2")
+
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-jdbc</artifactId>
+</dependency>
+<dependency>
+	<groupId>com.h2database</groupId>
+	<artifactId>h2</artifactId>
+</dependency>
+3) ContactRepository works with an injected JdbcTemplate to read and write Contact objects from the database.
+@Repository
+public class ContactRepository {
+	private JdbcTemplate jdbc;
+	@Autowired
+	public ContactRepository(JdbcTemplate jdbc) {
+		this.jdbc = jdbc;
+	}
+	public List<Contact> findAll() {		//Query for contacts
+		return jdbc.query("select id, firstName, lastName, phoneNumber, emailAddress from contacts order by lastName",
+			new RowMapper<Contact>() {
+					public Contact mapRow(ResultSet rs, int rowNum) throws SQLException {
+					Contact contact = new Contact();
+					contact.setId(rs.getLong(1));
+					contact.setFirstName(rs.getString(2));
+					contact.setLastName(rs.getString(3));
+					contact.setPhoneNumber(rs.getString(4));
+					contact.setEmailAddress(rs.getString(5));
+					return contact;
+			}
+		});
+	}
+	public void save(Contact contact) {
+		jdbc.update("insert into contacts (firstName, lastName, phoneNumber, emailAddress) values (?, ?, ?, ?)",		//Insert a contact
+		contact.getFirstName(), contact.getLastName(),
+		contact.getPhoneNumber(), contact.getEmailAddress());
+	}
+}
+- When Spring Boot detects that Spring’s JDBC module and H2 are on the classpath, autoconfiguration kicks in and automatically configures a JdbcTemplate bean and an H2 DataSource bean. 
+4) create db schema:
+create table contacts (
+	id identity,
+	firstName varchar(30) not null,
+	lastName varchar(50) not null,
+	phoneNumber varchar(13),
+	emailAddress varchar(30)
+);
+- If, by convention, you name this SQL file as schema.sql and place it at the root of the classpath (that is, in src/main/resources in the Maven or Gradle project), it will be found and loaded when the application starts up.
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#Persisting the data
+- We’ll use the H2 database and JDBC (using Spring’s JdbcTemplate) to keep things simple.
+- The JDBC starter dependency will pull in everything you need to work with Spring’s JdbcTemplate
+
+compile("org.springframework.boot:spring-boot-starter-jdbc")
+compile("com.h2database:h2")
+
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-jdbc</artifactId>
+</dependency>
+<dependency>
+	<groupId>com.h2database</groupId>
+	<artifactId>h2</artifactId>
+</dependency>
+
+- ContactRepository in the following listing works with an injected JdbcTemplate to read and write Contact objects from the database.
+@Repository
+public class ContactRepository {
+	private JdbcTemplate jdbc;
+	@Autowired
+	public ContactRepository(JdbcTemplate jdbc) {
+		this.jdbc = jdbc;
+	}
+	public List<Contact> findAll() {		//Query for contacts
+		return jdbc.query("select id, firstName, lastName, phoneNumber, emailAddress from contacts order by lastName",
+			new RowMapper<Contact>() {
+					public Contact mapRow(ResultSet rs, int rowNum) throws SQLException {
+					Contact contact = new Contact();
+					contact.setId(rs.getLong(1));
+					contact.setFirstName(rs.getString(2));
+					contact.setLastName(rs.getString(3));
+					contact.setPhoneNumber(rs.getString(4));
+					contact.setEmailAddress(rs.getString(5));
+					return contact;
+			}
+		});
+	}
+	public void save(Contact contact) {
+		jdbc.update("insert into contacts (firstName, lastName, phoneNumber, emailAddress) values (?, ?, ?, ?)",		//Insert a contact
+		contact.getFirstName(), contact.getLastName(),
+		contact.getPhoneNumber(), contact.getEmailAddress());
+	}
+}
+
+- what about JdbcTemplate? Don’t you need to declare a JdbcTemplate bean in the Spring application context? For that matter, don’t you need to declare an H2
+DataSource bean?
+- When Spring Boot detects that Spring’s JDBC module and H2 are on the classpath, autoconfiguration kicks in and automatically configures a JdbcTemplate bean and an H2 DataSource bean. 
+- But what about the database schema? Certainly you must define the schema that creates the contacts table, right?
+- There’s no way that Spring Boot can guess what the contacts should look like. So you’ll need to define a schema, such as this:
+create table contacts (
+	id identity,
+	firstName varchar(30) not null,
+	lastName varchar(50) not null,
+	phoneNumber varchar(13),
+	emailAddress varchar(30)
+);
+- If you name this SQL file as schema.sql and place it at the root of the classpath (that is, in src/main/resources in the Maven or Gradle project), it will be found and loaded when the application starts up.
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#Try it out
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+总而言之 (Run spring boot application) <Test> <Test Done>
+1) Spring Boot’s autoconfiguration feature eliminates most or all of the configuration. 
+2) you need a special class that bootstraps the Spring Boot application:
+@ComponentScan
+@EnableAutoConfiguration
+public class Application {
+	public static void main(String[] args) {
+		SpringApplication.run(Application.class, args);
+	}
+}
+- Application is annotated with @ComponentScan to enable component scanning. 
+- annotated with @EnableAutoConfiguration, which turns on Spring Boot’s autoconfiguration feature.
+- Application has a main() method. main() method can run spring boot applications as a standalone application, "SpringApplication.run(Application.class, args)" in main() tells Spring Boot to run using the configuration in Application itself and any arguments that were given on the command line.
+3) build the project. 
+$ gradle build 
+- Gradle build the project into build/libs/contacts-0.1.0.jar:
+$ mvn package
+- Maven build the artifact in the target folder.
+4) Run from command line (Gradle example), running the application from the command line is a valid option, even for production applications
+$ java -jar build/libs/contacts-0.1.0.jar
+5) building and deploying WAR file (an executable WAR) <Test> <Test Failed>
+5.1) In the Gradle build, add the following line to apply the “war” plugin:
+apply plugin: 'war'
+- change the “jar” configuration to a “war” configuration. This essentially comes down to replacing a “j” with a “w”:
+war {
+	baseName = 'contacts'
+	version = '0.1.0'
+}
+5.2) In the case of a Maven-built project, simply change the packaging from “jar” to “war”:
+<packaging>war</packaging>
+5.3) Now you can rebuild the project and find contacts-0.1.0.war in the build directory. That WAR file is deployable to any web container that supports Servlet 3.0.
+5.4) you can still run the application from the command line like this: $ java -jar build/libs/contacts-0.1.0.war
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- You haven’t yet written any Spring configuration, nor have you configured DispatcherServlet in a web.xml file or servlet initializer class.
+- Generally speaking, Spring Boot’s autoconfiguration feature eliminates most or all of the configuration. 
+- Therefore, it’s entirely possible to write an entire Spring application and not write a single line of configuration code.
+- Of course, autoconfiguration doesn’t cover all scenarios, so a typical Spring Boot application will still include some configuration.
+- You do, however, need a special class that bootstraps the Spring Boot application:
+- A simple bootstrapper class to initiate Spring Boot autoconfiguration:
+
+@ComponentScan
+@EnableAutoConfiguration
+public class Application {
+	public static void main(String[] args) {
+		SpringApplication.run(Application.class, args);
+	}
+}
+- Application is annotated with @ComponentScan to enable component scanning. 
+- And it’s annotated with @EnableAutoConfiguration, which turns on Spring Boot’s autoconfiguration feature.
+- Application has a main() method. Spring Boot applications can be run in a unique way, and the main() method here makes that possible. Within the main() method, there’s a single line that tells Spring Boot (via the SpringApplication class) to run using the configuration in Application itself and any arguments that were given on the command line.
+
+- All you need to do now is build it. If you’re using Gradle, then the following command line will build the project into build/libs/contacts-0.1.0.jar:
+$ gradle build 
+$ mvn package
+- After running the Maven build, you’ll find the build artifact in the target folder.
+- Traditionally, running the application would mean deploying the application WAR file to a servlet container such as Tomcat or WebSphere. But you don’t even
+have a WAR file—the build gives you a JAR file.
+- You can run it from the command line like this (referencing the Gradle-built JAR file):
+$ java -jar build/libs/contacts-0.1.0.jar
+- Even though running the application from the command line is a valid option, even for production applications, I understand that you probably need to work within the parameters of your company’s deployment procedures. And that probably means building and deploying WAR files. 
+- if it’s a WAR file that’s required. All that’s needed is a small tweak to the build. In the Gradle build, you’ll need to add the following line to apply the “war” plugin:
+apply plugin: 'war'
+- change the “jar” configuration to a “war” configuration. This essentially comes down to replacing a “j” with a “w”:
+war {
+	baseName = 'contacts'
+	version = '0.1.0'
+}
+- In the case of a Maven-built project, simply change the packaging from “jar” to “war”:
+<packaging>war</packaging>
+- Now you can rebuild the project and find contacts-0.1.0.war in the build directory. That WAR file is deployable to any web container that supports Servlet 3.0.
+- you can still run the application from the command line like this: $ java -jar build/libs/contacts-0.1.0.war
+- an executable WAR file!
+- Spring Boot starters simplify project build dependencies, and autoconfiguration eliminates the need for most explicit Spring configuration.
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#Going Groovy with the Spring Boot CLI
+总而言之 (Groovy and Spring Boot CLI) <Test> <Test Done>
+1) Groovy is a much simpler programming language than Java. you can write Groovy code without things like: 	semicolons, modifiers such as public and private, setter and getter methods for properties, return keyword to return values from methods
+2) Writing code in Groovy and run with Spring Boot’s CLI, then Spring Boot can take advantage of Groovy’s simplicity to further simplify Spring development. 
+3) the schema.sql, style.css, and home.html files will remain unchanged, you’ll need to convert the three Java classes to Groovy.
+4) The Spring Boot CLI is its own bootstrapper, so you won’t need the Application class you created before.
+5) The Maven and Gradle build files can go away too, since you’ll be running uncompiled Groovy files through the CLI.
+6) project structure:
+$ tree
+.
+├── Contact.groovy
+├── ContactController.groovy
+├── ContactRepository.groovy
+├── schema.sql
+├── static
+│ 	└── style.css
+└── templates
+	└── home.html
+7) writing Groovy controller:
+@Grab("thymeleaf-spring4")							//Grab Thymeleaf dependency
+@Controller
+@RequestMapping("/")
+class ContactController {
+	@Autowired 
+	ContactRepository contactRepo 					//Inject ContactRepository
+	@RequestMapping(method=RequestMethod.GET)		//Handle GET /
+	String home(Map<String,Object> model) {
+		List<Contact> contacts = contactRepo.findAll()
+		model.putAll([contacts: contacts])
+		"home"
+	}
+	@RequestMapping(method=RequestMethod.POST)		//Handle POST /
+		String submit(Contact contact) {
+		contactRepo.save(contact)
+		"redirect:/"
+	}
+}
+8) As a consequence of this auto-dependency/auto-import feature of the CLI, your controller class doesn’t need any imports. 
+8.1) Groovy imports a number of packages and classes by default: java.io.*, java.lang.*, 	java.math.BigDecimal, java.math.BigInteger, java.net.*, java.util.*, groovy.lang.*, groovy.util.*
+8.2) when you run the application, the Spring Boot CLI will try to compile these Groovy classes using the Groovy compiler. And because those types aren’t imported, it will fail. 
+- The CLI will recognize that the failures were due to missing Spring types, and it will take two steps to fix that problem. It will first fetch the Spring Boot web starter dependency and transitively all of its dependencies and add them to the classpath. (That’s right, it will download and add JARs to the
+classpath.), Then it will add the necessary packages to the Groovy compiler’s list of default imports and try to compile the code again.
+9) there are some limits to the CLI’s capabilities. Although it knows how to resolve many Spring dependencies and automatically add imports for many Spring
+types (as well as a handful of other libraries), it won’t automatically resolve and import everything.
+- The choice to use Thymeleaf templates, for example, is an opt-in choice. So you must explicitly ask for it with an @Grab annotation in the code.
+- by adding the @Grab annotation and asking for Thymeleaf, you triggered autoconfiguration to configure the beans necessary to support Thymeleaf templates
+in Spring MVC.
+10) the Contact class in Groovy:
+class Contact {
+	long id
+	String firstName
+	String lastName
+	String phoneNumber
+	String emailAddress
+}
+11) When written in Groovy, ContactRepository is much more succinct.
+@Grab("h2")
+import java.sql.ResultSet
+class ContactRepository {
+	@Autowired
+	JdbcTemplate jdbc
+	
+	List<Contact> findAll() {
+		jdbc.query(
+			"select id, firstName, lastName, phoneNumber, emailAddress from contacts order by lastName",
+			new RowMapper<Contact>() {
+				Contact mapRow(ResultSet rs, int rowNum) {
+				new Contact(id: rs.getLong(1), firstName: rs.getString(2),
+				lastName: rs.getString(3), phoneNumber: rs.getString(4),
+				emailAddress: rs.getString(5))
+			}
+		})
+	}
+	void save(Contact contact) {
+		jdbc.update(
+			"insert into contacts (firstName, lastName, phoneNumber, emailAddress) values (?, ?, ?, ?)",
+			contact.firstName, contact.lastName,
+			contact.phoneNumber, contact.emailAddress)
+	}
+}
+- Aside from the obvious improvements from Groovy syntax, this new ContactRepository class takes advantage of Spring Boot CLI’s auto-import feature to automatically import JdbcTemplate and RowMapper.
+- the JDBC starter dependency is automatically resolved when the CLI sees that you’re using those types.
+- you still had to import ResultSet. 
+- And because Spring Boot doesn’t know which database you want to use, you must use @Grab to ask for the H2 database.
+12) Running the Spring Boot CLI
+- You could either run it as an executable JAR or WAR file from the command line, 
+- or you could deploy a WAR file to a servlet container.
+- 3rd option: You can run the application directly by passing the Groovy source code through the CLI. with the CLI, there’s no need to build the application into a JAR or WAR file first. 
+
+12.1) INSTALLING THE CLI
+12.1.1)To install Spring Boot CLI using GVM, enter this command:
+$ gvm install springboot
+12.1.2) If you’re on OS X, you can use Homebrew to install Spring Boot CLI:
+$ brew tap pivotal/tap
+$ brew install springboot
+12.1.3) download and install manually, config env variable, SPRING_HOME and path %SPRING_HOME%/bin 
+12.1.4) check the installation:
+$ spring --version
+
+12.2) RUNNING THE CONTACTS APPLICATION WITH THE CLI
+- To run an application with the Spring Boot CLI, you type spring run in the command line, followed by one or more Groovy files that should be run through the CLI. For example, if your application only has a single Groovy class, you can run it like this:
+$ spring run Hello.groovy
+- If your application has several Groovy class files, you can run them using wildcards like this:
+$ spring run *.groovy
+- if those Groovy class files are in one or more subdirectories, you can use Ant-style wildcards to recursively seek for Groovy classes:
+$ spring run **/*.groovy 
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- Groovy is a much simpler programming language than Java. The syntax allows for shortcuts such as leaving off semicolons and the public keyword.
+- the properties of a Groovy class don’t require setter and getter methods as in Java. 
+- other features of Groovy eliminates much of the ceremony of Java coding.
+- If you’re willing to write your application code in Groovy and run it through Spring Boot’s CLI, then Spring Boot can take advantage of Groovy’s simplicity to further simplify Spring development. 
+
+- There were only a few small Java classes in the original version of the application, so there’s not much to rewrite in Groovy. 
+- You can reuse the same Thymeleaf template and schema.sql file. 
+- you can get rid of a few files, too. The Spring Boot CLI is its own bootstrapper, so you won’t need the Application class you created before. 
+- The Maven and Gradle build files can go away too, since you’ll be running uncompiled Groovy files through the CLI.
+- without Maven and Gradle, the entire project structure can be flattened. The new project structure will look a little like this
+$ tree
+.
+├── Contact.groovy
+├── ContactController.groovy
+├── ContactRepository.groovy
+├── schema.sql
+├── static
+│ 	└── style.css
+└── templates
+	└── home.html
+
+- Although the schema.sql, style.css, and home.html files will remain unchanged, you’ll need to convert the three Java classes to Groovy.
+
+#Writing a Groovy controller
+you can write Groovy code without things like
+	Semicolons
+	Modifiers such as public and private
+	Setter and getter methods for properties
+	The return keyword to return values from methods
+- Taking advantage of Groovy’s relaxed syntax (as well as some Spring Boot magic), you can rewrite the ContactController class in Groovy
+@Grab("thymeleaf-spring4")			//Grab Thymeleaf dependency
+@Controller
+@RequestMapping("/")
+class ContactController {
+	@Autowired 
+	ContactRepository contactRepo 			//Inject ContactRepository
+	@RequestMapping(method=RequestMethod.GET)		//Handle GET /
+	String home(Map<String,Object> model) {
+		List<Contact> contacts = contactRepo.findAll()
+		model.putAll([contacts: contacts])
+		"home"
+	}
+	@RequestMapping(method=RequestMethod.POST)		//Handle POST /
+		String submit(Contact contact) {
+		contactRepo.save(contact)
+		"redirect:/"
+	}
+}
+
+- there are no import lines, as is typical in a Java class. Groovy imports a number of packages and classes by default:
+	java.io.*
+	java.lang.*
+	java.math.BigDecimal
+	java.math.BigInteger
+	java.net.*
+	java.util.*
+	groovy.lang.*
+	groovy.util.*
+
+- Later when you run the application, the Spring Boot CLI will try to compile these Groovy classes using the Groovy compiler. And because those types aren’t imported, it will fail.
+- But the Spring Boot CLI doesn’t give up that easily. This is where the CLI takes autoconfiguration to a whole new level.
+- The CLI will recognize that the failures were due to missing Spring types, and it will take two steps to fix that problem. It will first fetch the Spring Boot web starter dependency and transitively all of its dependencies and add them to the classpath. (That’s right, it will download and add JARs to the
+classpath.)
+- Then it will add the necessary packages to the Groovy compiler’s list of default imports and try to compile the code again.
+- As a consequence of this auto-dependency/auto-import feature of the CLI, your controller class doesn’t need any imports. 
+- And you won’t need to resolve the Spring libraries manually or by using Maven or Gradle. Spring Boot CLI has you covered.
+- there are some limits to the CLI’s capabilities. Although it knows how to resolve many Spring dependencies and automatically add imports for many Spring
+types (as well as a handful of other libraries), it won’t automatically resolve and import everything.
+- The choice to use Thymeleaf templates, for example, is an opt-in choice. So you must explicitly ask for it with an @Grab annotation in the code.
+- Note that for many dependencies, it's unnecessary to specify the group ID or version number. Spring Boot plugs itself into the dependency resolution behind @Grab and fills in the missing group ID and version for you.
+- by adding the @Grab annotation and asking for Thymeleaf, you triggered autoconfiguration to configure the beans necessary to support Thymeleaf templates
+in Spring MVC.
+- the Contact class in Groovy:
+class Contact {
+	long id
+	String firstName
+	String lastName
+	String phoneNumber
+	String emailAddress
+}
+
+#Persisting with a Groovy repository
+- When written in Groovy, ContactRepository is much more succinct.
+@Grab("h2")
+import java.sql.ResultSet
+class ContactRepository {
+	@Autowired
+	JdbcTemplate jdbc
+	
+	List<Contact> findAll() {
+		jdbc.query(
+			"select id, firstName, lastName, phoneNumber, emailAddress from contacts order by lastName",
+			new RowMapper<Contact>() {
+				Contact mapRow(ResultSet rs, int rowNum) {
+				new Contact(id: rs.getLong(1), firstName: rs.getString(2),
+				lastName: rs.getString(3), phoneNumber: rs.getString(4),
+				emailAddress: rs.getString(5))
+			}
+		})
+	}
+	void save(Contact contact) {
+		jdbc.update(
+			"insert into contacts (firstName, lastName, phoneNumber, emailAddress) values (?, ?, ?, ?)",
+			contact.firstName, contact.lastName,
+			contact.phoneNumber, contact.emailAddress)
+	}
+}
+
+- Aside from the obvious improvements from Groovy syntax, this new ContactRepository class takes advantage of Spring Boot CLI’s auto-import feature to automatically import JdbcTemplate and RowMapper.
+- the JDBC starter dependency is automatically resolved when the CLI sees that you’re using those types.
+- you still had to import ResultSet. 
+- And because Spring Boot doesn’t know which database you want to use, you must use @Grab to ask for the H2 database.
+
+#Running the Spring Boot CLI
+- You could either run it as an executable JAR or WAR file from the command line, 
+- or you could deploy a WAR file to a servlet container.
+- 3rd option: You can run the application directly by passing the Groovy source code through the CLI. with the CLI, there’s no need to build the application into a JAR or WAR file first. 
+
+#INSTALLING THE CLI
+In order to use the Spring Boot CLI, you’ll need to install it. You have several options to choose from, including
+	The Groovy Environment Manager (GVM)
+	Homebrew
+	Manual installation
+To install Spring Boot CLI using GVM, enter this command:
+$ gvm install springboot
+If you’re on OS X, you can use Homebrew to install Spring Boot CLI:
+$ brew tap pivotal/tap
+$ brew install springboot
+If you’d rather install Spring Boot manually, you can download it using the instructions at http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/. 
+- Once you have the CLI installed, you can check the installation and which version you’re using with the following command line:
+$ spring --version
+
+#RUNNING THE CONTACTS APPLICATION WITH THE CLI
+- To run an application with the Spring Boot CLI, you type spring run in the command line, followed by one or more Groovy files that should be run through the CLI. For example, if your application only has a single Groovy class, you can run it like this:
+$ spring run Hello.groovy
+- If your application has several Groovy class files, you can run them using wildcards like this:
+$ spring run *.groovy
+- if those Groovy class files are in one or more subdirectories, you can use Ant-style wildcards to recursively seek for Groovy classes:
+$ spring run **/*.groovy
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#Gaining application insight with the Actuator
+总而言之，<Test> <Test Done>
+1) Spring Boot Actuator does adds several helpful management endpoints to a Spring Boot-based application. These endpoints include
+	GET /autoconfig—Explains the decisions made by Spring Boot when applying autoconfiguration
+	GET /beans—Catalogs the beans that are configured for the running application
+	GET /configprops—Lists all properties available for configuring the properties of beans in the application with their current values
+	GET /dump—Lists application threads, including a stack trace for each thread
+	GET /env—Lists all environment and system property variables available to the application context
+	GET /env/{name}—Displays the value for a specific environment or property variable
+	GET /health—Displays the current application health
+	GET /info—Displays application-specific information
+	GET /metrics—Lists metrics concerning the application, including running counts of requests against certain endpoints
+	GET /metrics/{name}—Displays metrics for a specific application metric key
+	POST /shutdown—Forcibly shuts down the application
+	GET /trace—Lists metadata concerning recent requests served through the application, including request and response headers
+2) enable the actuator, you simply add the actuator starter dependency to your project.
+@Grab("spring-boot-starter-actuator")
+compile("org.springframework.boot:spring-boot-starter-actuator")
+<dependency>
+	<groupId> org.springframework.boot</groupId>
+	<artifactId>spring-boot-actuator</carlsbad>
+</dependency>
+3) point your browser to any of those management endpoints for more information. see all of the beans in the Spring application context:
+$ curl http://localhost:8080/beans
+
+- /autoconfig endpoint shows how Spring Boot’s autoconfiguration works. The JSON produced by this endpoint display the decisions that Spring Boot made when autoconfiguring beans. 
+$ curl http://localhost:8080/autoconfig
+
+- the report has two sections: one for negative matches and one for positive matches. 
+- The negative matches section shown here indicates that the AOP and Spring Batch autoconfiguration weren’t applied because the requisite classes weren’t
+found on the classpath. 
+- Under the positive matches section, you can see that as a result of SpringTemplateEngine being found on the classpath, the Thymeleaf autoconfiguration
+goes into effect.
+- You can also see that the default template resolver, view resolver, and template engine beans will be autoconfigured unless you have already
+explicitly configured those beans. Moreover, the default view resolver bean will only be autoconfigured if the Servlet class is found on the classpath.
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- Spring Boot Actuator does adds several helpful management endpoints to a Spring Boot-based application. These endpoints include
+	GET /autoconfig—Explains the decisions made by Spring Boot when applying autoconfiguration
+	GET /beans—Catalogs the beans that are configured for the running application
+	GET /configprops—Lists all properties available for configuring the properties of beans in the application with their current values
+	GET /dump—Lists application threads, including a stack trace for each thread
+	GET /env—Lists all environment and system property variables available to the application context
+	GET /env/{name}—Displays the value for a specific environment or property variable
+	GET /health—Displays the current application health
+	GET /info—Displays application-specific information
+	GET /metrics—Lists metrics concerning the application, including running counts of requests against certain endpoints
+	GET /metrics/{name}—Displays metrics for a specific application metric key
+	POST /shutdown—Forcibly shuts down the application
+	GET /trace—Lists metadata concerning recent requests served through the application, including request and response headers
+
+- To enable the actuator, you simply add the actuator starter dependency to your project. If you’re writing your application in Groovy and running through the Spring Boot CLI, you can add the actuator starter with @Grab:
+@Grab("spring-boot-starter-actuator")
+
+- If you’re building a Java application using Gradle:
+compile("org.springframework.boot:spring-boot-starter-actuator")
+
+- Or in your project’s Maven pom.xml file, you can add the following <dependency>:
+<dependency>
+	<groupId> org.springframework.boot</groupId>
+	<artifactId>spring-boot-actuator</carlsbad>
+</dependency>
+
+- point your browser to any of those management endpoints for more information. For example, if you want to see all of the beans that are in the Spring application context, you can make a request for http://localhost:8080/beans.
+$ curl http://localhost:8080/beans
+
+- Another endpoint that lends some insight into how Spring Boot’s autoconfiguration works is the /autoconfig endpoint. The JSON produced by this endpoint lays bare the decisions that Spring Boot made when autoconfiguring beans. 
+$ curl http://localhost:8080/autoconfig
+
+- the report has two sections: one for negative matches and one for positive matches. 
+- The negative matches section shown here indicates that the AOP and Spring Batch autoconfiguration weren’t applied because the requisite classes weren’t
+found on the classpath. 
+- Under the positive matches section, you can see that as a result of SpringTemplateEngine being found on the classpath, the Thymeleaf autoconfiguration
+goes into effect.
+- You can also see that the default template resolver, view resolver, and template engine beans will be autoconfigured unless you have already
+explicitly configured those beans. Moreover, the default view resolver bean will only be autoconfigured if the Servlet class is found on the classpath.
+- Where Spring aims to make Java development simpler, Spring Boot aims to make Spring itself simpler.
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
