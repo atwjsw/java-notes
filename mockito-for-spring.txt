@@ -1,0 +1,918 @@
+﻿Chapter 2 Working with JUnit and Mockito
+
+总而言之 （Junit4)
+1） In TDD, a failing test is written first, then code is written to satisfy the test, and then the code quality is improved by refactoring the code and applying patterns. So unit tests drive the design.
+2）TDD reduce over engineering, as the code is written only to satisfy a failing test. 
+3) Junit annotations: <Test> <Test Done>
+3.1) @Test, @Before, @After, @BeforeClass, @AfterClass
+3.2) The @Before and @After annotations can be applied to any public void method. The @AfterClass and @BeforeClass annotations can be applied only to public static void methods.
+4) Assertion: <Test> <Test Done>
+4.1) verifying an expected value against an actual values
+4.2) "org.junit.Assert" class offers a set of static overloaded methods to assert expected and real values for all primitive types, objects, and arrays.
+4.2.1) assertTrue(assert condition), assertTrue(failure message, assert condition)
+4.2.2) assertFalse(boolean condition), assertFalse(failure message, boolean condition)
+4.2.3) assertNull or assertNotNull
+4.2.4) assertEquals(string message, object expected, object actual), assertEquals(object expected, object actual), assertEquals(primitive expected, primitive actual): use equals() to compare expected or actual object
+4.2.5) assertSame(object expected, object actual), assertNotSame: using == operator to evaluate
+4.2.6) assertEquals(double expected, double actual, double delta): Due to the uncertainty in double computation, the Assert class doesn't rely on double comparison, but assert the difference in the range of delta.
+4.3) test exception handling: @Test(expected=CustomException.class)
+5) @RunWith: accepts a class name. The class extends the org.junit.runner.Runner.
+5.1) JUnit4: default JUnit 4 class runner. If we annotate a test class with @RunWith or extend a @RunWith class, the built-in JUnit4 runner is ignored. A runner can change the characteristics of the test class.
+5.2) SpringJUnit4ClassRunner: enables Spring context initialization nature <Test> <Test Done>
+5.3) MockitoJUnitRunner: initializes proxy objects annotated with the @Mock annotation. <Test> <Test Done>
+5.4) Suite: build a suite that contains tests from many packages.	<Test> <Test Done>
+@RunWith(Suite.class)
+@Suite.SuiteClasses({AssertTest.class, TestExecutionOrder.class, Assumption.class })
+public class TestSuite {...}
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+• JUnit 4 annotations
+• Assertion methods and assertThat
+• The @RunWith annotation
+• Exception handling in JUnit
+• JUnit test suite
+• Overview of Mockito and Mockito APIs
+• Advanced Mockito examples
+
+#Learning unit testing
+- A unit test is a fundamental test to quickly assess whether the result of a computation can possibly go wrong or not. It is a straightforward check to verify the basis of the computation result.
+- combining production code with testing logic is not good practice
+- Unit testing is the basis of Test-Driven Development (TDD).
+- In TDD, a failing test is written first, then code is written to satisfy the test, and then the code quality is improved by refactoring the code and applying patterns. So unit tests drive the design.
+- They reduce over engineering, as the code is written only to satisfy a failing test. 
+- Automated tests provide a quick regression safety net for refactoring and new features.
+- Keeping the source code and the unit test code in the same package allows the unit test code to access the source code's protected and default methods
+and members.
+- JUnit 4 is a metadata-based (annotation), non-invasive (JUnit tests do not need to inherit from a framework class) framework.
+
+#Examining annotations
+- @Test: signifies a test. We can annotate any public method with @Test to make it a JUnit test method.
+- When a public void method of any name is annotated with @Before, then that method is executed prior to every test execution.
+- Similarly, when any public method is annotated with @After, the method gets executed subsequent to every test method execution.
+- JUnit 4 defines two method-level annotations, @BeforeClass and @AfterClass, for public static methods. Being static, they get executed only once per test class.
+- Any public static method annotated with @BeforeClass gets executed prior to the first test, and any public static method annotated with @AfterClass gets executed following the last test.
+- The @Before and @After annotations can be applied to any public void method. The @AfterClass and @BeforeClass annotations can be applied only to public static void methods.
+
+#Verifying an expectation with an assertion
+- An assertion verifies a programming hypothesis with the actual result of a code execution.
+- The org.junit.Assert class offers a set of static overloaded methods to assert expected and real values for all primitive types, objects, and arrays.
+- assertTrue(assert condition) or assertTrue(failure message, assert condition):
+- assertFalse(boolean condition) or assertFalse(failure message, boolean condition):
+- assertNull:
+- assertNotNull:
+- assertEquals(string message, object expected, object actual) or assertEquals(object expected, object actual) or assertEquals(primitive expected, primitive actual): If objects are passed, the equals() method is invoked such that expected equals actual.
+- assertSame(object expected, object actual): This method expects that two same object references will be passed to the method. It checks the object reference using the == operator
+- assertNotSame: 
+
+- Due to this uncertainty in double computation, the Assert class doesn't rely on double comparison, hence the assertEquals(double expected, double actual) method has been deprecated.
+- Assert offers an overloaded assertEquals method for double value assertion, which is assertEquals(double expected, double actual, double delta).
+
+#Examining exception handling
+- In a JUnit test, when a test method throws an exception, the test fails, and the test method marks the test as erroneous.
+- JUnit 4 provides a mechanism to handle the preceding situation. The @Test annotation takes an expected=<<Exception class name>>.class
+argument.
+
+#Working with the @RunWith annotation
+- Test runners perform JUnit test execution. 
+- @RunWith annotation accepts a class name. The class should extend the org.junit.runner.Runner class.
+- JUnit4.class is known as the default JUnit 4 class runner. When we annotate a test class with @RunWith or extend a @RunWith class, during test
+execution, the built-in JUnit4 runner is ignored.
+- Instead, JUnit uses the runner that it references in the @RunWith argument.
+- A runner can change the characteristics of the test class; for example, a Spring runner enables Spring context initialization nature, 
+- or a Mockito runner initializes proxy objects annotated with the @Mock annotation.
+- Suite is a standard runner that allows us to build a suite that contains tests from many packages.
+@RunWith(Suite.class)
+public class MySuite {
+}
+
+#Working with test suites
+- JUnit 4 offers the Suite.class class and the @Suite.SuiteClasses annotation. This annotation accepts a comma-separated array of test classes.
+@RunWith(Suite.class)
+@Suite.SuiteClasses({ AssertTest.class, TestExecutionOrder.class, Assumption.class })
+public class TestSuite {
+}
+- When we execute the TestSuite class, it in turn executes all the test classes passed to the @Suite.SuiteClasses annotation.
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#Working with assertThat
+总而言之 (assertThat)
+1) assertThat: method of Assert class class to verify a result in a sophisticated way
+2) public static void assertThat(Object actual, Matcher matcher), object represents the value received, and Matcher is an implementation of the org.hamcrest.Matcher interface. 
+3) assertThat method either compare the object partially with the matcher or may look for an exact match
+4) Matcher interface methods: is, either, or, not, and hasItem for partial and exact matches.
+5) The Matcher methods follow the builder pattern to create a chain of commands. It can combine one or more matchers to build a composite matcher chain.
+- This behavior is similar to the StringBuilder method, which builds a target string in numerous steps.
+6) org.hamcrest.CoreMatchers has many matcher methods: allOf, anyOf, both, either, describedAs, everyItem, is, isA, anything, hasItem, hasItems, equalTo, any, instanceOf, not, nullValue, notNullValue, sameInstance, theInstance ,startsWith, endsWith, and containsString； These methods return a Matcher to build a chain of commands.
+6.1) is == equalTo == assertEquals, using equals() method.
+6.2) sameInstance, theInstance == assertSame, using == operator
+6.3) nullValue == assertNull, notNullValue == assertNotNull
+7) Custom Matcher
+7.1) create a class LessThanOrEqual, implements Matcher interface or extend BaseMatcher
+public class LessThanOrEqual<T extends Comparable<T>> extends BaseMatcher<Comparable<T>> {}
+7.2) provide the implementation of the abstract describeTo and matches methods
+public class LessThanOrEqual<T extends Comparable<T>> extends BaseMatcher<Comparable<T>> {
+    private final Comparable<T> expValue;
+    public LessThanOrEqual(T expValue) {
+        this.expValue= expValue;
+    }
+    @Override
+    public void describeTo(Description desc) {
+        desc.appendText(" less than or equal(<=)" + expValue);
+    }
+    @Override
+    public boolean matches(Object t) {
+        int compareTo = expValue.compareTo((T)t);
+        return compareTo > -1;
+    }
+}
+7.3) Add a static method named lessThanOrEqual() to the LessThanOrEqual class, and instantiate a new object of LessThanOrEqual.
+@Factory
+public static<T extends Comparable<T>> Matcher<T> lessThanOrEqual(T t) {
+	return new LessThanOrEqual(t);
+}
+7.4) test method
+assertThat(99, lessThanOrEqual(new Integer(100)));
+assertThat("abc", lessThanOrEqual("abd"));
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- The assertThat method was added to the Assert class to verify a result in a sophisticated way.
+public static void assertThat(Object actual, Matcher matcher)
+- Object represents the value received, and Matcher is an implementation of the org.hamcrest.Matcher interface.
+- the assertThat method may either compare the object partially with the matcher or may look for an exact match.
+- The Matcher interface offers an array of utility methods such as is, either, or, not, and hasItem for partial and exact matches.
+- The Matcher methods follow the builder pattern to create a chain of commands. It can combine one or more matchers to build a composite matcher chain.
+- This behavior is similar to the StringBuilder method, which builds a target string in numerous steps.
+- The following examples demonstrate the capabilities of Matcher and assertThat:
+assertThat(calculatedTax, is(not(thirtyPercent)) );
+assertThat(phdStudentList, hasItem(DrJohn) );
+assertThat(manchesterUnitedClub, both(is(EPL_Champion)).and(is(UEFA_Champions_League_Champion)));
+- Hamcrest offers a utility matcher class, org.hamcrest.CoreMatchers, with an array of utility matcher methods. 
+- A few utility methods of CoreMatchers are allOf(*), anyOf(*), both(*), either(*), describedAs(*), everyItem(*), is(*), isA(*), anything(*), hasItem(*), hasItems(*), equalTo(*), any(*), instanceOf(*), not(*), nullValue(*), notNullValue(*), sameInstance(*), theInstance(*) ,startsWith, endsWith, and containsString.
+- These methods return a Matcher to build a chain of commands.
+
+#Exploring equalTo, is, and not
+public class AssertThatTest {
+    @Test
+    public void test_matcher_behavior() throws Exception {
+        int myAge = 30;
+
+        //examine the exact match with equalTo and is
+        assertThat(myAge, equalTo(30));
+        assertThat(myAge, is(30));
+
+        //examine partial match with not()
+        assertThat(myAge, not(equalTo(33)));
+        assertThat(myAge, is(not(33)));
+    }
+}
+- The equalTo method behaves like the == operator (??)
+- The is(value) method accepts a value or matcher; it works similar to equalTo(value).
+
+#Exploring compound matchers – either, both, anyOf, and allOf
+@Test
+    public void verify_multiple_values() throws Exception {
+        double myMarks = 100.00;
+        assertThat(myMarks, either(is(100.00)).or(is(90.9)));
+        assertThat(myMarks, both(not(99.99)).and(not(60.00)));
+        assertThat(myMarks, anyOf(is(100.00), is(1.00), is(55.00),is(88.00), is(67.8)));
+        assertThat(myMarks, not(anyOf(is(0.00), is(200.00))));
+        assertThat(myMarks, not(allOf(is(10.00), is(100.00), is(30.00))));
+    }
+- either(Matcher) method. It takes a matcher and returns a CombinableEitherMatcher class. This class defines an or(Matcher other) method to combine with the either Matcher method.
+- or(Matcher other) method is translated as return (new CombinableMatcher(first)).or(second);, and finally to new CombinableMatcher(new AnyOf(templatedListWith(second)));
+- The anyOf matcher method is more like the either method with multiple values.
+- The allOf matcher method is more like the both matcher method with multiple values.
+
+#Exploring collection matchers – hasItem and hasItems
+ @Test
+    public void verify_collection_values() throws Exception {
+        List<Double> salary = Arrays.asList(50.0, 200.0, 500.0);
+        assertThat(salary, hasItem(50.00));
+        assertThat(salary, hasItems(50.00, 200.00));
+        assertThat(salary, not(hasItem(1.00)));
+    }
+
+#Working with string matchers – startsWith, endsWith, and containsString
+- The CoreMatchers class has three built-in matcher methods (startsWith, endsWith, and containsString) to work with the strings.
+@Test
+public void verify_Strings() throws Exception {
+    String myName = "John Jr Dale";
+    assertThat(myName, startsWith("John"));
+    assertThat(myName, endsWith("Dale"));
+    assertThat(myName, containsString("Jr"));
+}
+
+#Custom macther
+- We'll be building this matcher to compare two values and return true only if the actual object is less than or equal to the expected value. We'll name it the lessThanOrEqual matcher.
+- All matchers implement the Matcher interface, though Hamcrest recommends extending the org.hamcrest.BaseMatcher class instead of implementing the Matcher interface.
+- The abstract BaseMatcher class implements the Matcher interface, but it doesn't implement the describeTo(Description description) and matches(Object t) methods. The class that extends the BaseMatcher class should provide the implementation of the abstract describeTo and matches methods.
+- the assertThat method invokes the matches(Object obj) method. An AssertionError is thrown if the matches method returns false, and the describeTo(Description description) method is called to build the error description.
+if(!matcher.matches(actual)){
+	Description description = new StringDescription();
+	description.appendText(reason).appendText("\nExpected: ").appendDescriptionOf(matcher).appendText("\n but: ");
+	matcher.describeMismatch(actual, description);
+	throw new AssertionError(description.toString());
+}
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#Working with Mockito
+总而言之 （Mockito)
+1）Mockito is an open source unit mocking framework for Java. It allows mock object creation, verification, and stubbing.
+2）Integration test takes time because it depends on external environment such as database, internet connection, web application, SMTP server, file I/O etc.
+3) Mockito provides APIs to mock external dependencies to isolate the actual logic from external dependencies.
+4) Mockito can't mock or spy on final classes and methods, static methods, enums, private methods, the equals() and hashCode() methods, primitive types, and anonymous classes.
+5) mocking object: <Test> <Test Done>
+5.1) org.mockito.Mockito class defines a static method mock() to create mock objects:
+List<String> mockedList = mock(List.class);
+5.2) @Mock == mock(List.class); 
+- @Mock requires mocks to be initialized before test execution, use MockitoAnnotations.initMocks(this) before using the mocks, or use MockitoJUnitRunner as a JUnit runner.
+6) verify interactions <Test> <Test Done>
+mockedList.add("one");
+verify(mockedList).add("one");
+6.1) The following methods can be used in combination with verify:
+• times(int wantedNumberOfInvocations)
+• never(): This is equivalent to times (0). 
+• atLeastOnce(): 
+• atLeast(int minNumberOfInvocations): 
+• atMost(int maxNumberOfInvocations): 
+• only(): 
+• timeout(int millis): This interacts in a specified time range.
+6.2) Verifying zero and no more interactions
+verifyZeroInteractions(mockedList);
+mockedList.add("andrew");
+verify(mockedList).add("andrew");
+verifyNoMoreInteractions(mockedList);
+7) stub method calls, Stubbing a method means simulating the behavior of the method. <Test> <Test Done>
+when(mockedList.get(0)).thenReturn("daniel");
+assertEquals("daniel", mockedList.get(0));
+7.1) Mock objects are proxy objects that imitates the behavior of real objects. We can stub a method on a mock object to redefine the behavior of the method.
+7.2) we can return a specific value or throw a specific exception when the method is called on the mocked object.
+7.3) If we don't stub a method of a mock object, the mock object returns the default values such as false for the Boolean return type, null for the object return type, 0 for the integer or long return type, and so on.
+7.4) Mockito.when() method identifies a method that needs to be stubbed, and the thenReturn() method returns a specific value.
+7.5) stub other return behaviors:
+7.5.1) thenReturn(value to be returned): This returns a specific value.
+7.5.2) thenThrow(throwable to be thrown): This throws a specific exception.
+7.5.3) thenAnswer(Answer answer): Unlike returning a specific value, some logic is executed and an action is taken from that logic; for example, some value is
+computed and returned. Answer is an interface.
+7.5.4) thenCallRealMethod(): This calls the real method on the object. The real method doesn't return any default value. It performs the actual logic, but if it needs to invoke any method that is stubbed, then the stubbed value is passed to the real method; for example, the foo()method calls bar(), but bar() is
+stubbed to return a value 10, so foo() will get 10. <Test Failed>
+7.5.5) syntax to throw an exception from a void method:
+doThrow(RuntimeException.class).when(mockedList).clear();
+mockedList.clear();
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- Mockito is an open source unit mocking framework for Java. It allows mock object creation, verification, and stubbing.
+- We add automated unit tests to run and notify us in case any code breaks the system so that the wrong code can be identified and fixed very quickly.
+- A test suite takes time because individual tests take time to execute. The following are some reasons behind delays in test execution:
+• A test performs an integration task, such as acquiring a database connection, and then fetches data or updates data.
+• A test may connect to the Internet to download files or get the current stock price.
+• A test may send an invoice mail to a vendor. In order to send an e-mail, it has to interact with an SMTP server.
+• A test may print a bill, open a file, or perform an I/O operation.
+- when a test interacts with an external resource, it is called an integration test. Due to external resource interaction, integration tests take time to execute but unit tests mock external dependencies using test doubles
+- Mockito provides APIs to mock external dependencies. It can mock a database connection with a mock implementation that doesn't interact with the real database, or it can mock an SMTP connection for an e-mail task.
+- Mockito provides APIs to isolate the actual logic from external dependencies to unit test it.
+
+#Mocking objects
+- The org.mockito.Mockito class defines a static method mock() to create mock objects.
+public class StockBrokerTest {
+	MarketWatcher marketWatcher = Mockito.mock(MarketWatcher.class);
+	Portfolio portfolio = Mockito.mock(Portfolio.class);
+}
+
+- Instead of directly calling the Mockito.mock() method, we can use the static import feature of Java:
+import static org.mockito.Mockito.mock;
+public class StockBrokerTest {
+	MarketWatcher marketWatcher = mock(MarketWatcher.class);
+	Portfolio portfolio = mock(Portfolio.class);
+}
+
+- The alternative is to annotate the class member variables with the @Mock annotation.
+import org.mockito.Mock;
+public class StockBrokerTest {
+	@Mock
+	MarketWatcher marketWatcher;
+	@Mock
+	Portfolio portfolio;
+}
+- To create mocks using the @Mock annotation, we need to initialize the mocks before test execution, so use MockitoAnnotations.initMocks(this) before using the
+mocks, or use MockitoJUnitRunner as a JUnit runner.
+- Mockito cannot mock or spy on Java constructs such as final classes and methods, static methods, enums, private methods, the equals() and hashCode() methods, primitive types, and anonymous classes.
+- PowerMockito (an extension of the Mockito framework) API allows us to overcome the limitations of Mockito. It lets us mock static and private methods.
+
+#Stubbing methods
+- Stubbing a method means setting up an expectation on a method invocation or simulating the behavior of the method.
+- Mock objects are basically proxy objects, and they imitate the behavior of real objects. We can stub a method on a mock object to redefine the behavior of the method.
+- In other words, we can return a specific value or throw a specific exception when the method is called on the mocked object.
+- If we don't stub a method of a mock object, the mock object returns the default values such as false for the Boolean return type, null for the object return type, 0 for the integer or long return type, and so on.
+- Mockito allows stubbing to return a specific value when a specific method is called.
+- Mockito.when() method identifies a method that needs to be stubbed, and the thenReturn() method returns a specific value.
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.when;
+@RunWith(MockitoJUnitRunner.class)
+public class StockBrokerTest {
+	@Mock MarketWatcher marketWatcher;
+	@Mock Portfolio portfolio;
+	@Test
+	public void marketWatcher_Returns_current_stock_status() {
+		Stock uvsityCorp = new Stock("UV", "Uvsity Corporation", new BigDecimal("100.00"));
+		when(marketWatcher.getQuote(anyString())).thenReturn(uvsityCorp);
+		assertNotNull(marketWatcher.getQuote("UV"));
+	}
+- The preceding test method creates a stock object and stubs the getQuote method of marketWatcher to return the stock.
+- Note that we passed anyString() to the getQuote method, and anyString represents any string value such as "UV", which we passed in the next line (marketWatcher.getQuote("UV")).
+- The following Mockito methods represent the course of action of the trigger:
+• thenReturn(value to be returned): This returns a specific value.
+• thenThrow(throwable to be thrown): This throws a specific exception.
+• thenAnswer(Answer answer): Unlike returning a specific value, some logic is executed and an action is taken from that logic; for example, some value is
+computed and returned. Answer is an interface.
+• thenCallRealMethod(): This calls the real method on the object. The real method doesn't return any default value. It performs the actual logic, but if it
+needs to invoke any method that is stubbed, then the stubbed value is passed to the real method; for example, the foo()method calls bar(), but bar() is
+stubbed to return a value 10, so foo() will get 10.
+
+- The verify() method is a static method. It is used to verify the method invocation.
+
+#Verifying in depth
+- An overloaded version of verify() takes org.mockito.internal.verification.Times as an argument. Times takes the wantedNumberOfInvocations integer
+argument.
+The following methods can be used in combination with verify:
+• times(int wantedNumberOfInvocations)
+• never(): This is equivalent to times (0). 
+• atLeastOnce(): 
+• atLeast(int minNumberOfInvocations): 
+• atMost(int maxNumberOfInvocations): 
+• only(): 
+• timeout(int millis): This interacts in a specified time range.
+
+#Verifying zero and no more interactions
+- The verifyZeroInteractions(object... mocks) method takes an array of mock objects and verifies that no methods were called on the mocks.
+- This is important to check the logic branching. Suppose we have two sets of classes, one to send e-mails, and one to generate the mail printout to be sent over the general mail.
+@Test
+public void verify_zero_interaction() {
+	verifyZeroInteractions(marketWatcher,portfolio);
+}
+- The verifyNoMoreInteractions(Object... mocks) method checks whether any of the given mocks has any unverified interaction. We can use this method after
+verifying a mock method to ensure that nothing else was invoked in the mock.
+
+#Throwing exceptions
+- Mockito provides methods to throw exceptions during testing. Mockito defines an action method called thenThrow(Throwable). This method throws a specific exception when a trigger occurs or a stubbed method is called.
+- The following is the syntax to throw an exception from a void method: doThrow(exception).when(mock).voidmethod(arguments);
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Chapter 3 - Working with Spring Tests
+总而言之 (Spring test)
+1) Spring's TestContext framework is a generic, annotation-driven framework for unit and integration testing. 
+2) The framework consists of two classes and three interfaces in org.springframework.test.context package
+2.1) TestContext: This class provides the context in which a test is executed. It also makes the context management and caching supports available for the
+test instance. 
+2.2) ContextLoader interface: To load the application context, the ContextLoader interface (or SmartContextLoader) is used.
+2.3) TestContextManager: This class is the main entry point to the TestContext framework; it manages a single TestContext class and publishes events to
+all registered TestExecutionListener implementations at test execution points:
+2.3.1) In static before class methods
+2.3.2) In before test execution methods
+2.3.3) During test instance preparation
+2.3.4) In after test execution methods
+2.3.5) In static after class methods
+2.4) TestExecutionListener: This interface defines the listener API to react to the published events.
+2.5) ContextLoader: This interface loads ApplicationContext for the Spring integration tests.
+2.5.1) SmartContextLoader: This interface is the extension of the ContextLoader interface and has been introduced in Spring 3.1. A SmartContextLoader interface processes resource locations, annotated classes, or context initializers. Also, it can set active bean profiles (@ActiveProfiles) and property sources in the context that it loads.
+3) How does Spring test framework work?
+3.1) For each test, a TestContextManager class is being created. 
+3.2) The TestContextManager class handles a TestContext class for the current test and updates the state of the TestContext class as the test progresses.
+3.3) For dependency injection, dirty checks, transactional support, and so on, the TestContextManager class delegates control to the TestExecutionListener implementations, which in turn implements the actual test execution by providing dependency injection, managing transactions, and so on.
+3.4) The default TestExecutionListener implementations are registered in the following order:
+3.4.1) ServletTestExecutionListener: This listener provides the Servlet API mocks for WebApplicationContext
+3.4.2) DependencyInjectionTestExecutionListener: As the name suggests, this listener provides dependency injections for the test
+3.4.3) DirtiesContextTestExecutionListener: This listener checks the context—whether any bean is dirtied or not during a test execution; it also handles the @DirtiesContext annotation
+3.4.4) TransactionalTestExecutionListener: This provides transactional support 
+3.4.5) SqlScriptsTestExecutionListener: This executes SQL scripts configured via the @Sql annotation
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#Exploring the TestContext framework
+- Spring's TestContext framework is a generic, annotation-driven framework for unit and integration testing.
+- The framework's resources are located in the org.springframework.test.context package.
+- This framework believes in the design paradigm "convention over configuration," which means that the framework provides reasonable defaults for every configuration; the user can still override the unconventional aspects through annotation-based configuration.
+- The framework consists of two classes and three interfaces. 
+1) TestContext: This class provides the context in which a test is executed. It also makes the context management and caching supports available for the
+test instance. 
+- To load the application context, the ContextLoader interface (or SmartContextLoader) is used.
+2) TestContextManager: This class is the main entry point to the TestContext framework; it manages a single TestContext class and publishes events to
+all registered TestExecutionListener implementations at test execution points. These are the test execution points:
+°° In static before class methods
+°° In before test execution methods
+°° During test instance preparation
+°° In after test execution methods
+°° In static after class methods
+3) TestExecutionListener: The TestContextManager class publishes events to all the registered listeners. This interface defines the listener API to react
+to the published events.
+• ContextLoader: This interface loads ApplicationContext for the Spring integration tests.
+• SmartContextLoader: This interface is the extension of the ContextLoader interface and has been introduced in Spring 3.1. A SmartContextLoader interface processes resource locations, annotated classes, or context initializers. Also, it can set active bean profiles (@ActiveProfiles) and property sources in the context that it loads.
+- For each test, a TestContextManager class is being created. The TestContextManager class handles a TestContext class for the current test and updates the state of the TestContext class as the test progresses.
+- For dependency injection, dirty checks, transactional support, and so on, the TestContextManager class delegates control to the TestExecutionListener implementations, which in turn implements the actual test execution by providing dependency injection, managing transactions, and so on.
+- The default TestExecutionListener implementations are registered in the following order:
+• ServletTestExecutionListener: This listener provides the Servlet API mocks for WebApplicationContext
+• DependencyInjectionTestExecutionListener: As the name suggests, this listener provides dependency injections for the test
+• DirtiesContextTestExecutionListener: This listener checks the context—whether any bean is dirtied or not during a test execution; it also handles the @DirtiesContext annotation
+• TransactionalTestExecutionListener: This provides transactional support 
+• SqlScriptsTestExecutionListener: This executes SQL scripts configured via the @Sql annotation
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+总而言之 （custom TestListener) <Test> <Test Done>
+1) The TestExecutionListener implementations externalize the reusable code to instrument tests. When we execute a TestExecutionListener implementation, we
+can reuse it across test class hierarchies and projects
+2) Custom TestExecutionListener implementations can be registered for a test class and its subclasses via the @TestExecutionListeners annotation.
+3) Custom TestExecutionListener implementations steps: 
+3.1) define a custom TestExecutionListener 
+3.1.1) declare an class (SysOutTestExecutionListener) implementing TestExecutionListener interface's methods, afterTestClass, beforeTestClass, afterTestMethod, beforeTestMethod, and prepareTestInstance. 
+3.1.2) Each method accepts a TestContext object. A TestContext object can provide the test method, test class, test instance, application context, and the beans configured in the application context, and so on.
+3.2) create a applicationContext.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans
+							http://www.springframework.org/schema/beans/springbeans.xsd">
+</beans>
+3.3) create a test class and annotated the class with @RunWith, @ContextConfiguration, and @TestExecutionListeners. 
+3.3.1) @RunWith(SpringJUnit4ClassRunner.class): enable the class to get the benefits of Spring unit and integration tests, such as TestContext, the applicationContext loading, DI, transaction support, and so on.
+3.3.2) @ContextConfiguration: loads the application context resource from the specified locations or the @Configuration annotated classes.
+3.3.3) @TestExecutionListeners: configure which TestExecutionListener implementations should be registered with TestContextManager.
+3.3.4) the difference between JUnit 4's @before and @after and the TestExecutionListener methods: (1) you can access TestContext in the TestExecutionListener methods but not in JUnit annotated methods, and (2)TestExecutionListener logic can be shared with many tests but JUnit annotations are test class specific.
+3.3.5) If a custom TestExecutionListener class is registered via @TestExecutionListeners, the default listeners will not be registered and need to be declared manually. mergeMode attribute of @TestExecutionListeners can be set to MergeMode.MERGE_WITH_DEFAULTS to avoid the redeclaration.
+@TestExecutionListeners(listeners = SysOutTestExecutionListener.class, mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
+4) Spring 3.1 introduced a feature called profiles, allows you to build one package that can be deployed in all environments, such as dev, test, prod, perf
+4.1) If we define a system property, spring.profiles.active, or annotate a test class with @ActiveProfiles and set the active profile names, Spring loads the beans from the context where the profile name matches or no profile name is defined. <Test> <test Done>
+4.2) Environment tab, and define a spring.profiles.active=prod
+4.3) Dspring.profiles.active=prod
+5) Mocking environment and properties
+5.1) The Environment interface and the PropertySource class were added to Spring 3.1 in order to simplify working with properties. 
+5.2) In Spring 3.2, MockEnvironment and MockPropertySource were added to the mock properties in tests.
+5.3) configure a bean from a properties file value and then mock out the properties file value with MockEnvironment and MockPropertySource.
+5.3.1) To mock the Environment value, we need to change the application context's Environment value at the time of context initialization.
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes=MyConfig.class, initializers=MockPropertyInitializer.class)
+public class EnvTest {...}
+public class MockPropertyInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+	@Override
+	public void initialize(ConfigurableApplicationContext applicationContext) {
+		MockEnvironment mock = new MockEnvironment();
+		mock.setProperty("message", "I'm a mockstar");
+		applicationContext.setEnvironment(mock);
+	}	
+}
+5.3.2) Similarly, we can use MockPropertySource with a mock value to mock out the properties file values.
+public class MockPropertyInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+	@Override
+	public void initialize(ConfigurableApplicationContext applicationContext) {
+		MutablePropertySources propertySources = applicationContext.getEnvironment().getPropertySources();
+		MockPropertySource mockEnvVars = new MockPropertySource().withProperty("message", "I'm a mock");
+		propertySources.replace(StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME, mockEnvVars);
+	}
+}
+6) Mocking JNDI
+6.1) Create an applicationContext.xml file
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:jee="http://www.springframework.org/schema/jee"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans.xsd
+                            http://www.springframework.org/schema/jee
+                            http://www.springframework.org/schema/jee/spring-jee-4.1.xsd">
+    <jee:jndi-lookup id="common-Datasource"
+                     jndi-name="java:comp/env/Datasource"
+                     resource-ref="true" cache="true"
+                     lookup-on-startup="false"
+                     proxy-interface="javax.sql.DataSource" />
+</beans>
+6.2) When we run a JUnit test, the container is not accessible; we need to mock out the <jee:jndi-lookup> from our JUnit test. We'll create an
+ApplicationContextInitializer instance to initialize the application context and bind a mock DataSource object with the original DataSource name.
+public class MockJeeLookUpInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+@Override
+public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
+    DataSource mockDataSource = Mockito.mock(javax.sql.DataSource.class);
+    SimpleNamingContextBuilder builder = new SimpleNamingContextBuilder();
+    builder.bind("java:comp/env/Datasource", mockDataSource);
+    try {
+        builder.activate();
+    } catch (IllegalStateException | NamingException e) {
+        e.printStackTrace();
+    }
+}
+6.3) Test class:
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = "classpath:org.atwjsw.jndi/applicationContext.xml", initializers =  MockJeeLookUpInitializer.class)
+public class DataSourceTest {...}
+7) ReflectionTestUtils: a collection of reflection-based utility methods to set a non-public field or invoke a private/protected setter method when testing the application code.
+7.1) ORM frameworks, such as JPA and Hibernate, allows private or protected field access as opposed to public setter methods for properties in a domain entity
+7.2) Spring's support for annotations such as @Autowired, @Inject, and @Resource, which provide dependency injections for private or protected fields, setter methods, and configuration methods
+7.3) create a Secret class, encrypting a String and set it to secret.
+public class Secret {
+    private String secret;
+    public void initiate(String key) {
+        this.secret = key.replaceAll("a", "z").replaceAll("i", "k");
+    }
+}
+7.4) test class invokes the getField and setField methods of ReflectionUtils to access the private field of the Secret class:
+public class ReflectionUtilsTest {
+    @Test
+    public void private_field_access() throws Exception {
+        Secret myClass = new Secret();
+        myClass.initiate("aio");
+        Field secretField = ReflectionUtils.findField(Secret.class,"secret", String.class);
+        assertNotNull(secretField);
+        ReflectionUtils.makeAccessible(secretField);
+        assertEquals("zko", ReflectionUtils.getField(secretField, myClass));
+        ReflectionUtils.setField(secretField, myClass, "cool");
+        assertEquals("cool", ReflectionUtils.getField(secretField, myClass));
+    }
+}
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- The TestExecutionListener implementations externalize the reusable code to instrument tests. When we execute a TestExecutionListener implementation, we
+can reuse it across test class hierarchies and projects
+
+- Custom TestExecutionListener implementations can be registered for a test class and its subclasses via the @TestExecutionListeners annotation.
+
+#Writing a custom TestExecutionListener interface
+- The SysOutTestExecutionListener class implements five methods, namely, afterTestClass, beforeTestClass, afterTestMethod, beforeTestMethod, and prepareTestInstance. 
+- Each method accepts a TestContext object. A TestContext object can provide the test method, test class, test instance, application context, and the beans configured in the application context, and so on.
+
+- The class is annotated with @RunWith, @ContextConfiguration, and @TestExecutionListeners. 
+- By annotating test classes with @RunWith(SpringJUnit4ClassRunner.class), we enable the class to get the benefits of Spring unit and integration tests, such as TestContext, the applicationContext loading, DI, transaction support, and so on.
+- The @ContextConfiguration annotation loads the application context resource from the specified locations or the @Configuration annotated classes. In locations, we pass the XML configuration or the applicationContext XML location that can be loaded from the classpath.
+- The @TestExecutionListeners annotation defines class-level metadata to configure which TestExecutionListener implementations should be registered with TestContextManager.
+- You might wonder what the difference is between JUnit 4's @before and @after and the TestExecutionListener methods. The answer is you can access TestContext in the TestExecutionListener methods but not in JUnit annotated methods, and TestExecutionListener logic can be shared with many tests but JUnit annotations are test class specific.
+- If a custom TestExecutionListener class is registered via @TestExecutionListeners, the default listeners will not be registered. This forces the developer to manually declare all default listeners in addition to any custom listeners.
+- To avoid the redeclaration of all default listeners, the mergeMode attribute of @TestExecutionListeners can be set to MergeMode.MERGE_WITH_DEFAULTS.
+
+#Configuring Spring profiles
+
+- Spring 3.1 introduced a feature called profiles. Profiles allow you to build one package that can be deployed in all environments, such as dev, test, prod, perf, and so on.
+- If we define a system property, spring.profiles.active, or annotate a test class with @ActiveProfiles and set the active profile names, Spring loads the beans from the context where the profile name matches or no profile name is defined.
+- Suppose you have a dev environment and a prod environment; you use a JNDI lookup for DataSource in prod, but in dev, you build DataSource
+<jee:jndi-lookup id="common-Datasource" jndi-name="java:comp/env/Datasource"
+		resource-ref="true" cache="true" lookup-on-startup="false"
+		proxy-interface="javax.sql.DataSource" />
+
+<bean id="common-Datasource" class="org.springframework.jdbc.datasource.DriverManagerDataSource" autowire-candidate="false">
+	<property name="driverClassName" value="${jdbc.driverClassName}" />
+	<property name="url" value="${jdbc.url}"/>
+	<property name="username" value="${jdbc.username}"/>
+	<property name="password" value="${jdbc.password}"/>
+</bean>
+
+#Mocking an environment
+- The Environment interface and the PropertySource class were added to Spring 3.1 in order to simplify working with properties. 
+- In Spring 3.2, MockEnvironment and MockPropertySource were added to the mock properties in tests.
+
+#Mocking the JNDI lookup
+- The org.springframework.mock.jndi package contains an implementation of the JNDI SPI, which you can use to set up a simple JNDI environment for test suites or standalone applications.
+
+#Using ReflectionTestUtils
+- The org.springframework.test.util package contains ReflectionTestUtils, which is a collection of reflection-based utility methods to set a non-public field
+or invoke a private/protected setter method when testing the application code.
+- ORM frameworks, such as JPA and Hibernate, condone private or protected field access as opposed to public setter methods for properties in a domain entity
+- Spring's support for annotations such as @Autowired, @Inject, and @Resource, which provide dependency injections for private or protected fields, setter methods, and configuration methods
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#Working with annotations
+总而言之 （Spring test annotations) <Test> <Test Done>
+1) The Spring Framework provides a set of Spring-specific annotations for unit and integration tests in conjunction with the TestContext framework.
+2) @ContextConfiguration: declares the application context's resource locations or the annotated classes.
+3) @WebAppConfiguration: indicates that the ApplicationContext loaded using the @ContextConfiguration annotation is a WebApplicationContext. 
+4) @ContextHierarchy: loads the parent-child application context in hierarchical order. 
+@ContextHierarchy({@ContextConfiguration(classes = TestConfig.class), @ContextConfiguration(classes = WebConfig.class)})
+5) @ActiveProfiles: declare the active profile:
+@ActiveProfiles({"dev", "test"})
+6) @TestPropertySource: configure the locations of the properties files and the inline properties to be added to the set of PropertySources of Environment
+@TestPropertySource("/test.properties")
+7) @TestExecutionListeners: externalize the reusable code to instrument tests via hook
+@TestExecutionListeners(listeners = SysOutTestExecutionListener.class, mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
+8) @DirtiesContext: This annotation specifies that the ApplicationContext has been dirtied during the execution of a test (such as, it changed the state
+of a singleton bean) and should be closed. When an application context is dirtied, it is removed from the testing framework's cache and closed. 
+9) @Timed: indicates that the annotated test method must finish execution in a specified time period (in milliseconds). If the text execution time exceeds the specified time period, the test fails.
+@Timed(millis=2000)
+10) @Repeat: indicates that the test method must be executed repeatedly.
+@Repeat(100)
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- The Spring Framework provides a set of Spring-specific annotations for unit and integration tests in conjunction with the TestContext framework.
+- @ContextConfiguration: used to determine how to load and configure an ApplicationContext for integration tests. @ContextConfiguration declares the application context's resource locations or the annotated classes that will be used to load the context.
+- @WebAppConfiguration: This class-level annotation is used to instruct the Spring context that the ApplicationContext loaded using the @ContextConfiguration annotation is a WebApplicationContext. 
+- @ContextHierarchy: This is a class-level annotation that loads the parent-child application context in hierarchical order. The following integration test declares a context hierarchy of two levels, one for the root WebApplicationContext (loaded using the TestConfig class) and one for the dispatcher servlet WebApplicationContext (loaded using the WebConfig class). The WebApplicationContext that is autowired into the test instance is the one used for the child context:
+@RunWith(SpringJUnit4ClassRunner.class)
+@WebAppConfiguration
+@ContextHierarchy({@ContextConfiguration(classes = TestConfig.class), @ContextConfiguration(classes = WebConfig.class)})
+public class IntegrationTests {
+	@Autowired
+	private WebApplicationContext wac;
+	// ...
+}
+
+- @ActiveProfiles: This class-level annotation is used to instruct the bean container about which bean definition profiles should be active during application context loading.
+@ContextConfiguration
+@ActiveProfiles({"dev", "test"})
+public class MyTest {
+}
+
+- @TestPropertySource: This class-level annotation is used to configure the locations of the properties files and the inline properties to be added to
+the set of PropertySources of Environment during ApplicationContext loading.
+@ContextConfiguration
+@TestPropertySource("/test.properties")
+public class MyTest {
+	// class body...
+}
+
+- @DirtiesContext: This annotation specifies that the ApplicationContext has been dirtied during the execution of a test (such as, it changed the state
+of a singleton bean) and should be closed. When an application context is dirtied, it is removed from the testing framework's cache and closed. This
+annotation can be used as both a class- and method-level within the same test class.
+
+- @TestExecutionListeners: We have already covered this class-level annotation before.
+
+- @Timed: This method-level annotation indicates that the annotated test method must finish execution in a specified time period (in milliseconds). If
+the text execution time exceeds the specified time period, the test fails. The following is an example of @Timed:
+@Timed(millis=2000)
+public void testTwoSecondsTimeout() {
+	// some logic that should not take longer than 2 seconds to execute
+}
+
+- @Repeat: This method-level annotation indicates that the test method must be executed repeatedly. The number of times the test method is to be executed is specified in the annotation:
+@Repeat(100)
+@Test
+public void testToBeRepeated() {
+	// ...
+}
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#Testing Spring MVC
+总而言之 (MockMvc)
+1）Mock request and session scope beans
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations ="classpath:beans.xml")
+@WebAppConfiguration
+public class LoginControllerTest {
+	@Autowired 
+	MockHttpServletRequest request;
+	@Autowired 
+	MockHttpSession session;
+	。。。
+}
+- mock the request and session scope beans with MockHttpServletRequest and MockHttpSession； injected the mock request or session into our test instance and prepared test data as appropriate, such as setting the request parameters and session attributes 
+- loaded a WebApplicationContext for our test by annotating the test class with @WebAppConfiguration
+- invoked the web component from the configured WebApplicationContext via dependency injections, and asserted the values against the mocks
+2）Mocking the servlet container with MockMvc
+2.1）test the controller by performing actual requests and generating responses, as they would be at runtime. 
+2.2）MockMvc is used to mock the servlet container, and it can perform a request and verify the resulting response status and response elements.
+2.3) examine the web tier in isolation from a web container using the 
+org.springframework.test.web.servlet.MockMvc, 
+org.springframework.test.web.servlet.request.MockMvcRequestBuilders, 
+org.springframework.test.web.servlet.result.MockMvcResultMatchers
+2.4) Test class:
+public class HRControllerTest {
+    @Autowired
+    private WebApplicationContext wac;
+    private MockMvc mockMvc;
+
+    @Before
+    public void setup() {
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
+    }
+
+    @Test
+    public void getEmployee() throws Exception {
+        this.mockMvc.perform(get("/employees/1").
+                accept(MediaType.parseMediaType("application/json;charset=UTF-8")))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/json;charset=UTF-8"))
+                .andExpect(jsonPath("$.name").value("John Doe"))
+                .andExpect(jsonPath("$.salary").value(100.00))
+                .andExpect(jsonPath("$.id").value(1));
+    }
+}
+2.4.1) The MockMvcBuilders class needs a WebApplicationContext to build a MockMvc object; 
+2.4.2) the WebApplicationContext is autowired using the @WebAppConfiguration annotation. 
+2.4.3) The MockMvc object is used to perform a GET request to /employees/1 and then it verifies that the response status is 200 (isOk()) as well as the JSON response. 
+2.4.4) The jsonPath("$.name").value("John Doe") statement checks whether the output JSON contains a name field and its value is John Doe.
+3) Handling transactions in Spring tests
+3.1) define applicationContext.xml and dataSource, transactionManager, and JdbcTemplate beans:
+<jdbc:embedded-database id="dataSource" type="H2">
+    <jdbc:script location="classpath:org.atwjsw.transaction/schema.sql"/>
+</jdbc:embedded-database>
+<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+	<constructor-arg ref="dataSource"/>
+</bean>
+<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+ 	<property name="dataSource" ref="dataSource"/>
+</bean>
+3.2) create test class:
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration({ "classpath:org.atwjsw.transaction/integration.xml" })
+@TransactionConfiguration(transactionManager = "transactionManager", defaultRollback = true)
+@Transactional
+public class PhoneBooSpringDaoIntegrationTest {...}
+3.3) The @TransactionConfiguration(transactionManager = "transactionManagerBean", defaultRollback = true) defines the transaction manager, and the defaultRollback attribute tells the transaction manager to roll back all transactions at the end of a given test.
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- This section will mock the request and session scope beans with MockHttpServletRequest and MockHttpSession:
+- We loaded a WebApplicationContext for our test by annotating the test class with @WebAppConfiguration
+• We injected the mock request or session into our test instance and prepared test data as appropriate, such as setting the request parameters
+and session attributes
+• We invoked the web component from the configured WebApplicationContext via dependency injections, and asserted the values against the mocks
+
+#Mocking the servlet container with MockMvc
+- The design behind the Spring MVC test is to test the controller by performing actual requests and generating responses, as they would be at runtime. 
+- MockMvc is used to mock the servlet container, and it can perform a request and verify the resulting response status and response elements.
+
+- We can examine the integration of the web tier with other tiers in isolation from a web container using the 
+org.springframework.test.web.servlet.MockMvc, 
+org.springframework.test.web.servlet.request.MockMvcRequestBuilders, 
+and org.springframework.test.web.servlet.result.MockMvcResultMatchers classes.
+
+#Handling transactions in Spring tests
+- Spring provides a module/utility library for integration tests.
+- The @TransactionConfiguration(transactionManager = "transactionManagerBean", defaultRollback = true) annotation defines the transaction manager, and the defaultRollback attribute tells the transaction manager to roll back all transactions at the end of a given test.
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Chapter4 Resolving Out-of-container Dependencies with Mockito
+总而言之
+1) Unit testing the web layer: mocked the service layer and unit testing of the web layer.
+@RunWith(MockitoJUnitRunner.class)
+public class LoginControllerTest {
+	@Mock
+	private LoginService loginService;
+	private LoginController controller;
+	
+	@Before
+	public void setup(){
+	    controller = new LoginController();
+	    controller.setLoginService(loginService);
+	}
+	
+	@Test
+	public void when_invalid_login_error_message_is_generated() {
+	    when(loginService.isValid()).thenReturn(false);
+	    ModelMap model = new ModelMap();
+	    ModelAndView modelAndView = controller.onLogin(model);
+	    assertNotNull(modelAndView.getModel().get("error"));
+	    assertEquals("login", modelAndView.getViewName());
+	}
+	...
+}
+2) Unit testing the service layer: mocked the database layer(i.e. dao) and unit testing of the service layer. 
+@RunWith(MockitoJUnitRunner.class)
+public class RegistrationServiceTest {
+    private RegistrationService registrationService;
+    @Mock
+    private RegistrationDao registrationDao;
+
+    @Before
+    public void setup(){
+        registrationService = new RegistrationService();
+        registrationService.setRegistrationDao(registrationDao);
+    }
+
+    @Test
+    public void when_empty_inputs_raises_error() {
+        String error = registrationService.hasError();
+        assertNotNull(error);
+        assertEquals(PLEASE_ENTER_USER_ID, error);
+        registrationService.setUserId("john123");
+        error = registrationService.hasError();
+        assertNotNull(error);
+        assertEquals(PLEASE_ENTER_PASSWORD, error);
+        registrationService.setPassword("Passw@rd");
+        error = registrationService.hasError();
+        assertNotNull(error);
+        assertEquals(PLEASE_ENTER_FIRST_NAME, error);
+        registrationService.setFirstName("john");
+        error = registrationService.hasError();
+        assertNotNull(error);
+        assertEquals(PLEASE_ENTER_LAST_NAME, error);
+        registrationService.setLastName("doe");
+        error = registrationService.hasError();
+        assertNull(error);
+    }
+}
+3) Unit testing the data access layer: mock the database APIs (i.e. JdbcTemplate) and perform the unit testing of the DAO layer.
+@RunWith(MockitoJUnitRunner.class)
+public class RegistrationDaoSpringTest {
+    @Mock
+    JdbcTemplate mockJdbcTemplate;
+    RegistrationDaoSpring springDao;
+
+    @Before
+    public void init() {
+        springDao = new RegistrationDaoSpring(mockJdbcTemplate);
+    }
+
+    @Test
+    public void when_creates_user() throws Exception {
+        // Prepare data for user registration
+        String joesUserId = "joe4u";
+        String joesPassword = "joe@123";
+        String joesFirstName = "Joseph";
+        String joesLastName = "Lawrence";
+        // Stub jdbcTemplate's update to return 1
+        when(mockJdbcTemplate.update(anyString(), anyString(), anyObject(), anyObject(), anyObject())).thenReturn(1);
+        // Execute
+        springDao.create(joesUserId, joesPassword, joesFirstName, joesLastName);
+        // Create argument captures
+        ArgumentCaptor<Object> varArgs = ArgumentCaptor.forClass(Object.class);
+        ArgumentCaptor<String> strArg = ArgumentCaptor.forClass(String.class);
+        // Verify update method was called and capture args
+        verify(mockJdbcTemplate).update(strArg.capture(), varArgs.capture(), varArgs.capture(), varArgs.capture(), varArgs.capture());
+        // Verify 1st dynamic argument was the userId
+        assertEquals(joesUserId, varArgs.getAllValues().get(0));
+        // Verify the password arguments
+        assertEquals(joesPassword, varArgs.getAllValues().get(1));
+        // Verify the name arguments
+        assertEquals(joesFirstName, varArgs.getAllValues().get(2));
+        assertEquals(joesLastName, varArgs.getAllValues().get(3));
+    }
+}
+3.1) The ArgumentCaptor class is a Mockito class and it allows you to capture the argument passed to a stubbed method of a mock/proxy object.
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#Unit testing the web layer
+- mocked the service layer and covered the unit testing of the web layer.
+@Mock
+private LoginService loginService;
+private LoginController controller;
+
+@Before
+public void setup(){
+    controller = new LoginController();
+    controller.setLoginService(loginService);
+}
+
+when(loginService.isValid()).thenReturn(false);
+ModelMap model = new ModelMap();
+ModelAndView modelAndView = controller.onLogin(model);
+assertNotNull(modelAndView.getModel().get("error"));
+assertEquals("login", modelAndView.getViewName());
+
+#Unit testing the service layer
+- mocked the database layer and covered the unit testing of the service layer. what you need to do is create an interface for the DAO layer and mock the interface.
+
+#Unit testing the data access layer
+- mock the database APIs and perform the unit testing of the DAO layer.
+- We can unit test the data access logic in isolation from the database and perform integration testing to verify the application and database integrity.
+- This JUnit test checks whether the Spring JDBC API is properly used or not and whether the arguments are passed to the JDBC API in the correct order
+or not. 
+- The ArgumentCaptor class is a Mockito class and it allows you to capture the argument passed to a stubbed method of a mock/proxy object.
+- This chapter covered unit testing of the service layer in isolation from the data access layer with Mockito, unit testing the Spring data access layer with Mockito, and unit testing the Spring presentation layer (MVC) with Mockito.
+- The next chapter explores the new features of Spring 4 and its advanced topics, such as @RestController, AsyncRestTemplate, Async task, and caching.
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Chapter 5 Time Travelling with Spring
+总而言之
+1) @RestController stereotype annotation combine @ResponseBody and @Controller.
+2) @Async: Java 7 has a feature called Future. Futures let you retrieve the result of an asynchronous operation at a later time. The FutureTask class runs in a separate thread, which allows you to perform non-blocking asynchronous operations. Spring provides an @Async annotation to make it more easier to use.
+3) AsyncRestTemplate
+2.1) To handle RESTful web service calls asynchronously, Spring offers two useful classes: AsyncRestTemplate and ListenableFuture.
+2.2) We can make an async call using the template and get Future back and then continue with other processing, and finally we can ask Future to get the result.
+2.3) The AsyncRestTemplate class defines an array of overloaded methods to access RESTful web services asynchronously. e.g. exchange and execute methods.
+2.4) The ListenableFuture is the handle to our output; we invoked the GET method on ListenableFuture to get the RESTful service call response. The ResponseEntity has the getBody, getClass, getHeaders, and getStatusCode methods for extracting the web service call response.
+4) Caching: two annotations for caching: @Cacheable and @CacheEvict. These annotations allow methods to trigger cache population or cache eviction
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+ Spring 4.0 is the Java 8-enabled latest release of the Spring Framework.
+- We will cover the following topics in depth:
+• @RestController
+• AsyncRestTemplate
+• Async tasks
+• Caching
+
+• Spring 4 supports Java 8 features such as Java lambda expressions and java.time. Spring 4 supports JDK 6 as the minimum.
+• All deprecated packages/methods are removed.
+• Java Enterprise Edition 6 or 7 are the base of Spring 4, which is based on JPA 2 and Servlet 3.0. 
+• Bean configuration using the Groovy DSL is supported in Spring Framework 4.0.
+• Hibernate 4.3 is supported by Spring 4.
+• Custom annotations are supported in Spring 4.
+• Autowired lists and arrays can be ordered. The @Order annotation and the Ordered interface are supported.
+• The @Lazy annotation can now be used on injection points as well as on the @Bean definitions.
+• For the REST application, Spring 4 provides a new @RestController annotation. We will discuss this in detail in the following section.
+• The AsyncRestTemplate feature (class) is added for asynchronous REST client development.
+• Different time zones are supported in Spring 4.0.
+• New spring-websocket and spring-messaging modules have been added.
+• The SocketUtils class is added to examine the free TCP and UDP server ports on localhost.
+• All the mocks under the org.springframework.mock.web package are now based on the Servlet 3.0 specification.
+• Spring supports JCache annotations and new improvements have been made in caching.
+• The @Conditional annotation has been added to conditionally enable or disable an @Configuration class or even individual @Bean methods.
+• In the test module, SQL script execution can now be configured declaratively via the new @Sql and @SqlConfig annotations on a per-class or per-method basis.
+
+#Working with asynchronous tasks
+- Java 7 has a feature called Future. Futures let you retrieve the result of an asynchronous operation at a later time. The FutureTask class runs in a separate
+thread, which allows you to perform non-blocking asynchronous operations.
+- Spring provides an @Async annotation to make it more easier to use.
+
+#Exploring @RestController
+- Spring MVC offers controllers to create RESTful web services.
+
+#Learning AsyncRestTemplate
+- To handle RESTful web service calls asynchronously, Spring offers two useful classes: AsyncRestTemplate and ListenableFuture.
+- We can make an async call using the template and get Future back and then continue with other processing, and finally we can ask Future to get the result.
+- The AsyncRestTemplate class defines an array of overloaded methods to access RESTful web services asynchronously. We'll explore the exchange and execute methods.
+- The ListenableFuture is the handle to our output; we invoked the GET method on ListenableFuture to get the RESTful service call response. The ResponseEntity has the getBody, getClass, getHeaders, and getStatusCode methods for extracting the web service call response.
+
+#Caching objects
+- two annotations for caching: @Cacheable and @CacheEvict. These annotations allow methods to trigger cache population or cache eviction, respectively.
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

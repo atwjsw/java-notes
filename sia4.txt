@@ -8967,21 +8967,58 @@ explicitly configured those beans. Moreover, the default view resolver bean will
 - Where Spring aims to make Java development simpler, Spring Boot aims to make Spring itself simpler.
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+Chapter 20 Managing Spring beans with JMX
+- once the application has been deployed and is running, DI alone can’t do much to help you change that configuration. 
+- JMX is a technology that enables you to instrument applications for management, monitoring, and configuration. 
+- JMX is now a standard part of the Java 5 distribution. 
+- The key component of an application that’s instrumented for management with JMX is the managed bean (MBean). 
+- An MBean is a JavaBean that exposes certain methods that define the management interface. The JMX specification defines four types of MBeans:
+Standard MBeans—MBeans whose management interface is determined by reflection on a fixed Java interface that’s implemented by the bean class.
+Dynamic MBeans—MBeans whose management interface is determined at runtime by invoking methods of the DynamicMBean interface. Because the management
+interface isn’t defined by a static interface, it can vary at runtime.
+Open MBeans—A special kind of dynamic MBean whose attributes and operations are limited to primitive types, class wrappers for primitive types, and any
+type that can be decomposed into primitives or primitive wrappers.
+Model MBeans—A special kind of dynamic MBean that bridges a management interface to the managed resource. Model MBeans aren’t written as much as
+they are declared. They’re typically produced by a factory that uses some meta information to assemble the management interface.
+- Spring’s JMX module enables you to export Spring beans as model MBeans so that you can see inside your application and tweak the configuration
 
+- Exporting Spring beans as MBeansThere are several ways you can use JMX to manage the beans in the Spittr application.
+- making a modest change to SpittleController as it appeared. We’ll add a new spittlesPerPage property:
+public static final int DEFAULT_SPITTLES_PER_PAGE = 25;
+private int spittlesPerPage = DEFAULT_SPITTLES_PER_PAGE;
+public void setSpittlesPerPage(int spittlesPerPage) {
+	this.spittlesPerPage = spittlesPerPage;
+}
+public int getSpittlesPerPage() {
+	return spittlesPerPage;
+}
+- Spring’s MBeanExporter exports the properties and methods of Spring beans as JMX attributes and operations in an MBean server. From there, a JMX management tool such as JConsole can look inside the running application.
+- An MBean server (sometimes called an MBean agent) is a container where MBeans live and through which the MBeans are accessed.
 
+- The following @Bean method declares an MBeanExporter in Spring to export the spittleController bean as a model MBean:
+@Bean
+public MBeanExporter mbeanExporter(SpittleController spittleController) {
+	MBeanExporter exporter = new MBeanExporter();
+	Map<String, Object> beans = new HashMap<String, Object>();
+	beans.put("spitter:name=SpittleController", spittleController);
+	exporter.setBeans(beans);
+	return exporter;
+}
 
+- The key of each <entry> is the name to be given to the MBean (composed of a management domain name and a key-value pair—spitter:name=SpittleController in the case of the SpittleController MBean).
+- The value of entry is a reference to the Spring-managed bean that’s to be exported.
+- all public members of the SpittleController are exported as MBean operations and attributes.
+- To gain finer control over an MBean’s attributes and operations, Spring offers a few options, including the following:
+	Declaring bean methods that are to be exposed/ignored by name
+	Fronting the bean with an interface to select the exposed methods
+	Annotating the bean to designate managed attributes and operations
+- selecting the bean methods to expose by name.
 
+- As configured, MBeanExporter assumes that it’s running in an application server (such as Tomcat) or some other context that provides an MBean server.
+- if your Spring application will be running standalone or in a container that doesn’t provide an MBean server, you’ll want to configure an MBean server in the Spring context.
 
-
-
-
-
-
-
-
-
-
-
+- In XML configuration, the <context:mbean-server> element can handle that for you. In Java configuration, you’ll need to take a more direct approach and configure a bean of type MBeanServerFactoryBean() (which is what <context:mbeanserver> does for you in XML).
+- MBeanServerFactoryBean creates an MBean server as a bean in the Spring application context. By default, that bean’s ID is mbeanServer. Knowing this, you can wire it into MBeanExporter’s server property to specify which MBean server an MBean should be exposed through.
 
 
 
