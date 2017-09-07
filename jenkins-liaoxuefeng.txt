@@ -1,0 +1,50 @@
+Travis CI:
+1) 持续集成：Continuous Integration(CI)，在一个项目中，任何人对代码库的任何改动，都会触发CI服务器自动对项目进行构建，自动运行测试，甚至自动部署到测试环境。这样做的好处就是，随时发现问题，随时修复。因为修复问题的成本随着时间的推移而增长，越早发现，修复成本越低。
+2) Travis CI是在线托管的CI服务，用Travis来进行持续集成，不需要自己搭服务器，在网页上点几下就好，用起来更方便。最重要的是，它对开源项目是免费的。
+3) 因为GitHub和Travis是一对好基友，不用GitHub虽然也能用Travis，但是配置起来太麻烦。而且，作为开源项目，为什么不用GitHub？
+4) 第一次登录时，授权给Travis访问你的GitHub代码库，然后，把需要CI的代码库选上：
+5) 默认情况下，Travis会在代码push时收到GitHub通知，然后自动获取最新代码，进行CI。
+6) 但是我们还是需要编写一个.travis.yml文件来告诉Travis一些项目信息，比如用的Java还是Python，用的JDK 8还是JDK 6，等等。 假设我们用的Java和JDK 8，这个.travis.yml就这么写：
+language: java
+jdk:
+  - oraclejdk8
+6) 然后，放到代码库的根目录下。
+7) Travis一看到Java项目，默认用Maven 3，然后执行两个脚本命令：
+install: mvn install -DskipTests=true -Dmaven.javadoc.skip=true
+script: mvn test
+8) 提交.travis.yml并push后，如果一切顺利，Travis就会自动开始构建这个Maven工程。可以在Travis上看到构建结果和详细的输出
+9) 也可以指定构建脚本，例如：script: mvn package
+10) 如果项目结构标准，pom.xml在根目录下，执行就会一切正常。但是，如果pom.xml在子目录下，就需要修改install脚本：
+install: cd wxapi && mvn install -DskipTests=true -Dmaven.javadoc.skip=true
+11) 有一些Maven项目在package时用到了PGP密钥来签名，因为Travis的服务器不可能知道PGP密钥，所以install脚本就会失败。解决方法是加上-Dgpg.skip=true：
+install: cd wxapi && mvn install -DskipTests=true -Dmaven.javadoc.skip=true -Dgpg.skip=true
+
+12) 是不是用了CI代码质量就有保证了？
+这个问题的答案是否。如果CI能提高代码质量，那软件公司只需要招实习生写代码外加CI就可以了，招那么贵的高级工程师浪费钱干啥？
+13) 是不是用了Travis就实现了CI？
+这个问题的答案还是否。CI是解决问题的手段而不是目的。问题是如何提高代码质量。我见过很多公司的项目，编译一次半小时（不是编译Linux内核那种），测试一次几个小时。不能在短时间内完成编译、测试的代码都有问题，导致CI形同虚设。这里的“短时间”是指5分钟以内。
+14) 私有项目怎么用Travis？
+如果不是开源项目，能用Travis吗？免费的肯定是不能用了，但是有收费的Travis Pro.
+
+Jenkins
+1) 如果不想交钱，可以自己搭建CI环境，利用Jenkins CI进行持续集成。
+2) 首先，我们从Jenkins官方网站https://jenkins.io/下载最新的war包。虽然Jenkins提供了Windows、Linux、OS 等各种安装程序，但是，这些安装程序都没有war包好使。我从未见过Jenkins这样把Java包做得如此简单的项目。只需要运行命令：
+java -jar jenkins.war
+Jenkins就启动成功了！它的war包自带Jetty服务器，剩下的工作我们全部在浏览器中进行。
+3) 第一次启动Jenkins时，出于安全考虑，Jenkins会自动生成一个随机的按照口令。注意控制台输出的口令，复制下来，然后在浏览器输入：
+http://localhost:8080/
+4) 粘贴口令，进入安装界面，如果执行默认的安装，Jenkins就自动配置好了Maven、git等常用插件。
+5) 最后，创建一个admin用户，完成安装。
+6) 用管理员账号登录Jenkins后，第一次使用前，需要在“系统管理”->“插件关联”->安装”Maven Integration plugin“
+6.5) Config Tool -》 configure Java_Home and Maven Home
+7) 然后，在Jenkins首页选择“新建”，输入名字，选择“构建一个maven项目”：
+8）在配置页中，源码管理选择Git，填入地址： https://github.com/atwjsw/mockito-for-spring.git
+9) 默认使用master分支。如果需要口令，在Credentials中添加用户名/口令，或者使用SSH Key。
+10) 构建触发器指定了触发一次构建的条件。推荐使用最简单的配置“Poll SCM”，它的意思是，定时检查版本库，发现有新的提交就触发构建。这种方式对git、SVN等所有版本管理系统都是通用的。
+11) 我们在日程表中填入： * * * * * 表示每分钟检查一次。
+12) 如果你觉得太频繁，可以改成“每3分钟检查一次”： */3 * * * *
+13) 在“Build”中，默认的Root POM是pom.xml。如果pom.xml不在根目录下，就填入子目录，例如：wxapi/pom.xml。
+14) 在Goals and options中，填入需要执行的mvn命令：clean package，Jenkins将执行如下命令：
+mvn clean package
+特殊参数也在这里填写，如-DskipTests=true clean package。
+15) 保存后，就可以执行自动化构建了
