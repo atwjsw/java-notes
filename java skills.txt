@@ -1,0 +1,186 @@
+In Summary:
+
+1) Basis: Core Java(Apache Commons, Common lang, common io, common pool, common fileipload common collections, guava...), JEE, Spring Framework(AOP, MVC, Data, Integration), OOP, design patterns (Spring Boot, Resrful MicroServices)
+2) Web Tier: JSP/JSF/JS/JQuery (Angular/BootStrap/React.js)
+3) Database: RDBMS/SQL/PL SQL/Hibernate, Mongo DB, Oracle, DB2, SQLServer
+4) Testing/Deployment: Maven/Git/Jenkins (Gradle/Ant/SVN/Nexus), (NodeJS, NPM, grunt)
+5) Application Server: Tomcat (WebSphere, WebLogic, JBOSS)
+6) IDE: Eclipse/IDEA
+7) Unix scripting
+8) SOLR / ELASTIC Search
+9) Messaging: message queues, event listeners, MQ, Tibco
+10) cloud: Salesforce, MS Azure, Adobe AWS
+
+#procom java developer
+
+Required Skills:
+• Strong object-oriented analysis, design, and programming experience
+• Core Java
+• J2EE based Web Application experience
+• Spring Framework
+• Hibernate
+• Web/UI Technologies (JSP / JSF / JavaScript / JQuery)
+• Maven / Ant
+• Git / SVN
+• RDBMS (Oracle) , SQL & PL/Sql basics
+• Agile/ SCRUM experience
+• Application Servers (WebSphere / WebLogic / JBOSS)
+• Eclipse / NetBeans
+• Unix Shell Scripting
+
+Nice to have:
+• Spring AOP, MVC , Boot
+• Restful Microservices
+• Angular JS / BootStrap
+• Spring Integration / Apache Camel
+• Security (Secure Auth / OAuth)
+• Web Servers: Tomcat, Apache HTTP
+• NoSql Database, Mongo DB
+• Liferay
+• Rules Engine (SMARTS / iLOG / JRules)
+• Groovy
+• Gradle
+• NPM / grunt
+
+------------------------------------------------------------------------------------------------------------
+Full Stack Java Developer
+
+Our Banking client is looking for a Senior Full Stack Java Developer to work on a project in Mississauga.
+
+Full Stack Java Developer Mandatory Skills
+
+Solid understanding of enterprise application architecture from front to back
+Experience developing high performance server side components.
+At least 6-7 years experience using J2EE to develop dynamic enterprise applications
+Good experience with caching and performance tuning
+Design and develop the core services ensuring strong reliability, scalability and performance
+Understanding of good design principles and ability to adhere to complex design
+Extensive hand-coding expertise in Core Java / J2EE development
+Proficiency with Spring Framework
+Strong experience in data modeling and experience with relational and no-sql database. Oracle and MongoDB
+Experienced in building and managing REST Apis
+Full Stack Java Developer Desired Skills
+
+Experience with SOLR / ELASTIC Search will be plus
+Experience with front end technologies. ReactJS experience will be plus.
+
+----------------------------------------------------------------------
+Java/DevOps Developer Mandatory Skills
+
+Experience in Java and Javascript - 7 years
+Experience in Node js development - 2+ years
+Experience with deployment of java solutions. - 7 years
+Ability to evaluate tools/frameworks and recommend appropriate solutions. - 7 years
+Experience in Agile methodology - 2+ years
+Excellent verbal and written communication skill
+Experience in REST API, Spring, Strongloop and soap - 2+ years
+Experience in Jboss websphere UNIx deploying code - 5 years
+Experience in CLOud and blueprints - 2 years
+Experience in Devops (Jenkins, Nexus, GIt and MAven)- 2+ years
+Java/DevOps Developer Desired Skills
+
+Experience in integration with SQL - 3 years
+Former TD experience
+Experience with large corporations
+Experience with Real Time event processing technologies - message queues, event listeners
+Knowledge and experience on Wealth Management or Trading execution platforms would be an asset
+
+-------------------------------------------------------------------------------------------
+Java Technical Lead Job Description
+
+As a part of evolving the IT systems to meet the critical business needs, we are modernizing the Java application suite that services our business partners. We are migrating application to a state of the art environment that provides the agility needed for the business. 
+Java Technical Lead Responsibilities
+
+Hands on experience in software design, development and delivery of complex solutions
+Accountable for solving for all technical aspects and delivery
+Accountable for the articulation of the solutions, to various levels
+Provide solutions based on strong technical acumen and technical currency in a variety of technologies: Java framework, Middleware (MQ, Tibco), and Databases (Oracle, DB2, SQLServer)
+Exposure to Cloud application platforms (Salesforce, MS Azure, Adobe AWS) and Mobile
+Provide strong oversight and ownership of coding efforts, and technical solutions for the team
+Provide guidance to onshore, offshore, and near shore development service providers as necessary
+Provide strong insurance business acumen, and customer focus
+Provide governance for troubleshooting complex system issues as necessary
+Demonstrate effective collaboration, communication, presentation, negotiation and influencing skills at various levels from developers to the project managers to the CIO of Insurance
+ Java Technical Lead Must Have Skills
+
+4+ years of experience in a technical leadership role with strong hands-on experience as a JAVA/J2EE developer working on Java EE standards and technologies - Core Java, Servlets, JSP, JDBC, EJB, JMS
+4+ years of experience in a technical leadership role with strong hands-on experience working on IBM middleware - WebSphere Application Server, WebSphere MQ & Databases technologies 
+
+----------------------------------------------------------------------------------------------------------
+
+Deloitte's Digital Integration practice in Toronto is in need of experienced Java developers with functional and technical expertise to join one of our key delivery teams.
+
+Completed undergraduate engineering degree in computer science or equivalent.
+3 to 5 years of relevant professional software development experience.
+Strong commitment to professional and client service excellence.
+Experience working with clients and proven ability to cultivate relationships with clients.
+Superior verbal and written communication skills.
+Proven ability to deliver technical aspects in all stages of the project development life cycle.
+Strong understanding of Agile / Iterative delivery methodology.
+Good analytical and problem solving skills to overcome technical challenges to satisfy business requirements.
+Strong presentation skills.
+
+Job Qualifications
+Further Requirements:
+Expertise in Enterprise Java development and Java frameworks including the Spring Framework and Hibernate.
+Hands on experience in micro-services design and build.
+Clear understanding of Domain driven design, RESTful design patterns for micro services.
+Hands on experience in RAML and micro service modelling.
+Good understanding and experience developing and consuming SOAP and RESTful web services.
+Strong in scripting language and experienced in at least one scripting language e.g. Python, Ruby, BASH, JavaScript.
+Strong understanding of Relational Database concepts and experienced in developing SQL scripts.
+Experienced in developing middle tiers for web applications.
+Familiar with version control and source code tracking tools such as Subversion and GitHub.
+Ability to work in fast paced Agile projects.
+Strong understanding of Object Oriented and Functional design and programming.
+Experienced in all phases of Software Development Life Cycle.
+In addition, the following would be considered an asset for this position:
+Experience developing on cloud platforms like Spring Cloud, Pivotal Cloud Foundry, Heroku and Red Hat OpenShift.
+Experience developing with Spring Boot.
+Experience in building and packaging contents with Docker, Docker Compose.
+Previous full time experience as a consultant within a consulting firm.
+Experience working on large enterprise projects for Banks and/or Financial institutions.
+Exposure to multiple middleware platform (IBM / TIBCO / Oracle ESB / webMethods)
+Experience in business application design, Service Oriented Architecture (SOA) and implementation projects for large IT organizations using systems integration methods and technologies including experience with web services
+------------------------------------------------------------------------------------------
+Skills:
+excellent verbal and written communication skills (Must Have)
+Java J2EE (Must Have)
+JavaScript (Must Have)
+Spring Framework dev. exp. (Must Have)
+RESTful APIs in a JSP page (Must Have)
+MVC (Must Have)
+eCommerce - Web on-line buying technologies (Must Have)
+Agile Scrum meetings/release teams (Must Have)
+MySQL, MSSQL (Nice to Have)
+Jira,Bamboo,Atlassian,Maven,Stash products (Nice to Have)
+Apache (Nice to Have)
+Hyrbris development (Nice to Have)
+
+------------------------------------------------------------------------------------------
+Responsibilities:
+
+Working with continuous integration
+Web design using HTML, JavaScript (JQuery), CSS
+Develop, implement, and maintain Java based components and interfaces
+Contribute in all phases of the development life-cycle
+Support continuous improvement by investigating alternatives and technologies.
+Must Have:
+
+College or Bachelor's Degree, computer science or related field
+Minimum 4 years of practical experience
+Strong Java background, including experience with Java EE (Java, EJB, JPA - JDBC, JMS, XML, SOAP, XSD, WSDL, SSL, JAXB, Java EE Design patterns)
+Experience with Eclipse, Spring 10, PhoneGap mobile development
+Experience with WebLogic Application server or any other Web/Application server
+JUnit, log4j, subversion, cruise control/Jenkins, check style
+Excellent verbal and written communication skills in both a technical and functional role
+Java 1.5, JavaScript (JQuery/Prototype), HTML, CSS, XML
+Work extremely well in a team/agile environment
+Enthusiasm, flexibility, commitment, positive attitude
+Development: JEE certified development environment. Extensive hands on experience with Enterprise Java Development
+Nice to Have:
+
+Excellent SQL skills for SQL Server
+UI Design patterns and principals
+
+-------------------------------------------------------------------------------------------

@@ -1,0 +1,2097 @@
+Chapter1 Introduction
+#Maven是构建工具
+总而言之
+
+- Maven主要服务于基于Java平台的项目构建、依赖管理和项目信息管理
+1）项目构建：
+1.1) Maven是一个标准化，跨平台，开放式（plugin），构建自动化工具
+1.2）build: Compiling、unit testing、documentation、packaging and deployment (besides coding)
+1.3) build automation: use software to automate the process, just one command to execute
+1.4) automated：automate build process，从clean, compile, test, generate report, package and deploy. No need to enter command again and again, just use Maven配置好项目，then use mvn clean  install.., Maven会帮我们处理那些烦琐的任务。
+1.5) portable： 这意味着无论是在Windows上，还是在Linux或者Mac上，都可以使用同样的命令。
+1.6) Standardized： Maven抽象了一个完整的构建生命周期模型，这个模型吸取了大量其他的构建脚本和构建工具的优点，总结了大量项目的实际需求。如果遵循这个模型，可以避免很多不必要的错误，可以直接使用大量成熟的Maven插件来完成我们的任务（很多时候我们可能都不知道自己在使用Maven插件）。
+1.7) Open：如果有非常特殊的需求，我们也可以轻松实现自己的插件。
+
+2) Dependency Management
+2.1) Maven通过一个坐标系统准确地定位每一个构件（artifact），也就是通过一组坐标Maven能够找到任何一个Java类库（如jar文件）。
+3.2) Maven还为全世界的Java开发者提供了一个免费的中央仓库，在其中几乎可以找到任何的流行开源类库。通过一些Maven的衍生工具（如Nexus），我们还能对其进行快速地搜索。只要定位了坐标，Maven就能够帮我们自动下载，省去了手工劳动。
+
+3) 项目信息管理
+3.1) (in POM.xml)Maven还能帮助我们管理原本分散在项目中各个角落的项目信息，包括项目描述、开发者列表、版本控制系统地址、许可证、缺陷管理系统地址等
+3.2) 除了直接的项目信息，通过Maven自动生成的站点，以及一些已有的插件，我们还能够轻松获得项目文档、测试报告、静态分析报告、源码版本日志报告等非常具有价值的项目信息。
+
+4) Maven对于项目目录结构、测试用例命名方式等内容都有既定的规则，只要遵循了这些成熟的规则，用户在项目间切换的时候就免去了额外的学习成本，可以说是约定优于配置（Convention Over Configuration）。
+
+5) Maven vs. IDE, Make, Ant
+5.1) - shell script (require shell skills, error-prone) -> Make (target/prerequisite/shell command) -> Ant (java version of make)  -> reuse Ant script -> standardized ant script -> Maven (standardize build process/plugins/convention) -> Gradle (integrated dependency management/groovy)
+
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+1) Maven主要服务于基于Java平台的项目构建、依赖管理和项目信息管理
+2) Build: 除了编写源代码，我们每天有相当一部分时间花在了Compiling、unit testing、documentation、packaging and deployment等烦琐且不起眼的工作上，这就是构建
+3) Build autotation: 如果我们现在还手工这样做，那成本也太高了，于是有人用软件的方法让这一系列工作完全自动化，使得软件的构建可以像全自动流水线一样，只需要一条简单的命令，所有烦琐的步骤都能够自动完成，很快就能得到最终结果。
+4) Why Maven?: automate build process，从clean, compile, test, generate report, package and deploy. No need to enter command again and again, just use Maven配置好项目，then use mvn clean  install.., Maven会帮我们处理那些烦琐的任务。
+5) Maven是跨平台的，这意味着无论是在Windows上，还是在Linux或者Mac上，都可以使用同样的命令。
+6) Maven最大化地消 除了构建的重复，抽象了构建生命周期，并且为绝大部分的构建任务提供了已实现的插件，我们不再需要定义过程，甚至不需要
+再去实现这些过程中的一些任务。
+7) 最简单的例子是测试，我们没必要告诉Maven去测试，更不需要告诉Maven如何运行测试，只需要遵循Maven的约定编写好测试用例，当我们运行构建的时候，这些测试便会自动运行。
+8) Maven抽象了一个完整的构建生命周期模型，这个模型吸取了大量其他的构建脚本和构建工具的优点，总结了大量项目的实际需求。如果遵循这个模型，可以避免很多不必要的错误，可以直接使用大量成熟的Maven插件来完成我们的任务（很多时候我们可能都不知道自己在使用Maven插件）。
+9) 此外，如果有非常特殊的需求，我们也可以轻松实现自己的插件。
+10) Maven还有一个优点，它能帮助我们标准化构建过程, 构建步骤和构建命令都是简单一致
+
+#Maven不仅仅是构建工具
+- Maven提 供了一个优秀的解决方案，它通过一个坐标系统准确地定位每一个构件（artifact），也就是通过一组坐标Maven能够找到任何一个Java类库（如jar文件）。
+- Maven给这个类库世界引入了经纬，让它们变得有秩序，于是我们可以借助它来有序地管理依赖，轻松地解决那些繁杂的依赖问题。
+- Maven还能帮助我们管理原本分散在项目中各个角落的项目信息，包括项目描述、开发者列表、版本控制系统地址、许可证、缺陷管理系统地址等
+- 除了直接的项目信息，通过Maven自动生成的站点，以及一些已有的插件，我们还能够轻松获得项目文档、测试报告、静态分析报告、源码版本日志报告等非常具有价值的项目信息。
+- Maven还为全世界的Java开发者提供了一个免费的中央仓库，在其中几乎可以找到任何的流行开源类库。通过一些Maven的衍生工具（如Nexus），我们还能对其进行快速地搜索。只要定位了坐标，Maven就能够帮我们自动下载，省去了手工劳动。
+- Maven对于项目目录结构、测试用例命名方式等内容都有既定的规则，只要遵循了这些成熟的规则，用户在项目间切换的时候就免去了额外的学习成本，可以说是约定优于配置（Convention Over Configuration）。
+
+#Maven vs. IDE, Make, Ant
+- Maven vs. custom script:用脚本建立高度自定义的构建系统就像买组装PC，耗时费力，结果也不一定很好。使用Maven就像购买品牌PC，省时省力，并能得到成熟的构建系统，还能得到来自于Maven社区的大量支持。
+- Maven vs. IDE: IDE依赖大量的手工操作。编译、测试、代码生成等工作都是相互独立的，很难一键完成所有工作;很难在项目中统一所有的IDE配置; 而且主流IDE都集成了Maven，我们可以在IDE中方便地运行Maven执行构建。
+- Maven vs Make: Make通过一系列目标和依赖将整个构建过程串联起来，同时利用本地命令完成每个目标的实际行为;Make的强大之处在于
+它可以利用所有系统的本地命令，尤其是UNIX/Linux系统，丰富的功能、强大的命令能够帮助Make快速高效地完成任务;但是，Make将自己和操作系统绑定在一起了。也就是说，使用Make，就不能实现（至少很难）跨平台的构建
+- Ant: Ant不是指蚂蚁，而是意指“另一个整洁的工具”（Another Neat Tool)创作它的动机就是因为受不了Makefile的语法格式。 我们可以将Ant看成是一个Java版本的Make，也正因为使用了Java，Ant是跨平台的。此外，Ant使用XML定义构建脚本，相对于Makefile来说，这也更加友好。 
+- 与Make类似，Ant有一个构建脚本build.xml, build.xml的基本结构也是目标（target）、依赖（depends），以及实现目标的任务。
+- Ant有大量内置的用Java实现的任务，这保证了其跨平台的特质，同时，Ant也有特殊的任务exec来执行本地命令。
+- 和Make一样，Ant也都是过程式的，开发者显式地指定每一个目标，以及完成该目标所需要执行的任务。针对每一个项目，开发者都需要重新编写这一过程，这里其实隐含着很大的重复
+- Ant打包，无非就是创建目录，复制文件，编译源代码，使用一堆任务，如copydir、fileset、classpath、ref、target，然后再jar、zip、war，打包就成功了。
+- Maven是声明式的，项目构建过程和过程各个阶段所需的工作都由插件实现，并且大部分插件都是现成的，开发者只需要声明项目的基本元素，Maven就执行内置的、完整的构建过程。这在很大程度上消除了重复。
+- shell script (require shell skills) -> Make (target/prerequisite/shell command) -> Ant (java version of make)  -> reuse Ant script -> standardized ant script -> Maven (standardize build process/plugins/convention) -> Gradle (integrated dependency management/groovy)
+
+#Gradle
+1.一种可切换的，像maven一样的基于约定的构建框架，却又从不锁住你（约定优于配置）
+2. 强大的支持多工程的构建
+3. 强大的依赖管理（基于Apache Ivy），提供最大的便利去构建你的工程
+4. 全力支持已有的Maven或者Ivy仓库基础建设, 支持多方式依赖管理：包括从maven远程仓库、nexus私服、ivy仓库以及本地文件系统的jars或者dirs
+5. 支持传递性依赖管理，在不需要远程仓库和pom.xml和ivy配置文件的前提下
+6 基于groovy脚本构建，其build脚本使用groovy语言编写
+7 具有广泛的领域模型支持你的构建
+
+
+#Maven与XP(SCRUM as well)
+- 测试驱动开发 （TDD）
+- 十分钟构建
+- 持续集成
+- 富有信息的工作区
+
+#Maven's problem
+- “Maven对于IDE（如Eclipse和IDEA）的支持较差，bug多，而且不稳定。”
+- “Maven采用了一个糟糕的插件系统来执行构建，新的、破损的插件会让你的构建莫名其妙地失败。”
+- “Maven过于复杂，它就是构建系统的EJB 2。”
+- “Maven的仓库十分混乱，当无法从仓库中得到需要的类库时，我需要手工下载复制到本地仓库中。”
+- “缺乏文档是理解和使用Maven的一个主要障碍！”
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Chapter 2 Maven的安装和配置
+总而言之
+1）install JDK/JDK_HOME/path
+2）install Maven/MAVEN_HOME/path
+3) super POM: $MAVEN_HOME/lib/maven-model-builder-3.5.0.jar的\org\apache\maven\model\pom-4.0.0.xml.
+4) ~/.m2: 默认情况下，该文件夹下放置了Maven本地仓库.m2/repository
+5) 所有的Maven构件(plugins and dependency)都被存储到该仓库中，以方便重用。
+6) 大多数Maven用户需要复制MAVEN_HOME/conf/settings.xml文件到~/.m2/settings.xml。
+7) http proxy: 有时候你所在的公司基于安全因素考虑，要求你使用通过安全认证的代理访问因特网, edit <proxies><proxy>...</proxy></proxies> in settings.xml
+8) best practices: 
+8.1) 设置MAVEN_OPTS环境变量: 通常需要设置MAVEN_OPTS的值为-Xms128m-Xmx512m，因为Java默认的最大可用内存往往不能够满足Maven运行的需要，比如在项目较大时，使用Maven生成项目站点需要占用大量的内存，如果没有该配置，则很容易得到java.lang.OutOfMemeoryError。参考前面设置MAVEN_HOME环境变量的做法.
+8.2) 配置用户范围settings.xml: 主要是为了避免无意识地影响到系统中的其他用户；配置用户范围settings.xml文件还便于Maven升级。
+8.3）不要使用IDE内嵌的Maven
+- 应该在IDE中配置Maven插件时使用与命令行一致的Maven。
+9) maven最重要的配置文件： settings.xml, pom.xml, super pom
+9.1) super pom: global level config, such as central repository, default plugin??, default plugin config??
+9.2）settings.xml: global level or user level custom settings, such as local repository, http proxy, server authentication(for remote dependency repository and distribution repository), mirrors of repository, remote repositories(dependency and plugin) other than central...
+9.3) pom.xml: project level config: artifact coordinate, dependency, plugins, remote repositories(dependency and plugin) other than central， distributionManagement/repository
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#在Windows上安装Maven
+1) 安装JDK， JAVA_HOME， path
+echo %JAVA_HOME%
+echo %path%
+java -version
+2) download Maven apache-maven-3.X-bin.zip
+3) install Maven: 
+echo %MAVEN_HOME%
+add %MAVEN_HOME%\bin to path variable
+mvn -v
+4) upgrade Maven:
+**down and install new version. change MAVEN_HOME to point to the new version.
+
+#Unix installation
+1) 安装JDK， JAVA_HOME， path
+echo $JAVA_HOME
+echo $path
+java -version
+2) download apache-maven-3.x-bin.tar.gz
+- tar -xvzf apache-maven-3.x-bin.tar.gz
+3) install Maven: 
+- 虽然直接使用该目录配置环境变量之后就能使用Maven了，但这里的推荐做法是，在安装目录旁平行地创建一个符号链接，以方便日后的升级：
+ln -s apache-maven-3.0 apache-maven
+export MAVEN_HOME=/home/atwjsw/bin/apache-maven （MAVEN_HOME指向符号链接）
+export PATH=$PATH:$MAVEN_HOME/bin
+echo $MAVEN_HOME
+mvn -v
+- 一般来说，需要将这两行命令加入到系统的登录shell脚本中去，以Ubuntu 8.10为例，编辑~/.bashrc文件，添加这两行命令。这
+样，每次启动一个终端，这些配置就能自动执行。
+4) upgrade Maven:
+**download and install new version. change MAVEN_HOME to point to the new version.
+- 在基于UNIX的系统上，可以利用符号链接这一工具来简化Maven的升级，不必像在Windows上那样，每次升级都必须更新环境变量。
+- 假设需要升级到新的Maven 3.1版本，将安装包解压到与前一版本平行的目录下，然后更新符号链接指向3.1版的目录便可：
+rm apache-maven
+ln -s apache-maven-3.1 apache-maven
+
+#安装目录分析
+- bin：该目录包含了mvn运行的脚本，这些脚本用来配置Java命令，准备好classpath和相关的Java系统属性，然后执行Java命
+令。 其中mvn是基于UNIX平台的shell脚本，mvn.bat是基于Windows平台的bat脚本。该目录还包含了mvnDebug和mvnDebug.bat两个文件，mvnDebug多了一条MAVEN_DEBUG_OPTS配置，其作用就是在运行Maven时开启debug，以便调试Maven本身。此外，该目录还包含m2.conf文件，这是classworlds的配置文件，后面会介绍classworlds。
+- boot：该目录只包含一个文件plexus-classworlds-2.2.3.jar。 plexus-classworlds是一个类加载器框
+架，相对于默认的java类加载器，它提供了更丰富的语法以方便配置，Maven使用该框架加载自己的类库。对于一般的Maven用户来说，不必关心该文件- conf：该目录包含了一个非常重要的文件settings.xml。直接修改该文件，就能在机器上全局地定制Maven的行为。一般情况
+下，我们更偏向于复制该文件至~/.m2/目录下（~表示用户目录），然后修改该文件，在用户范围定制Maven的行为。后面将会多
+次提到settings.xml，并逐步分析其中的各个元素。
+- lib：该目录包含了所有Maven运行时需要的Java类库，Maven本身是分模块开发的，因此用户能看到诸如maven-core-3.0.jar、
+maven-model-3.0.jar之类的文件。此外，这里还包含一些Maven用到的第三方依赖，如common-cli-1.2.jar、google-collection-1.0.jar
+等。 可以说，lib目录就是真正的Maven。关于该文件，还有一点值得一提的是，用户可以在这个目录中找到Maven内置的超级POM，
+
+#~/.m2
+- 在用户目录下可以发现.m2文件夹。默认情况下，该文件夹下放置了Maven本地仓库.m2/repository。
+- 所有的Maven构件都被存储到该仓库中，以方便重用。可以到~/.m2/repository/org/apache/maven/plugins/maven-help-plugins/目录下找到刚才下载的maven-helpplugin的pom文件和jar文件。Maven根据一套规则来确定任何一个构件在仓库中的位置，
+- 默认情况下，~/.m2目录下除了repository仓库之外就没有其他目录和文件了，不过大多数Maven用户需要复制M2_HOME/conf/settings.xml文件到~/.m2/settings.xml。
+
+#设置HTTP代理
+- 有时候你所在的公司基于安全因素考虑，要求你使用通过安全认证的代理访问因特网。这种情况下，就需要为Maven配置
+HTTP代理，才能让它正常访问外部仓库，以下载所需要的资源。
+- 如果真的需要代理，先检查一下代理服务器是否畅通。比如现在有一个IP地址为218.14.227.197，端口为3128的代理服务，我们可以运行telnet
+218.14.227.1973128来检测该地址的该端口是否畅通。
+- 检查完毕之后，编辑~/.m2/settings.xml文件（如果没有该文件，则复制＄MAVEN_HOME/conf/settings.xml）。添加代理配置如下：
+<proxies>
+	<proxy>
+		<id>my-proxy</id>
+		...
+	</proxy>		
+</proxies>
+
+#安装m2eclipse
+- 由Maven之父Jason sVan Zyl创立的Sonatype公司建立了m2eclipse项目。这是Eclipse下的一款十分强大的Maven插件
+
+#Maven安装最佳实践
+#设置MAVEN_OPTS环境变量
+- 前面介绍Maven安装目录时我们了解到，运行mvn命令实际上是执行了Java命令，既然是运行Java，那么运行Java命令可用的参数当然也应该在运行mvn命令时可用。这个时候，MAVEN_OPTS环境变量就能派上用场。
+- 通常需要设置MAVEN_OPTS的值为-Xms128m-Xmx512m，因为Java默认的最大可用内存往往不能够满足Maven运行的需要，比如在项目较大时，使用Maven生成项目站点需要占用大量的内存，如果没有该配置，则很容易得到java.lang.OutOfMemeoryError。因此，一开始就配置该变量是推荐的做法。
+- 关于如何设置环境变量，请参考前面设置MAVEN_HOME环境变量的做法，尽量不要直接修改mvn.bat或者mvn这两个Maven执行脚本文件。因为如果修改了脚本文件，升级Maven时就不得不再次修改，一来麻烦，二来容易忘记。同理，应该尽可能地不去修改任何Maven安装目录下的文件。
+
+#配置用户范围settings.xml
+- Maven用户可以选择配置＄MAVEN_HOME/conf/settings.xml或者~/.m2/settings.xml。前者是全局范围的，整台机器上的所有用户都会
+直接受到该配置的影响，而后者是用户范围的，只有当前用户才会受到该配置的影响。
+- 推荐使用用户范围的settings.xml，主要是为了避免无意识地影响到系统中的其他用户。如果有切实的需求，需要统一系统中所有用户的settings.xml配置，当然应该使用全局范围的settings.xml。
+- 除了影响范围这一因素，配置用户范围settings.xml文件还便于Maven升级。直接修改conf目录下的settings.xml会导致Maven升级不便，每次升级到新版本的Maven，都需要复制settings.xml文件。如果使用~/.m2目录下的settings.xml，就不会影响到Maven安装文件，升级时就不需要触动settings.xml文件。
+
+#不要使用IDE内嵌的Maven
+- 应该在IDE中配置Maven插件时使用与命令行一致的Maven。
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Chapter3 Maven使用入门
+总而言之
+1）就像Make的Makefile、Ant的build.xml一样，Maven项目的核心是pom.xml
+2）POM（Project Object Model，项目对象模型）定义了项目的基本信息（coordinate...），用于描述项目如何构建(build/plugin)，声明项目依赖(depndency)
+3) 代码的第一行是XML头，指定了该xml文档的版本和编码方式
+4) project是所有pom.xml的根元素，它还声明了一些POM相关的命名空间及xsd元素，虽然这些属性不是必须的，但使用这些属性能够让第三方工具（如IDE中的XML编辑器）帮助我们快速编辑POM。
+5) project info:
+5.1) modelVersion指定了当前POM模型的版本，对于Maven 2及Maven 3来说，它只能是4.0.0
+5.2) groupId、artifactId和version的三行。这三个元素定义了一个项目基本的坐标
+5.2.1) groupId: Maven项目属于哪个组, org.springframework, org.junit, com.googlecode.myapp, org.atwjsw.mia...
+5.2.2) artifactId: 定义了当前Maven项目在组中唯一的ID，spring-webmvc, spring-core, spring-context...
+5.2.3) version: 指定了项目当前的版本——1.0-SNAPSHOT。SNAPSHOT意为快照，说明该项目还处于开发中，是不稳定的版本。随着项目的发展，version会不断更新，如升级为1.0、1.1-SNAPSHOT、1.1、2.0等
+5.2.4) name: 声明了一个对于用户更为友好的项目名称，虽然这不是必须的，但还是推荐为每个POM声明name，以方便信息交流。
+6) source structure: 
+6.1) 项目主代码和测试代码不同，项目的主代码会被打包到最终的构件中（如jar），而测试代码只在运行测试时用到，不会被打包。
+6.2) 在绝大多数情况下，应该把项目主代码放到src/main/java/目录下（遵循Maven的约定），而无须额外的配置，Maven会自动搜寻该目录找到项目主代码。
+6.3) Java类的包名使用groupId+artifactId, e.g. org.springframework.spring-core, 一般来说，项目中Java类的包都应该基于项目的groupId和artifactId，这样更加清晰，更加符合逻辑，也方便搜索构件或者Java类。
+6.4) 测试代码: 为了使项目结构保持清晰，主代码与测试代码应该分别位于独立的目录中, Maven项目中默认的测试代码目录是src/test/java。
+7) dependency:
+7.1) In pom.xml: add<dependencies><dependency>....</dependency></dependencies>
+7.2) scope为依赖范围，若依赖范围为test则表示该依赖只对测试有效。 
+7.3) 换句话说，测试代码中的import JUnit代码是没有问题的，但是如果在主代码中用import JUnit代码，就会造成编译错误。
+7.4) 如果不声明依赖范围，那么默认值就是compile，表示该依赖对主代码和测试代码都有效。
+7.5) Maven就能够自动下载junit-4.12.jar。在Maven之前，可以去JUnit的官方网站下载分发包，有了Maven，它会自动访问中央仓库（http://repo1.maven.org/maven2/ ），下载需要的文件。
+7.6) 可以自己访问该仓库，打开路径junit/junit/4.7/，就能看到junit-4.12.pom和junit-4.12.jar
+8) compile: 执行mvn clean compile
+8.1) clean告诉Maven删除输出目录target/，默认情况下， Maven构建的所有输出都在target/目录中
+8.2）接着执行resources：resources任务（未定义项目资源，暂且略过）； 
+8.3）compile告诉Maven编译项目主代码。 执行compiler：compile任务， 将项目主代码编译至target/classes目录（编译好的类为org/atwjsw/mia/helloworld/HelloWorld.Class）。
+8.4）上文提到的clean：clean、resources：resources和compiler：compile对应了一些Maven插件及插件目标，比如clean：clean是clean插
+件的clean目标，compiler：compile是compiler插件的compile目标
+8.5）clean插件： maven-clean-plugin:2.5:clean (default-clean) @ hello-world 
+8.6）resources插件： maven-resources-plugin:2.6:resources (default-resources) @ hello-world 
+8.7）compiler插件： maven-compiler-plugin:3.1:compile (default-compile) @ hello-world
+9）test: 执行mvn clean test
+9.1) steps
+clean:clean 
+resoueces:resources 
+compiler:compile
+*resource:testResouces maven-resources-plugin:2.6:testResources (default-testResources) @ hello-world ---
+*compile:testCompile   maven-compiler-plugin:3.1:testCompile (default-testCompile) @ hello-world ---
+*surefire:test       maven-surefire-plugin:2.12.4:test (default-test) @ hello-world ---
+9.2) 在Maven执行测试（test）之前，它会先自动执行项目主资源处理、主代码编译、测试资源处理、测试代码编译等工作，这是Maven生命周期的一个特性
+9.3 配置maven-compiler-plugin支持Java 5 (由于Maven3.0默认支持JDK1.3，而junit4需要@Test annotation)
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-compiler-plugin</artifactId>
+  <configuration>
+    <source>1.5</source>
+    <target>1.5</target>
+  </configuration>
+</plugin>
+10) package: mvn clean package
+10.1) POM中没有指定打包类型，使用默认打包类型jar。\
+10.2) steps： 比test多一步jar:jar 
+clean:clean       
+resoueces:resources   
+compiler:compile    
+resource:testResouces 
+compile:testCompile   
+surefire:test
+jar:jar         maven-jar-plugin:2.4:jar (default-jar) @ hello-world
+10.3） jar：jar任务负责打包，实际上就是jar插件的jar目标，将项目主代码打包成一个名为hello-world-1.0-SNAPSHOT.jar的文件。
+10.4）该文件也位于target/输出目录中，它是根据artifact-version.jar规则进行命名的，如有需要，还可以使用finalName来自定义该文件的名称.
+11）install: mvn clean install
+11.1) 为了让其他的Maven项目直接引用这个jar，还需要一个安装的步骤：
+11.2) steps: 比package多一步install:install
+clean:clean       
+resoueces:resources   
+compiler:compile    
+resource:testResouces 
+compile:testCompile   
+surefire:test
+jar:jar
+install:install maven-install-plugin:2.4:install (default-install) @ hello-world
+11.3) 该任务将项目输出的jar安装到了Maven本地仓库中，可以打开相应的文件夹看到HelloWorld项目的pom和jar。
+11.4) 只有构件被下载到本地仓库后，才能由所有Maven项目使用, 也只有将HelloWorld的构件安装到本地仓库之后，其他Maven项目才能使用它。
+12) run: 
+12.1) 默认打包生成的jar是不能够直接运行的，因为带有main方法的类信息不会添加到manifest中（打开jar文件中的META-INF/MANIFEST.MF文件， 将无法看到Main-Class一行）
+12.2)为了生成可执行的jar文件，需要借助maven-shade-plugin，replacing original artifact with shaded artifact：
+<plugin>
+   <groupId>org.apache.maven.plugins</groupId>
+   <artifactId>maven-shade-plugin</artifactId>
+   <version>1.2.1</version>
+   <executions>
+     <execution>
+       <phase>package</phase>
+       <goals>
+         <goal>shade</goal>
+       </goals>
+       <configuration>
+         <transformers>
+           <transformplementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+             <mainClass>org.atwjsw.mia.helloworld.HelloWorld</mainClass>
+           </transformer>
+         </transformers>
+       </configuration>
+     </execution>
+   </executions>
+</plugin>
+12.3) mvn clean install
+clean:clean             
+resoueces:resources     
+compiler:compile        
+resource:testResouces   
+compile:testCompile     
+surefire:test
+jar:jar
+shade:shade maven-shade-plugin:1.2.1:shade (default) @ hello-world
+install:install 
+12.4) plugin元素在POM中的相对位置应该在<project><build><plugins>下面。 我们配置了mainClass为 org.atwjsw.mia.helloworld.HelloWorld， 项目在打包时会将该信息放到MANIFEST中。
+12.5) java -jar target/hello-world-1.0-SNAPSHOT.jar => Hello Maven, 
+12.6) 否则需要按如下方式运行: java -classpath target/hello-world-1.0-SNAPSHOT.jar org.atwjsw.mia.helloworld.HelloWorld
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- 如果你是初次接触Maven，建议按照本章的内容一步步地编写代码并执行，其中可能你会碰到一些概念暂时难以理解，不用着急，记下这些疑难点，相信本书的后续章节会帮你逐一解答。
+- 就像Make的Makefile、Ant的build.xml一样，Maven项目的核心是pom.xml
+- POM（Project Object Model，项目对象模型）定义了项目的基本信息，用于描述项目如何构建，声明项目依赖，等等。
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.atwjsw.mia</groupId>
+    <artifactId>hello-world</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>Maven Hello World Project</name>  
+</project>
+- 代码的第一行是XML头，指定了该xml文档的版本和编码方式。
+- 紧接着是project元素，project是所有pom.xml的根元素，它还声明了一些POM相关的命名空间及xsd元素，虽然这些属性不是必须的，但使用这些属性能够让第三方工具（如IDE中的XML编辑器）帮助我们快速编辑POM。
+- 根元素下的第一个子元素modelVersion指定了当前POM模型的版本，对于Maven 2及Maven 3来说，它只能是4.0.0。
+- 最重要的是包含groupId、artifactId和version的三行。这三个元素定义了一个项目基本的坐标，在Maven的世界，任何的jar、pom或者war都是以基于这些基本的坐标进行区分的。
+- groupId定义了项目属于哪个组，这个组往往和项目所在的组织或公司存在关联。譬如在googlecode上建立了一个名为myapp的项目，那么groupId就应该是com.googlecode.myapp，如果你的公司是mycom，有一个项目为myapp，那么groupId就应该是com.mycom.myapp。本书中所有的代码都基于groupId com.juvenxu.mvnbook。
+- artifactId定义了当前Maven项目在组中唯一的ID，而在前面的groupId为com.googlecode.myapp的例子中，你可能会为不同的子项目（模块）分配artifactId，如myapp-util、myapp-domain、myapp-web等。
+- version指定了Hello World项目当前的版本——1.0-SNAPSHOT。SNAPSHOT意为快照，说明该项目还处于开发中，是不稳定的版本。随着项目的发展，version会不断更新，如升级为1.0、1.1-SNAPSHOT、1.1、2.0等。
+- 最后一个name元素声明了一个对于用户更为友好的项目名称，虽然这不是必须的，但还是推荐为每个POM声明name，以方便信息交流。
+- 没有任何实际的Java代码，我们就能够定义一个Maven项目的POM，这体现了Maven的一大优点，它能让项目对象模型最大程度地与实际代码相独立，我们可以称之为解耦，或者正交性。这在很大程度上避免了Java代码和POM代码的相互影响。比如当项目需要升级版本时，只需要修改POM，而不需要更改Java代码；而在POM稳定之后，日常的Java代码开发工作基本不涉及POM的修改。
+
+#编写主代码
+- 项目主代码和测试代码不同，项目的主代码会被打包到最终的构件中（如jar），而测试代码只在运行测试时用到，不会被打包。默认情况下，Maven假设项目主代码位于src/main/java目录，我们遵循Maven的约定，创建该目录，然后在该目录下创建文件com/juvenxu/mvnbook/helloworld/HelloWorld.java，
+package com.juvenxu.mvnbook.helloworld;
+
+public class HelloWorld {
+
+	public String sayHello()
+	{
+		return "Hello Maven";
+	}
+	
+	public static void main(String[] args)
+	{
+		System.out.print( new HelloWorld().sayHello() );
+	}
+}
+- 在绝大多数情况下，应该把项目主代码放到src/main/java/目录下（遵循Maven的约定），而无须额外的配置，Maven会自动搜寻该目录找到项目主代码。
+- 其次，该Java类的包名是org.atwjsw.mia.helloworld，这与之前在POM中定义的groupId和artifactId相吻合。一般来说，项目中Java类的包都应该基于项目的groupId和artifactId，这样更加清晰，更加符合逻辑，也方便搜索构件或者Java类。
+
+- 执行mvn clean compile
+- clean告诉Maven清理输出目录target/，从输出中看到Maven首先执行了clean：clean任务，删除target/目录, 默认情况下， Maven构建的所有输出都在target/目录中
+- 接着执行resources：resources任务（未定义项目资源，暂且略过）； 
+- compile告诉Maven编译项目主代码。 最后执行compiler：compile任务， 将项目主代码编译至target/classes目录（编译好的类为org/atwjsw/mia/helloworld/HelloWorld.Class）。
+- 上文提到的clean：clean、resources：resources和compiler：compile对应了一些Maven插件及插件目标，比如clean：clean是clean插
+件的clean目标，compiler：compile是compiler插件的compile目标
+- maven-clean-plugin:2.5:clean (default-clean) @ hello-world 
+- maven-resources-plugin:2.6:resources (default-resources) @ hello-world 
+- maven-compiler-plugin:3.1:compile (default-compile) @ hello-world
+
+#编写测试代码
+- 为了使项目结构保持清晰，主代码与测试代码应该分别位于独立的目录中。
+- Maven项目中默认的主代码目录是src/main/java，对应地，Maven项目中默认的测试代码目录是src/test/java。
+- 添加junit
+<dependencies>
+  <dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <version>4.12</version>
+    <scope>test</scope>
+  </dependency>
+</dependencies> 
+- 有了这段声明，Maven就能够自动下载junit-4.7.jar。在Maven之前，可以去JUnit的官方网站下载分发包，有了Maven，它会自动访问中央仓库（http://repo1.maven.org/maven2/ ），下载需要的文件。
+- 可以自己访问该仓库，打开路径junit/junit/4.7/，就能看到junit-4.7.pom和junit-4.7.jar
+- 上述POM代码中还有一个值为test的元素scope，scope为依赖范围，若依赖范围为test则表示该依赖只对测试有效。 
+- 换句话说，测试代码中的import JUnit代码是没有问题的，但是如果在主代码中用import JUnit代码，就会造成编译错误。
+- 如果不声明依赖范围，那么默认值就是compile，表示该依赖对主代码和测试代码都有效。
+- create test class:
+package org.atwjsw.mia.helloworld;
+
+import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+
+public class HelloWorldTest
+{
+    @Test
+    public void testSayHello()
+    {
+        HelloWorld helloWorld = new HelloWorld();
+
+        String result = helloWorld.sayHello();
+
+        assertEquals( "Hello Maven", result );
+    }
+}
+- 一个典型的单元测试包含三个步骤：①准备测试类及数据；②执行要测试的行为；③检查结果。
+- mvn clean test
+clean:clean 			maven-clean-plugin:2.5:clean (default-clean) @ hello-world ---
+resoueces:resources 	maven-resources-plugin:2.6:resources (default-resources) @ hello-world ---
+compiler:compile 		maven-compiler-plugin:3.1:compile (default-compile) @ hello-world ---
+resource:testResouces	maven-resources-plugin:2.6:testResources (default-testResources) @ hello-world ---
+compile:testCompile 	maven-compiler-plugin:3.1:testCompile (default-testCompile) @ hello-world ---
+surefire:test 			maven-surefire-plugin:2.12.4:test (default-test) @ hello-world ---
+- 在Maven执行测试（test）之前，它会先自动执行项目主资源处理、主代码编译、测试资源处理、测试代码编译等工作，这是Maven生命周期的一个特性
+- 由于历史原因，Maven的核心插件之一——compiler插件默认只支持编译Java 1.3，因此需要配置该插件使其支持Java 5
+2015-11-14	3.3.9	Java 7
+2014-12-20	3.2.5	Java 6
+2013-10-04	3.1.1	Java 5
+- 配置maven-compiler-plugin支持Java 5
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-compiler-plugin</artifactId>
+  <configuration>
+    <source>1.5</source>
+    <target>1.5</target>
+  </configuration>
+</plugin>
+
+#打包和运行
+- 将项目进行编译、测试之后，下一个重要步骤就是打包（package）。
+- Hello World的POM中没有指定打包类型，使用默认打包类型jar。
+- mvn clean package
+clean:clean 			
+resoueces:resources 	
+compiler:compile 		
+resource:testResouces	
+compile:testCompile 	
+surefire:test
+jar:jar  				maven-jar-plugin:2.4:jar (default-jar) @ hello-world
+- Maven会在打包之前执行编译、测试等操作。这里看到jar：jar任务负责打包，实际上就是jar插件的jar目标将项目主代码打包成一个名为hello-world-1.0-SNAPSHOT.jar的文件。
+- 该文件也位于target/输出目录中，它是根据artifact-version.jar规则进行命名的，如有需要，还可以使用finalName来自定义该文件的名称.
+
+#install
+- 我们得到了项目的输出，如果有需要的话，就可以复制这个jar文件到其他项目的Classpath中从而使用HelloWorld类。
+- 如何才能让其他的Maven项目直接引用这个jar呢？还需要一个安装的步骤，执行mvn clean install：
+mvn clean install
+clean:clean 			
+resoueces:resources 	
+compiler:compile 		
+resource:testResouces	
+compile:testCompile 	
+surefire:test
+jar:jar
+install:install maven-install-plugin:2.4:install (default-install) @ hello-world
+- compile->test->package->install
+- 该任务将项目输出的jar安装到了Maven本地仓库中，可以打开相应的文件夹看到HelloWorld项目的pom和jar。
+- 只有构件被下载到本地仓库后，才能由所有Maven项目使用，只有将HelloWorld的构件安装到本地仓库之后，其他Maven项目才能使用它。
+
+#run
+- 默认打包生成的jar是不能够直接运行的，因为带有main方法的类信息不会添加到manifest中（打开jar文件中的META-INF/MANIFEST.MF文件，将无法看到Main-Class一行）
+- 为了生成可执行的jar文件，需要借助maven-shade-plugin，Replacing original artifact with shaded artifact：
+<plugin>
+   <groupId>org.apache.maven.plugins</groupId>
+   <artifactId>maven-shade-plugin</artifactId>
+   <version>1.2.1</version>
+   <executions>
+     <execution>
+       <phase>package</phase>
+       <goals>
+         <goal>shade</goal>
+       </goals>
+       <configuration>
+         <transformers>
+           <transformplementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+             <mainClass>org.atwjsw.mia.helloworld.HelloWorld</mainClass>
+           </transformer>
+         </transformers>
+       </configuration>
+     </execution>
+   </executions>
+</plugin>
+- mvn install again
+clean:clean             
+resoueces:resources     
+compiler:compile        
+resource:testResouces   
+compile:testCompile     
+surefire:test
+jar:jar
+shade:shade maven-shade-plugin:1.2.1:shade (default) @ hello-world
+install:install 
+- plugin元素在POM中的相对位置应该在<project><build><plugins>下面。我们配置了mainClass为 org.atwjsw.mia.helloworld.HelloWorld，项目在打包时会将该信息放到MANIFEST中。
+- java -jar target/hello-world-1.0-SNAPSHOT.jar => Hello Maven, 否则需要按如下方式运行
+- java -classpath target/hello-world-1.0-SNAPSHOT.jar org.atwjsw.mia.helloworld.HelloWorld
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#使用Archetype生成项目骨架
+总而言之 (Archetype)
+1) Maven的约定在项目的根目录中放置pom.xml，在src/main/java目录中放置项目的主代码，在src/test/java中放置项目的测试代码。
+2) 这些基本的目录结构和pom.xml文件内容称为项目的骨架，为了避免重复创建基本结构，Maven提供了Archetype可以帮助我们迅速地构建起项目的骨架
+3) 使用maven archetype来创建该项目的骨架, 实际上是在运行插件maven-archetype-plugin： mvn archetype:generate
+archetype:generate          maven-archetype-plugin:3.0.1:generate (default-cli) @ standalone-pom
+4) Archetype插件将根据我们提供的信息创建项目骨架。在当前目录下，Archetype插件会创建一个名为hello-world（我们定义的artifactId）的子目录，
+5) 从中可以看到项目的基本结构：基本的pom.xml已经被创建，里面包含了必要的信息以及一个junit依赖；主代码目录src/main/java已经被创建，在该目录下还有一个Java类org.atwjsw.mia.helloworld.App，注意这里使用到了刚才定义的包名，而这个类也仅仅只有一个简单的输出Hello World！的main方法； 测试代码目录src/test/java也被创建好了，并且包含了一个测试用例org.atwjsw.mia.helloworld.AppTest。
+6) 如果有很多项目拥有类似的自定义项目结构以及配置文件，则完全可以一劳永逸地开发自己的Archetype，然后在这些项目中使用自定义的Archetype来快速生成项目骨架。
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- Hello World项目中有一些Maven的约定：在项目的根目录中放置pom.xml，在src/main/java目录中放置项目的主代码，在src/test/java中放置项目的测试代码。
+- 我们称这些基本的目录结构和pom.xml文件内容称为项目的骨架，为了避免重复创建基本结构，Maven提供了Archetype可以帮助我们迅速地构建起项目的骨架
+- 使用maven archetype来创建该项目的骨架, 实际上是在运行插件maven-archetype-plugin：
+mvn archetype:generate
+archetype:generate          maven-archetype-plugin:3.0.1:generate (default-cli) @ standalone-pom
+- Archetype插件将根据我们提供的信息创建项目骨架。在当前目录下，Archetype插件会创建一个名为hello-world（我们定义的artifactId）的子目录，从中可以看到项目的基本结构：基本的pom.xml已经被创建，里面包含了必要的信息以及一个junit依赖；主代码目录src/main/java已经被创建，在该目录下还有一个Java类org.atwjsw.mia.helloworld.App，注意这里使用到了刚才定义的包名，而这个类也仅仅只有一个简单的输出Hello World！的main方法；测试代码目录src/test/java也被创建好了，并且包含了一个测试用例org.atwjsw.mia.helloworld.AppTest。
+- 如果有很多项目拥有类似的自定义项目结构以及配置文件，则完全可以一劳永逸地开发自己的Archetype，然后在这些项目中使用自定义的Archetype来快速生成项目骨架。
+
+#m2eclipse简单使用
+#导入Maven项目
+#创建Maven项目
+#运行mvn命令
+in idea, open maven project window
+- lifecycle 可以执行default goal
+- plugin 可以执行individual goal
+- Dependency可以看到transitive dependency
+- 可以下载documentation和source code， 这样ctrl B就可以看到source code
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Chapter4　背景案例
+- 简单的账户注册服务
+- 不过本书的目的不在这个功能本身，我们需要一个像模像样的、有很多模块的系统来演示Maven很多非常酷的特性，同时，又不想引入一个拥有成千上万行代码的过于庞大的系统
+
+Chapter5 坐标和依赖
+总而言之 （coordinate)
+1) Maven的一大功能是管理项目依赖。
+2) 坐标: 为了能自动化地解析任何一个Java构件，Maven就必须将它们唯一标识，这就依赖管理的底层基础——坐标。
+3) 世界上任何一个构件都可以使用Maven坐标唯一标识，Maven坐标的元素包括groupId、artifactId、version、packaging、classifier。
+4) 例如，当需要使用Java5平台上TestNG的5.8版时，就告诉Maven：“groupId=org.testng；artifactId=testng；version=5.8；classifier=jdk15”，Maven就会从仓库中寻找相应的构件供我们使用。
+5）in super POM, Maven内置了一个中央仓库的地址（http://repo1.maven.org/maven2), 包含了世界上大部分流行的开源项目构件， Maven会在需要的时候去那里下载
+6) 在我们开发自己项目的时候，也需要为其定义适当的坐标，这是Maven强制要求的。在这个基础上，其他Maven项目才能引用该项目生成的构件
+7) 坐标详解
+7.1) Maven坐标是通过一些元素定义的，groupId、artifactId、version、packaging、classifier。
+7.2) e.g. nexus-indexer的坐标定义，它是Nexus项目的一个子模块:
+<groupId>org.sonatype.nexus</groupId>
+<artifactId>nexus-indexer</artifactId>
+<version>2.0.0</version>
+<packaging>jar</packaging>
+没有classifier
+7.3) groupId: 定义当前Maven项目隶属的实际项目: e.g. org.springframework, org.sonatype.nexus
+7.4) artifactId： 该元素定义实际项目中的一个Maven项目（模块），推荐的做法是使用实际项目名称作为artifactId的前缀。 e.g. 上例中的artifactId是nexus-indexer, 考虑有5个项目，每个项目都有一个core模块，如果没有前缀，我们会看到很多core-1.2.jar这样的文件，加上实际项目名前缀之后，便能很容易区分foo-core-1.2.jar、bar-core-1.2.jar……
+7.4.1) 在默认情况下，Maven生成的构件，其文件名会以artifactId作为开头，如nexus-indexer-2.0.0.jar，使用实际项目名称作为前缀之后，就能方便从一个lib文件夹中找到某个项目的一组构件. 
+7.5)version：该元素定义Maven项目当前所处的版本，如上例中nexus-indexer的版本是2.0.0。Maven定义了一套完整的版本规范，以及SNAPSHOT的概念
+7.6) packaging： 该元素定义Maven项目的打包方式。 
+7.6.1) 打包方式通常与所生成构件的文件扩展名对应，如上例中packaging为jar，最终的文件名为nexus-indexer-2.0.0.jar， 而使用war打包方式的Maven 项目，最终生成的构件会有一个.war文件，不过这不是绝对的。
+7.6.2) 打包方式会影响到构建的生命周期，比如jar打包和war打包会使用不同的命令（plugin/goal）。 
+7.6.3) 当不定义packaging的时候， Maven会使用默认值jar。
+7.7) classifier： 该元素用来帮助定义构建输出的一些附属构件。
+7.7.1) 附属构件与主构件对应，如上例中的主构件是nexus-indexer-2.0.0.jar，该项目可能还会通过使用一些插件生成如nexus-indexer-2.0.0-javadoc.jar、nexus-indexer-2.0.0-sources.jar这样一些附属构件，其包含了Java文档和源代码。
+7.7.2) javadoc和sources就是这两个附属构件的classifier。
+7.7.3) 这样，附属构件也就拥有了自己唯一的坐标。
+7.7.4)不能直接定义项目的classifier，因为附属构件不是项目直接默认生成的，而是由附加的插件帮助生成。
+7.7.5) 一个关于classifier的典型例子是TestNG，TestNG的主构件是基于Java 1.4平台的，而它又提供了一个classifier为jdk5的附属构件。
+8) groupId、artifactId、version是必须定义的，packaging是可选的（默认为jar），而classifier是不能直接定义的。
+9) artifact的文件名是与坐标相对应的，一般的规则为artifactId-version［-classifier］.packaging，［-classifier］表示可选。
+10) packaging并非一定与构件扩展名对应，比如packaging为maven-plugin的构件扩展名为jar。
+11) Maven仓库的布局也是基于Maven坐标
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- Maven的一大功能是管理项目依赖。为了能自动化地解析任何一个Java构件，Maven就必须将它们唯一标识，这就依赖管理的底层基础——坐标。
+#何为Maven坐标
+- 对应于平面中的点和城市中的地址，Maven的世界中拥有数量非常巨大的构件，也就是平时用的一些jar、war等文件。在Maven为这些构件引入坐标概念之前，我们无法使用任何一种方式来唯一标识所有这些构件。
+- Maven定义了这样一组规则：世界上任何一个构件都可以使用Maven坐标唯一标识，Maven坐标的元素包括groupId、artifactId、version、packaging、
+classifier。现在，只要我们提供正确的坐标元素，Maven就能找到对应的构件。
+- 比如说，当需要使用Java5平台上TestNG的5.8版时，就告诉Maven：“groupId=org.testng；artifactId=testng；version=5.8；classifier=jdk15”，Maven就会从仓库中寻找相应的构件供我们使用。
+- Maven内置了一个中央仓库的地址（http://repo1.maven.org/maven2)，该中央仓库包含了世界上大部分流行的开源项目构件，Maven会在需要的时候去那里下载。
+- 在我们开发自己项目的时候，也需要为其定义适当的坐标，这是Maven强制要求的。在这个基础上，其他Maven项目才能引用该项目生成的构件
+
+#坐标详解
+- Maven坐标为各种构件引入了秩序，任何一个构件都必须明确定义自己的坐标，而一组Maven坐标是通过一些元素定义的，groupId、artifactId、version、packaging、classifier。
+- 这是nexus-indexer的坐标定义，nexus-indexer是一个对Maven仓库编纂索引并提供搜索功能的类库，它是Nexus项目的一个子模块。后面会详细介绍Nexus:
+<groupId>org.sonatype.nexus</groupId>
+<artifactId>nexus-indexer</artifactId>
+<version>2.0.0</version>
+<packaging>jar</packaging>
+没有classifier
+
+groupId： 
+- 定义当前Maven项目隶属的实际项目。 
+- Maven项目和实际项目不一定是一对一的关系。比如SpringFramework这一实际项目，其对应的Maven项目会有很多，如spring-core、spring-context等。
+- 其次，groupId不应该对应项目隶属的组织或公司. groupId的表示方式与Java包名的表示方式类似，通常与域名反向一一对应
+- 上例中，groupId为org.sonatype.nexus，org.sonatype表示Sonatype公司建立的一个非盈利性组织，nexus表示Nexus这一实际项目，该groupId与域名nexus.sonatype.org对应。
+
+artifactId： 
+- 该元素定义实际项目中的一个Maven项目（模块），推荐的做法是使用实际项目名称作为artifactId的前缀。 比如上例中的artifactId是nexus-indexer， 
+- 在默认情况下，Maven生成的构件，其文件名会以artifactId作为开头，如nexus-indexer-2.0.0.jar，使用实际项目名称作为前缀之后，就能方便从一个lib文件夹中找到某个项目的一组构件. 
+- 考虑有5个项目，每个项目都有一个core模块，如果没有前缀，我们会看到很多core-1.2.jar这样的文件，加上实际项目名前缀之后，便能很容易区分foo-core-1.2.jar、bar-core-1.2.jar……
+
+version： 该元素定义Maven项目当前所处的版本，如上例中nexus-indexer的版本是2.0.0。需要注意的是，Maven定义了一套完整的版本规范，以及快照（SNAPSHOT）的概念
+
+packaging： 该元素定义Maven项目的打包方式。
+- 首先，打包方式通常与所生成构件的文件扩展名对应，如上例中packaging为jar，最终的文件名为nexus-indexer-2.0.0.jar， 而使用war打包方式的Maven项目，最终生成的构件会有一个.war文件，不过这不是绝对的。
+- 其次，打包方式会影响到构建的生命周期，比如jar打包和war打包会使用不同的命令（plugin/goal）。 
+- 最后，当不定义packaging的时候， Maven会使用默认值jar。
+
+classifier： 该元素用来帮助定义构建输出的一些附属构件。
+- 附属构件与主构件对应，如上例中的主构件是nexus-indexer-2.0.0.jar，该项目可能还会通过使用一些插件生成如nexus-indexer-2.0.0-javadoc.jar、nexus-indexer-2.0.0-sources.jar这样一些附属构件，其包含了Java文档和源代码。
+- javadoc和sources就是这两个附属构件的classifier。
+- 这样，附属构件也就拥有了自己唯一的坐标。
+- 还有一个关于classifier的典型例子是TestNG，TestNG的主构件是基于Java 1.4平台的，而它又提供了一个classifier为jdk5的附属构件。
+- 注意，不能直接定义项目的classifier，因为附属构件不是项目直接默认生成的，而是由附加的插件帮助生成。
+
+- groupId、artifactId、version是必须定义的，packaging是可选的（默认为jar），而classifier是不能直接定义的。
+- artifact的文件名是与坐标相对应的，一般的规则为artifactId-version［-classifier］.packaging，［-classifier］表示可选。
+- 这里还要强调的一点是，packaging并非一定与构件扩展名对应，比如packaging为maven-plugin的构件扩展名为jar。
+- 此外，Maven仓库的布局也是基于Maven坐标
+
+#构建account-email
+- 使用mvn clean install构建account-email，Maven会根据POM配置自动下载所需要的依赖构件，执行编译、测试、打包等工作，最后将项目生成的构件account-email-1.0.0-SNAPSHOT.jar安装到本地仓库中。这时，该模块就能供其他Maven项目使用了。
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#依赖的配置
+总而言之 （dependency)
+1) 一个依赖声明可以包含如下的一些元素： <groupId>, <artifactId>, <version>, <scope>, <type>, <optional>, <exclusions>
+2) scope： 代码的引用范围 compile/test/provided/runtime/system
+2.1）since not all the dependency jars are required to be used in all scenarios, three types of classpath: 编译/测试/运行 are defined in Maven:
+2.1.1) 编译classpath:Maven在编译项目主代码的时候需要使用一套classpath。编译项目主代码的时候需要用到spring-core,该文件以依赖的方式被引入到classpath中。
+2.1.2) 测试classpath: 在编译测试代码和执行测试代码的时候会使用另外一套classpath。上例中的JUnit就是一个很好的例子， 该文件也以依赖的方式引入到测试使用的classpath中。
+2.1.3）运行classpath: 实际运行Maven项目的时候，又会使用一套classpath，上例中的spring-core需要在该classpath中，而JUnit则不需要。
+3）scope is used to control the relationship and the dependency and the three types of classpath（编译classpath、测试classpath、运行classpath）的关系, define whether the dependency will be added to the classpth:
+3.1）compile： 默认的依赖范围。使用此依赖范围的Maven依赖，对于编译、测试、运行三种classpath都有效。典型的例子是spring-core，在编译、测试和运行的时候都需要使用该依赖。 
+3.2）test： 使用此依赖范围的Maven依赖，只对于测试classpath有效，在编译主代码或者运行项目的使用时将无法使用此类依赖。典型的例子是JUnit，它只有在编译测试代码及运行测试的时候才需要。
+3.3) provided： 使用此依赖范围的Maven依赖，对于编译和测试classpath有效，但在运行时无效。典型的例子是servlet-api，编译和测试项目的时候需要该依赖，但在运行项目的时候，由于容器已经提供，就不需要Maven重复地引入一遍。
+3.4) runtime： 使用此依赖范围的Maven依赖，对于测试(需要运行测试代码）和运行classpath有效，但在编译主代码时无效。典型的例子是JDBC驱动实现，项目主代码的编译只需要JDK提供的JDBC接口，只有在执行测试或者运行项目的时候才需要实现上述接口的具体JDBC驱动。
+3.5)system： 系统依赖范围。该依赖与三种classpath的关系，和provided依赖范围完全一致。但是，使用system范围的依赖时必须通过systemPath元素显式地指定依赖文件的路径。由于此类依赖不是通过Maven仓库解析的，而且往往与本机系统绑定，可能造成构建的不可移植，因此应该谨慎使用
+<dependency>
+    <groupId>javax.sql</groupId>
+    <artifactId>jdbc-stdext</artifactId>
+    <version>2.0</version>
+    <scope>system</scope>
+    <systemPath>${java.home}/lib/rt.jar</systemPath>
+</dependency>
+3.6) 
+4）relationship between dependency and classpath 
+            complie classpath           test classpath              run classpath           Example
+compile     Y                           Y                           Y                       spring-core
+test        N                           Y                           N                       junit
+provided    Y                           Y                           N                       servlet API    
+runtime     N                           Y                           Y                       JDBC driver
+system      Y                           Y                           N                       local jars
+3.6) import（Maven 2.0.9及以上）： 导入依赖范围。该依赖范围不会对三种classpath产生实际的影响.
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- 一个依赖声明可以包含如下的一些元素：
+<dependency>
+  <groupId>...</groupId>
+  <artifactId>...</artifactId>
+  <version>...</version>
+  <scope>test/runtime/compile</scope> <!--代码的引用范围--
+  <type></type> <!依赖的类型，对应于项目坐标定义的packaging。大部分情况下，该元素不必声明，其默认值为jar-->
+  <optional>true/false</optional> <!--依赖是否可选--> 
+  <exclusions>
+        <exclude></exclude><!--排除依赖引用传递-->
+  </exclusions>
+</dependency>
+
+#依赖范围
+- 编译classpath:Maven在编译项目主代码的时候需要使用一套classpath。在上例中，编译项目主代码的时候需要用到springcore,该文件以依赖的方式被引入到classpath中。
+- 测试classpath: 其次，Maven在编译测试代码和执行测试的时候会使用另外一套classpath。上例中的JUnit就是一个很好的例子，该文件也以依赖的方式引入到测试使用的classpath中，不同的是这里的依赖范围是test。
+- 运行classpath: 最后，实际运行Maven项目的时候，又会使用一套classpath，上例中的spring-core需要在该classpath中，而JUnit则不需要。
+
+- 依赖范围就是用来控制依赖与这三种classpath（编译classpath、测试classpath、运行classpath）的关系，Maven有以下几种依赖范围：
+1）compile： 编译依赖范围。默认的依赖范围。使用此依赖范围的Maven依赖，对于编译、测试、运行三种classpath都有效。典型的例子是spring-core，在编译、测试和运行的时候都需要使用该依赖。 
+
+2）test： 测试依赖范围。使用此依赖范围的Maven依赖，只对于测试classpath有效，在编译主代码或者运行项目的使用时将无法使用此类依赖。典型的例子是JUnit，它只有在编译测试代码及运行测试的时候才需要。
+
+3) provided： 已提供依赖范围。使用此依赖范围的Maven依赖，对于编译和测试classpath有效，但在运行时无效。典型的例子是servlet-api，编译和测试项目的时候需要该依赖，但在运行项目的时候，由于容器已经提供，就不需要Maven重复地引入一遍。
+
+4) runtime： 运行时依赖范围。使用此依赖范围的Maven依赖，对于测试和运行classpath有效，但在编译主代码时无效。典型的例子是JDBC驱动实现，项目主代码的编译只需要JDK提供的JDBC接口，只有在执行测试或者运行项目的时候才需要实现上述接口的具体JDBC驱动。
+
+5)system： 系统依赖范围。该依赖与三种classpath的关系，和provided依赖范围完全一致。但是，使用system范围的依赖时必须通过systemPath元素显式地指定依赖文件的路径。由于此类依赖不是通过Maven仓库解析的，而且往往与本机系统绑定，可能造成构建的不可移植，因此应该谨慎使用
+<dependency>
+    <groupId>javax.sql</groupId>
+    <artifactId>jdbc-stdext</artifactId>
+    <version>2.0</version>
+    <scope>system</scope>
+    <systemPath>${java.home}/lib/rt.jar</systemPath>
+</dependency>
+import（Maven 2.0.9及以上）： 导入依赖范围。该依赖范围不会对三种classpath产生实际的影响.
+            complie classpath           test classpath              run classpath           Example
+compile     Y                           Y                           Y                       spring-core
+test        N                           Y                           N                       junit
+provided    Y                           Y                           N                       servlet API    
+runtime     N                           Y                           Y                       JDBC driver
+system      Y                           Y                           N                       local jars
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#传递性依赖
+总而言之 （scope affecting dependency transistion)
+1) 通过传递性依赖机制，在使用Dependency(e.g. Spring Framework),的时候就Maven会解析各个直接依赖的POM，将那些必要的间接依赖， 以传递性依赖的形式引入到当前的项目中。
+2) 不用去考虑它依赖了什么，也不用担心引入多余的依赖。 
+3） dependency scope affects dependency transistion:
+3.1) 假设A依赖于B，B依赖于C，我们说A对于B是第一直接依赖，B对于C是第二直接依赖, A对于C是传递性依赖
+3.2) 第一直接依赖的范围和第二直接依赖的范围决定了传递性依赖的范围, 最左边一行表示第一直接依赖范围，最上面一行表示第二直接依赖范围， 中间的交叉单元格则表示传递性依赖范围。
+                compile         test        provided        runtime
+compile         compile         _           _               runtime
+test            test            _           _               test
+provided        provided        _           provided        provided
+runtime         runtime         _           _               runtime
+3.3) rules, 从第二依赖开始观察：
+3.3.1）当第二直接依赖的范围是compile的时候，传递性依赖的范围与第一直接依赖的范围一致；
+3.3.2）当第二直接依赖的范围是test的时候，依赖不会得以传递；
+3.3.3）当第二直接依赖的范围是provided的时候，只传递第一直接依赖范围也为provided的依赖，且传递性依赖的范围同样为provided；
+3.3.4）当第二直接依赖的范围是runtime的时候，传递性依赖的范围与第一直接依赖的范围一致，但compile例外，此时传递性依赖的范围为runtime。
+4) 依赖调解 (dependency mediation)
+4.1) 当传递性依赖造成问题的时候，我们就需要清楚地知道该传递性依赖是从哪条依赖路径引入的。
+4.2) 路径最近者优先： A->B->C->X（1.0）、A->D->X（2.0) ,X（2.0）会被解析使用。
+4.3) 第一声明者优先： A->B->Y（1.0）、A->C->Y（2.0）, 在依赖路径长度相等的前提下，在POM中依赖声明的顺序决定了谁会被解析使用
+5) 可选依赖 (Optional)
+5.1) 假设有这样一个依赖关系，项目A依赖于项目B，项目B依赖于项目X和Y，B对于X和Y的依赖都是可选依赖：A->B、B->X（可选）、 B->Y（可选）。 
+5.2) 由于这里X、Y是可选依赖， 依赖将不会得以传递。 换句话说，X、Y将不会对A有任何影响
+5.3) 为什么要使用可选依赖这一特性呢？可能项目B实现了两个特性，其中的特性一依赖于X，特性二依赖于Y，而且这两个特性是互斥的，用户不可能同时使用两个特性。比如B是一个持久层隔离工具包，它支持多种数据库，包括MySQL、PostgreSQL等，在构建这个工具包的时候，需要这两种数据库的驱动程序，但在使用这个工具包的时候，只会依赖一种数据库。
+5.4) 使用<optional>元素表示mysql-connector-java和postgresql这两个依赖为可选依赖，它们只会对当前项目B产生影响， 当其他项目依赖于B的时候， 这两个依赖不会被传递。
+5.5) 当项目A依赖于项目B的时候，如果其实际使用基于MySQL数据库，那么在项目A中就需要显式地声明mysql-connector-java这一依赖
+5.6) 在理想的情况下，是不应该使用可选依赖的
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- 考虑一个基于Spring Framework的项目，如果不使用Maven，那么在项目中就需要手动下载相关依赖。
+- 这么做往往就引入了很多不必要的依赖。另一种做法是只下载springframework-2.5.6.zip这样一个包，这里不包含其他相关依赖，到实际使用的时候，再根据出错信息，或者查询相关文档，加入需要的其他依赖。
+- Maven的传递性依赖机制可以很好地解决这一问题。account-mail有一个compile范围的spring-core依赖，spring-core有一个compile范围的commons-logging依赖，那么commons-logging就会成为account-email的compile范围依赖，commons-logging是account-email的一个传递性依赖
+- 有了传递性依赖机制，在使用Spring Framework的时候就不用去考虑它依赖了什么，也不用担心引入多余的依赖。Maven会解析各个直接依赖的POM，将那些必要的间接依赖，以传递性依赖的形式引入到当前的项目中。
+
+#传递性依赖和依赖范围
+- 依赖范围不仅可以控制依赖与三种classpath的关系，还对传递性依赖产生影响。
+- 假设A依赖于B，B依赖于C，我们说A对于B是第一直接依赖，B对于C是第二直接依赖, A对于C是传递性依赖
+- 第一直接依赖的范围和第二直接依赖的范围决定了传递性依赖的范围, 最左边一行表示第一直接依赖范围，最上面一行表示第二直接依赖范围， 中间的交叉单元格则表示传递性依赖范围。
+                compile         test        provided        runtime
+compile         compile         _           _               runtime
+test            test            _           _               test
+provided        provided        _           provided        provided
+runtime         runtime         _           _               runtime
+
+- 这里再举个例子。account-email项目有一个com.icegreen：greenmail：1.3.1b的直接依赖，我们说这是第一直接依赖，其依赖范围是test；而greenmail又有一个javax.mail：mail：1.4的直接依赖，我们说这是第二直接依赖，其依赖范围是compile。显然javax.mail：mail：1.4是account-email的传递性依赖，对照上表可以知道，当第一直接依赖范围为test，第二直接依赖范围是compile的时候，传递性依赖的范围是test，因此javax.mail：mail：1.4是 account-email的一个范围是test的传递依赖。
+规律：
+- 当第二直接依赖的范围是compile的时候，传递性依赖的范围与第一直接依赖的范围一致；
+- 当第二直接依赖的范围是test的时候，依赖不会得以传递；
+- 当第二直接依赖的范围是provided的时候，只传递第一直接依赖范围也为provided的依赖，且传递性依赖的范围同样为provided；
+- 当第二直接依赖的范围是runtime的时候，传递性依赖的范围与第一直接依赖的范围一致，但compile例外，此时传递性依赖的范围为runtime。
+
+#依赖调解
+- Maven引入的传递性依赖机制，一方面大大简化和方便了依赖声明，另一方面，大部分情况下我们只需要关心项目的直接依赖是什么，而不用考虑这些直接依赖会引入什么传递性依赖。
+- 但有时候，当传递性依赖造成问题的时候，我们就需要清楚地知道该传递性依赖是从哪条依赖路径引入的。
+- 路径最近者优先： 例如，项目A有这样的依赖关系：A->B->C->X（1.0）、A->D->X（2.0），X是A的传递性依赖，但是两条依赖路径上有两个版本的X， 必须选择一个。 Maven依赖调解（Dependency Mediation）的第一原则是：路径最近者优先。该例中X（1.0）的路径长度为3， 而X（2.0）的路径长度为2， 因此X（2.0）会被解析使用。
+- 第一声明者优先： 依赖调解第一原则不能解决所有问题，比如这样的依赖关系：A->B->Y（1.0）、A->C->Y（2.0），Y（1.0）和Y（2.0）的 依赖路径长度是一样的，都为2。 那么到底谁会被解析使用呢？ Maven定义了依赖调解的第二原则：第一声明者优先。在依赖路径长度相等的前提
+下，在POM中依赖声明的顺序决定了谁会被解析使用，顺序最靠前的那个依赖优胜。该例中，如果B的依赖声明在C之前，那么Y（1.0）就会被解析使用。
+
+#可选依赖
+- 假设有这样一个依赖关系，项目A依赖于项目B，项目B依赖于项目X和Y，B对于X和Y的依赖都是可选依赖：A->B、B->X（可选）、 B->Y（可选）。 根据传递性依赖的定义，如果所有这三个依赖的范围都是compile，那么X、Y就是A的compile范围传递性依赖。然而，由于这里X、Y是可选依赖，依赖将不会得以传递。换句话说，X、Y将不会对A有任何影响
+- 为什么要使用可选依赖这一特性呢？可能项目B实现了两个特性，其中的特性一依赖于X，特性二依赖于Y，而且这两个特性是互斥的，用户不可能同时使用两个特性。比如B是一个持久层隔离工具包，它支持多种数据库，包括MySQL、PostgreSQL等，在构建这个工具包的时候，需要这两种数据库的驱动程序，但在使用这个工具包的时候，只会依赖一种数据库。
+- 上述XML代码片段中，使用<optional>元素表示mysql-connector-java和postgresql这两个依赖为可选依赖，它们只会对当前项目B
+产生影响，当其他项目依赖于B的时候，这两个依赖不会被传递。
+- 因此，当项目A依赖于项目B的时候，如果其实际使用基于MySQL数据库，那么在项目A中就需要显式地声明mysql-connector-java这一依赖
+- 在理想的情况下，是不应该使用可选依赖的
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#最佳实践
+总而言之 （dependency best practice)
+1) 排除依赖 (dependency exclusion)
+1.1) 传递性依赖会给项目隐式地引入很多依赖，这极大地简化了项目依赖的管理，但是有些时候这种特性也会带来问题。
+1.2) 例如，当前项目有一个第三方依赖，而这个第三方依赖由于某些原因依赖了另外一个类库的SNAPSHOT版本，那么这个SNAPSHOT就会成为当前项目的传递性依赖，而SNAPSHOT的不稳定性会直接影响到当前的项目。这时就需要排除掉该SNAPSHOT，并且在当前项目中声明该类库的某个正式发布的版本。
+1.3) 还有一些情况，你可能也想要替换某个传递性依赖，比如Sun JTA API，Hibernate依赖于这个JAR，但是由于版权的因素， 该类库不在中央仓库中， 而Apache Geronimo项目有一个对应的实现。这时你就可以排除Sun JAT API，再声明Geronimo的JTA API实现：
+1.4) 代码中使用exclusions元素声明排除依赖，exclusions可以包含一个或者多个exclusion子元素, 排除一个或者多个传递性依赖
+1.5) 声明exclusion的时候只需要groupId和artifactId，而不需要version元素，这是因为只需要groupId和artifactId就能唯一定位依赖图中的某个依赖
+2) 归类依赖：
+2.1）有很多关于Spring Framework的依赖，它们分别是org.springframework：spring-core：2.5.6、org.springframework：
+spring-beans：2.5.6、org.springframework：spring-context：2.5.6和org.springframework：spring-context-support：2.5.6，它们是来自同一
+项目的不同模块。所有这些依赖的版本都是相同的，如果将来需要升级Spring Framework，这些依赖的版本会一起升级。 
+2.2）使用properties元素定义Maven属性，该例中定义了一个springframework.version子元素，其值为2.5.6。
+2.3）使用${...}的方式引用Maven属性,所有Spring Framework依赖的版本值用这一属性引用表示
+3) 优化依赖
+3.1) understand Maven项目的dependency，并对其进行优化，如去除多余的依赖，显式地声明某些必要的依赖。
+3.2) Maven会自动解析所有项目的直接依赖和传递性依赖，并且根据规则正确判断每个依赖的范围，对于一些依赖冲突，也能进行调节，"以确保任何一个构件只有唯一的版本在依赖中存在"。在这些工作之后，最后得到的那些依赖被称为已解析依赖（Resolved Dependency）。
+3.3) 查看当前项目的已解析依赖：mvn dependency:list 
+3.4) 当前项目POM声明的依赖定义为顶层依赖，而这些顶层依赖的依赖则定义为第二层依赖，以此类推，有第三、第四层依赖。当这些依赖经Maven解析后，就会构成一个依赖树，通过这棵依赖树就能很清楚地看到某个依赖是通过哪条传递路径引入的。
+3.5) 查看当前项目的依赖树：mvn dependency: tree
+3.6） 分析当前项目的依赖： mvn dependency: analyze
+[WARNING] Used undeclared dependencies found:
+[WARNING]    org.springframework:spring-context:jar:2.5.6:compile
+[WARNING] Unused declared dependencies found:
+[WARNING]    org.springframework:spring-core:jar:2.5.6:compile
+[WARNING]    org.springframework:spring-beans:jar:2.5.6:compile
+3.6.1）首先是Used undeclared dependencies，意指项目中使用到的，但是没有显式声明的依赖，例如这里是spring-context，应显式声明任何项目中 直接用到的依赖。
+3.6.2）Used undeclared dependencies意味着潜在的风险，当前项目直接在使用它们，例如有很多相关的Java import声明，而这种依赖是通过直
+接依赖传递进来的
+3.6.3）当升级直接依赖的时候，相关传递性依赖的版本也可能发生变化，这种变化不易察觉，但是有可能导致当前项目出错。例如由于接口的改变，当前项目中的相关代码无法编译。
+3.6.4）Unused declared dependencies，意指项目中未使用的，但显式声明的依赖，这里有spring-core和spring-beans。 对于这样一类依赖，我们不应该简单地直接删除其声明，而是应该仔细分析。
+3.6.5）由于dependency：analyze只会分析"编译"主代码和测试代码需要用到的依赖，一些执行测试和运行时需要的依赖它就发现不了（例如jdbc-driver或者是不直接import的类库）。
+3.6.6）该例中的spring-core和spring-beans是运行SpringFramework项目必要的类库，因此不应该删除依赖声明。当然，有时候确实能通过该信息找到一些没用的依赖，但一定要小心测试。
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- Maven依赖涉及的知识点比较多，在理解了主要的功能和原理之后，最需要的当然就是前人的经验总结了，我们称之为最佳实践。
+
+1）排除依赖
+- 传递性依赖会给项目隐式地引入很多依赖，这极大地简化了项目依赖的管理，但是有些时候这种特性也会带来问题。
+- 例如，当前项目有一个第三方依赖，而这个第三方依赖由于某些原因依赖了另外一个类库的SNAPSHOT版本，那么这个SNAPSHOT就会成为当前项目的传递性依赖，而SNAPSHOT的不稳定性会直接影响到当前的项目。这时就需要排除掉该SNAPSHOT，并且在当前项目中声明该类库的某个正式发布的版本。
+- 还有一些情况，你可能也想要替换某个传递性依赖，比如Sun JTA API，Hibernate依赖于这个JAR，但是由于版权的因素， 该类库不在中央仓库中， 而Apache Geronimo项目有一个对应的实现。这时你就可以排除Sun JAT API，再声明Geronimo的JTA API实现： 
+- 代码中使用exclusions元素声明排除依赖，exclusions可以包含一个或者多个exclusion子元素，因此可以排除一个或者多个传
+递性依赖。需要注意的是，声明exclusion的时候只需要groupId和artifactId，而不需要version元素，这是因为只需要groupId和artifactId
+就能唯一定位依赖图中的某个依赖
+
+2）归类依赖
+- 有很多关于Spring Framework的依赖，它们分别是org.springframework：spring-core：2.5.6、org.springframework：
+spring-beans：2.5.6、org.springframework：spring-context：2.5.6和org.springframework：spring-context-support：2.5.6，它们是来自同一
+项目的不同模块。因此，所有这些依赖的版本都是相同的，而且可以预见，如果将来需要升级Spring Framework，这些依赖的版本会一起升级。 
+- 对于account-email中这些Spring Framework来说，也应该在一个唯一的地方定义版本，并且在dependency声明中引用这一版本。 这样， 在升级Spring Framework的时候就只需要修改一处，
+- 这里简单用到了Maven属性，首先使用properties元素定义Maven属性，该例中定义了一个springframework.version子元素，其值为2.5.6。
+- 有了这个属性定义之后，Maven运行的时候会将POM中的所有的＄{springframework.version}替换成实际值2.5.6。也就是说，可以使用美元符号和大括弧环绕的方式引用Maven属性。然后，将所有Spring Framework依赖的版本值用 这一属性引用表示:
+
+<properties>
+    <springframework.version>2.5.6</springframework.version>
+</properties>
+<dependencies>
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-core</artifactId>
+        <version>${springframework.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-beans</artifactId>
+        <version>${springframework.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context</artifactId>
+        <version>${springframework.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context-support</artifactId>
+        <version>${springframework.version}</version>
+    </dependency>
+    ...
+</dependencies>
+
+#优化依赖
+- 程序员也应该能够对Maven项目的依赖了然于胸，并对其进行优化，如去除多余的依赖，显式地声明某些必要的依赖。
+- Maven会自动解析所有项目的直接依赖和传递性依赖，并且根据规则正确判断每个依赖的范围，对于一些依赖冲突，也能进行调节，以确保任何一个构件只有唯一的版本在依赖中存在。在这些工作之后，最后得到的那些依赖被称为已解析依赖（Resolved Dependency）。可以运行如下的命令查看当前项目的已解析依赖：
+mvn dependency:list
+- 进一步了解已解析依赖的信息。将直接在当前项目POM声明的依赖定义为顶层依赖，而这些顶层依赖的
+依赖则定义为第二层依赖，以此类推，有第三、第四层依赖。当这些依赖经Maven解析后，就会构成一个依赖树，通过这棵依赖树就能很清楚地看到某个依赖是通过哪条传递路径引入的。
+mvn dependency: tree
+- 使用dependency：list和dependency：tree可以帮助我们详细了解项目中所有依赖的具体信息，在此基础上，还有dependency：analyze工具可以帮助分析当前项目的依赖。
+mvn dependency: analyze
+[WARNING] Used undeclared dependencies found:
+[WARNING]    org.springframework:spring-context:jar:2.5.6:compile
+[WARNING] Unused declared dependencies found:
+[WARNING]    org.springframework:spring-core:jar:2.5.6:compile
+[WARNING]    org.springframework:spring-beans:jar:2.5.6:compile
+
+- 首先是Used undeclared dependencies，意指项目中使用到的，但是没有显式声明的依赖， 这里是spring-context。
+- 这种依赖意味着潜在的风险，当前项目直接在使用它们，例如有很多相关的Java import声明，而这种依赖是通过直
+接依赖传递进来的，当升级直接依赖的时候，相关传递性依赖的版本也可能发生变化，这种变化不易察觉，但是有可能导致当前项目出错。例如由于接口的改变，当前项目中的相关代码无法编译。这种隐藏的、潜在的威胁一旦出现，就往往需要耗费大量的时间来查明真相。因此，显式声明任何项目中直接用到的依赖。
+- Unused declared dependencies，意指项目中未使用的，但显式声明的依赖，这里有spring-core和spring-beans。
+- 需要注意的是，对于这样一类依赖，我们不应该简单地直接删除其声明，而是应该仔细分析。由于dependency：analyze只会分析"编译"主代码和测试代码需要用到的依赖，一些执行测试和运行时需要的依赖它就发现不了。很显然，该例中的spring-core和spring-beans是运行SpringFramework项目必要的类库，因此不应该删除依赖声明。当然，有时候确实能通过该信息找到一些没用的依赖，但一定要小心测试。
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Chapter6　Repository
+总而言之 （Repository）
+1) 何为Maven repository?
+1.1）坐标和依赖是任何一个构件在Maven世界中的逻辑表示方式；而构件的物理表示方式是文件，Maven通过仓库来统一管理这些文件。
+1.2）aritifact: dependency, plugin, project build output jar/war
+1.3) 得益于坐标机制，任何Maven项目使用任何一个构件的方式都是完全相同的。在此基础上，Maven可以在某个位置统一存储所有Maven项目共享的构件，这个统一的位置就是repository。
+1.4) 实际的Maven项目将不再各自存储其依赖文件，它们只需要声明这些依赖的坐标，在需要的时候（例如，编译项目的时候需要将依赖加入到classpath中）， Maven 会自动根据坐标找到仓库中的构件，并使用它们。
+1.5) 为了实现重用，项目构建完毕后生成的构件也可以安装或者部署到仓库中，供其他项目使用
+2) repository layout
+2.1) 任何一个构件都有其唯一的坐标(groupId/artifactId/version/classifier/packaging)，根据这个坐标可以定义其在仓库中的唯一存储路径， 这便是Maven的仓库布局方式。
+2.2) 路径与坐标的大致对应关系为groupId/artifactId/version/artifactId-version.packaging; e.g. dependency log4j：log4j：1.2.15对应的 仓库路径为log4j/log4j/1.2.15/log4j-1.2.15.jar.
+2.3) Maven仓库是基于简单文件系统存储的，我们也理解了其存储方式，当遇到一些与仓库相关的问题时，可以方便地查找相关文件，定位问题。
+2.4) 例如，当Maven无法获得项目声明的依赖时，可以查看该依赖对应的文件在仓库中是否存在，如果不存在，查看是否有其他版本可用
+3) local and remote repository
+3.1) 当Maven根据坐标寻找构件的时候，它首先会查看本地仓库，如果本地仓库存在此构件，则直接使用；
+3.2) 如果本地仓库不存在此构件，或者需要查看是否有更新的构件版本，Maven就会去远程仓库查找，发现需要的构件之后，下载到本地仓库再使用。
+3.3) 如果本地仓库和远程仓库都没有需要的构件，Maven就会报错。
+4) remote repository
+4.1) 中央仓库是Maven核心自带的远程仓库，它包含了绝大部分开源的构件。 在默认配置下，当本地仓库没有Maven需要的构件的时候， 它就会尝试从中央仓库下载。
+4.2) 私服是另一种特殊的远程仓库，为了节省带宽和时间，可以在局域网内架设一个私有的仓库服务器，用其代理所有外部的远程仓库。内部的项目还能部署到私服上供其他项目使用。
+4.3）除了中央仓库和私服，还有很多其他公开的远程仓库，常见的有Java.net Maven库（http://download.java.net/maven/2/ ）和JBoss Maven库（http://repository.jboss.com/maven2/ ）等。
+5）local repository
+5.1) 一般来说，在Maven项目目录下，没有诸如lib/样用来存放依赖文件的目录。当Maven在执行编译或测试时，如果需要使用依赖文件， 它总是基于坐标使用本地仓库的依赖文件。
+5.2) 默认情况下，不管是在Windows还是Linux上，每个用户在自己的用户目录下都有一个路径名为.m2/repository/的仓库目录。 
+5.3) 例如，笔者的用户名是juven，在Windows机器上的本地仓库地址为C：\Users\juven\.m2\repository\，而在Linux上的本地仓库地址为/home/juven/.m2/repository/。 注意，在Linux系统中， 以点（.）开头的文件或目录默认是隐藏的，可以使用ls-a命令显示隐藏文件或目录。
+5.4) 有时候，因为某些原因（例如C盘空间不够），用户会想要自定义本地仓库目录地址。这时，可以编辑文件~/.m2/settings.xml,  设置localRepository元素的值为想要的仓库地址: <localRepository>d:/java/repository</localRepository>
+5.5) 一个构件只有在本地仓库中之后，才能由其他Maven项目使用，那么构件如何进入到本地仓库中呢？最常见的是依赖Maven从远程仓库下载到本地仓库中。
+5.6) 还有一种常见的情况是，将本地项目的构件安装到Maven仓库中。 Maven使用Install插件将该文件复制到本地仓库中，具体的路径根据坐标计算获得。
+5.7) 安装好Maven后，如果不执行任何Maven命令，本地仓库目录是不存在的。当用户输入第一条Maven命令之后，Maven才会创建本地仓库，然后根据配置和需要，从远程仓库下载构件至本地仓库。
+5.8) 对于Maven来说，每个用户只有一个本地仓库，但可以配置访问很多远程仓库
+6) central repository
+6.1) 由于最原始的本地仓库是空的，Maven必须知道至少一个可用的远程仓库，才能在执行Maven命令的时候下载到需要的构件。中央仓库就是这样一个默认的远程仓库，Maven的安装文件自带了中央仓库的配置, 可以使用解压工具打开jar文件$MAVEN_HOME/lib/maven-model-builder-3.5.jar,然后访问路径org/apache/maven/model/pom-4.0.0.xml, 即所有Maven项目都会继承的超级POM :
+<repositories>
+  <repository>
+    <id>central</id>
+    <name>Central Repository</name>
+    <url>https://repo.maven.apache.org/maven2</url>
+    <layout>default</layout>
+    <snapshots>
+      <enabled>false</enabled>
+    </snapshots>
+  </repository>
+</repositories>
+6.2）这段配置使用id central对中央仓库进行唯一标识，其名称为Central Repository, 它使用default仓库布局，也就是仓库布局部分介绍的布局。
+6.3）最后需要注意的是snapshots元素，其子元素enabled的值为false，表示不从该中央仓库下载快照版本的构件
+6.4）中央仓库包含了这个世界上绝大多数流行的开源Java构件，以及源码、作者信息、SCM、信息、许可证信息等
+7）私服
+7.1）私服是一种特殊的远程仓库，它是架设在局域网内的仓库服务，私服代理广域网上的远程仓库，供局域网内的Maven用户使用。
+7.2) 当Maven需要下载构件的时候，它从私服请求，如果私服上不存在该构件，则从外部的远程仓库下载，缓存在私服上之后，再为Maven的下载请求提供服务。
+7.3) 一些无法从外部仓库下载到的构件也能从本地上传到私服上供大家使用
+7.4) 最流行的Maven私服软件——Nexus。
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- 坐标和依赖是任何一个构件在Maven世界中的逻辑表示方式；而构件的物理表示方式是文件，Maven通过仓库来统一管理这些文件。
+#何为Maven仓库
+- 任何一个依赖、插件或者项目构建的输出，都可以称为构件。
+- 在一台工作站上，可能会有几十个Maven项目，所有项目都使用maven-compiler-plugin，这些项目中的大部分都用到了log4j，有一小部分用到了Spring Framework，还有另外一小部分用到了Struts2。在每个有需要的项目中都放置一份重复的log4j或者struts2显然不是最好的解决方案，这样做不仅造成了磁盘空间的浪费，而且也难于统一管理，文件的复制等操作也会降低构建的速度。而实际情况是，在不使用Maven的那些项目中，我们往往就能发现命名为lib/的目录，各个项目lib/目录下的内容存在大量的重复。
+- 得益于坐标机制，任何Maven项目使用任何一个构件的方式都是完全相同的。在此基础上，Maven可以在某个位置统一存储所有Maven项目共享的构件，这个统一的位置就是仓库。
+- 实际的Maven项目将不再各自存储其依赖文件，它们只需要声明这些依赖的坐标，在需要的时候（例如，编译项目的时候需要将依赖加入到classpath中），Maven会自动根据坐标找到仓库中的构件，并使用它们。
+- 为了实现重用，项目构建完毕后生成的构件也可以安装或者部署到仓库中，供其他项目使用
+
+#仓库的布局
+- 任何一个构件都有其唯一的坐标，根据这个坐标可以定义其在仓库中的唯一存储路径，这便是Maven的仓库布局方式。
+- 例如，log4j：log4j：1.2.15这一依赖，其对应的仓库路径为log4j/log4j/1.2.15/log4j-1.2.15.jar，细心的读者可以观察到，该路径与坐标的大致对应关系为groupId/artifactId/version/artifactId-version.packaging。
+- Maven仓库是基于简单文件系统存储的，我们也理解了其存储方式，因此，当遇到一些与仓库相关的问题时，可以很方便地查找相关文件，方便定位问题。例如，当Maven无法获得项目声明的依赖时，可以查看该依赖对应的文件在仓库中是否存在，如果不存在，查看是否有其他版本可用
+
+#仓库的分类
+- 仓库只分为两类：本地仓库和远程仓库
+- 当Maven根据坐标寻找构件的时候，它首先会查看本地仓库，如果本地仓库存在此构件，则直接使用；
+- 如果本地仓库不存在此构件，或者需要查看是否有更新的构件版本，Maven就会去远程仓库查找，发现需要的构件之后，下载到本地仓库再使用。
+- 如果本地仓库和远程仓库都没有需要的构件，Maven就会报错。
+- 在这个最基本分类的基础上，还有必要介绍一些特殊的远程仓库。中央仓库是Maven核心自带的远程仓库，它包含了绝大部分开源的构件。在默认配置下，当本地仓库没有Maven需要的构件的时候，它就会尝试从中央仓库下载。
+-私服是另一种特殊的远程仓库，为了节省带宽和时间，应该在局域网内架设一个私有的仓库服务器，用其代理所有外部的远程仓库。内部的项目还能部署到私服上供其他项目使用。
+- 除了中央仓库和私服，还有很多其他公开的远程仓库，常见的有Java.net Maven库（http://download.java.net/maven/2/ ）和JBoss Maven库（http://repository.jboss.com/maven2/ ）等。
+
+#本地仓库
+- 一般来说，在Maven项目目录下，没有诸如lib/样用来存放依赖文件的目录。当Maven在执行编译或测试时，如果需要使用依赖文件，它总是基于坐标使用本地仓库的依赖文件。
+- 默认情况下，不管是在Windows还是Linux上，每个用户在自己的用户目录下都有一个路径名为.m2/repository/的仓库目录。例如，笔者的用户名是juven， 我在Windows机器上的本地仓库地址为C：\Users\juven\.m2\repository\，而我在Linux上的本地仓库地址为/home/juven/.m2/repository/。注意，在Linux系统中， 以点（.）开头的文件或目录默认是隐藏的，可以使用ls-a命令显示隐藏文件或目录。
+- 有时候，因为某些原因（例如C盘空间不够），用户会想要自定义本地仓库目录地址。这时，可以编辑文件~/.m2/settings.xml， 设置localRepository元素的 值为想要的仓库地址。
+<localRepository>d:/java/repository</localRepository>
+- 该用户的本地仓库地址就被设置成了D：\java\repository\。
+- 一个构件只有在本地仓库中之后，才能由其他Maven项目使用，那么构件如何进入到本地仓库中呢？最常见的是依赖Maven从远程仓库下载到本地仓库中。还有一种常见的情况是，将本地项目的构件安装到Maven仓库中。
+- Maven使用Install插件将该文件复制到本地仓库中，具体的路径根据坐标计算获得。
+
+#远程仓库
+- 安装好Maven后，如果不执行任何Maven命令，本地仓库目录是不存在的。当用户输入第一条Maven命令之后，Maven才会创建本地仓库，然后根据配置和需要，从远程仓库下载构件至本地仓库。
+- 对于Maven来说，每个用户只有一个本地仓库，但可以配置访问很多远程仓库
+
+#中央仓库
+- 由于最原始的本地仓库是空的，Maven必须知道至少一个可用的远程仓库，才能在执行Maven命令的时候下载到需要的构件。中央仓库就是这样一个默认的远程仓库，Maven的安装文件自带了中央仓库的配置。
+- 可以使用解压工具打开jar文件＄MAVEN_HOME/lib/maven-model-builder-3.5.jar,然后访问路径org/apache/maven/model/pom-4.0.0.xml， 可以看到如下的配置：
+<repositories>
+  <repository>
+    <id>central</id>
+    <name>Central Repository</name>
+    <url>https://repo.maven.apache.org/maven2</url>
+    <layout>default</layout>
+    <snapshots>
+      <enabled>false</enabled>
+    </snapshots>
+  </repository>
+</repositories>
+
+- 包含这段配置的文件是所有Maven项目都会继承的超级POM，
+- 这段配置使用id central对中央仓库进行唯一标识，其名称为Central Repository, 它使用default仓库布局，也就是在第6.2节介绍的仓库布局。
+- 最后需要注意的是snapshots元素，其子元素enabled的值为false，表示不从该中央仓库下载快照版本的构件
+- 中央仓库包含了这个世界上绝大多数流行的开源Java构件，以及源码、作者信息、SCM、信息、许可证信息等，每个月这里都会接受全世界Java程序员大概1亿次的访问，它对全世界Java开发者的贡献由此可见一斑。
+-由于中央仓库包含了超过2000个开源项目的构件，因此，一般来说，一个简单Maven项目所需要的依赖构件都能从中央仓库下载到。这也解释了为什么Maven能做
+到“开箱即用”。
+- 私服是一种特殊的远程仓库，它是架设在局域网内的仓库服务，私服代理广域网上的远程仓库，供局域网内的Maven用户使用。
+- 当Maven需要下载构件的时候，它从私服请求，如果私服上不存在该构件，则从外部的远程仓库下载，缓存在私服上之后，再为Maven的下载请求提供服务。
+- 此外，一些无法从外部仓库下载到的构件也能从本地上传到私服上供大家使用
+- 最流行的Maven私服软件——Nexus。
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#远程仓库的配置
+总而言之 (configuration and authentication of remote repository other than central)
+1）在POM中配置, 例如当默认的中央仓库无法满足项目的需求，可能项目需要的构件存在于另外一个远程仓库中，如JBoss Maven仓库：
+repositories>
+    <repository>
+      <id>jboss</id>
+      <name>JBOSS repository</name>
+      <url>http://repository.jboss.com/maven2/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <layout>default</layout>
+    </repository>
+<repositories>
+1.1) 在repositories元素下，可以使用repository子元素声明一个或者多个远程仓库。
+1.2) 该例中声明了一个id为jboss，名称为JBoss Repository的仓库。任何一个仓库声明的id必须是唯一的，Maven自带的中央仓库使用的id为central，如果其他的仓库声明也使用该id，就会覆盖中央仓库的配置。
+1.3) url值指向了仓库的地址，一般来说，该地址都基于http协议，Maven用户都可以在浏览器中打开仓库地址浏览构件。
+1.4) releases和snapshots元素控制Maven对于发布版构件和快照版构件的下载。 releases的enabled值为true，表示开启JBoss仓库的发布版本下载支持， 而snapshots的enabled值为false， 表示关闭JBoss仓库的快照版本的下载支持。
+1.5) layout元素值default表示仓库的布局是Maven 2及Maven 3的默认布局，而不是Maven 1的布局。
+1.6) 对于releases和snapshots来说，除了enabled，还包含另外两个子元素updatePolicy和checksumPolicy：
+<snapshots>
+  <enabled>false</enabled>
+  <updatePolicy>daily</updatePolicy>
+  <checksumPolicy>ignore</checksumPolicy>
+</snapshots>
+1.7) 元素updatePolicy用来配置Maven从远程仓库检查更新的频率，默认的值是daily，表示Maven每天检查一次。其他值包括：never—从不检查更新；always—每次构建都检查更新；interval：X—每隔X分钟检查一次更新（X为任意整数）。
+1.8) 元素checksumPolicy用来配置Maven检查检验和文件的策略。当构件被部署到Maven仓库中时，会同时部署对应的校验和文件。在下载构件的时候，Maven会验证校验和文件，如果校验和验证失败，怎么办？当checksumPolicy的值为默认的warn时，Maven会在执行构建时输出警告信息，其他可用的值包括：fail—Maven遇到校验和错误就让构建失败；ignore—使Maven完全忽略校验和错误。
+2) authentication of remote repository
+2.1) 大部分远程仓库无须认证就可以访问，但有时候出于安全方面的考虑，我们需要提供认证信息才能访问一些远程仓库。
+2.2) 例如，组织内部有一个Maven仓库服务器，该服务器为每个项目都提供独立的Maven仓库，为了防止非法的仓库访问，管理员为每个仓库提供了一组用户名及密码。这时，为了能让Maven访问仓库内容，就需要配置认证信息。
+2.3) 配置仓库信息可以直接配置在POM文件中，但是认证信息必须配置在settings.xml文件中。这是因为POM往往是被提交到代码仓库中供所有成员访问的，而settings.xml一般只放在本机。
+<servers>
+    <server>
+      <id>deploymentRepo</id>
+      <username>repouser</username>
+      <password>repopwd</password>
+    </server>
+    <server>
+      <id>siteServer</id>
+      <privateKey>/path/to/private/key</privateKey>
+      <passphrase>optional; leave empty if not used.</passphrase>
+    </server>
+</servers>
+2.4) settings.xml中server元素的id必须与POM中需要认证的repository元素的id完全一致。换句话说，正是这个id将认证信息与仓库配置联系在了一起。
+3) deployment to remote repository
+3.1) 私服的一大作用是部署第三方构件，包括组织内部生成的构件以及一些无法从外部仓库直接获取的构件。无论是日常开发中生成的构件，还是正式版本发布的构件，都需要部署到仓库中，供其他团队成员使用。
+3.2) 首先，需要编辑项目的pom.xml文件。配置distributionManagement元素,说明构件部署地址等:
+<distributionManagement>
+  <repository>
+    <id>project-releases</id>
+    <name>Project Release Repository</name>
+    <url>http://192.168.246.170/content/repository/project-releases</url>
+  </repository>
+  <snapshotRepository>
+    <id>project-snapshots</id>
+    <name>Project Snapshot Repository</name>
+    <url>http://192.168.246.170/content/repository/project-snapshots</url>
+  </snapshotRepository>
+</distributionManagement>
+3.3）distributionManagement包含repository和snapshotRepository子元素，前者表示发布版本构件的仓库，后者表示快照版本的仓库。
+3.4）这两个元素下都需要配置id、name和url，id为该远程仓库的唯一标识，name是为了方便人阅读，关键的url表示该仓库的地址。
+3.5）往远程仓库部署构件的时候，往往需要认证。 like dependency repository authentication, 在settings.xml中创建一个server元素， 其id与仓库的id匹配，并配置正确的认证信息
+3.6）mvn clean deploy：将项目构建输出的artifacts部署到配置的远程仓库，如果项目当前的版本是快照版本，则部署到快照版本仓库地址， 否则就部署到发布版本仓库地址。
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- 在很多情况下，默认的中央仓库无法满足项目的需求，可能项目需要的构件存在于另外一个远程仓库中，如JBoss Maven仓库。这时，可以在POM中配置该仓库:
+<repositories>
+    <repository>
+      <id>jboss</id>
+      <name>JBOSS repository</name>
+      <url>http://repository.jboss.com/maven2/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <layout>default</layout>
+    </repository>
+<repositories>
+- 在repositories元素下，可以使用repository子元素声明一个或者多个远程仓库。
+- 该例中声明了一个id为jboss，名称为JBoss Repository的仓库。任何一个仓库声明的id必须是唯一的，尤其需要注意的是， Maven自带的中央仓库使用的id为central，如果其他的仓库声明也使用该id，就会覆盖中央仓库的配置。
+- 该配置中的url值指向了仓库的地址，一般来说，该地址都基于http协议，Maven用户都可以在浏览器中打开仓库地址浏览构件。
+- 该例配置中的releases和snapshots元素比较重要，它们用来控制Maven对于发布版构件和快照版构件的下载。
+- 这里需要注意的是enabled子元素，该例中releases的enabled值为true，表示开启JBoss仓库的发布版本下载支持，而snapshots的enabled值为false，表示关闭JBoss仓库的快照版本的下载支持。因此，根据该配置，Maven只会从JBoss仓库下载发布版的构件，而不会下载快照版的构件。
+- 该例中的layout元素值default表示仓库的布局是Maven 2及Maven 3的默认布局，而不是Maven 1的布局。
+- 对于releases和snapshots来说，除了enabled，它们还包含另外两个子元素updatePolicy和checksumPolicy：
+<snapshots>
+  <enabled>false</enabled>
+  <updatePolicy>daily</updatePolicy>
+  <checksumPolicy>ignore</checksumPolicy>
+</snapshots>
+- 元素updatePolicy用来配置Maven从远程仓库检查更新的频率，默认的值是daily，表示Maven每天检查一次。其他可用的值包括：never—从不检查更新；always—每次构建都检查更新；interval：X—每隔X分钟检查一次更新（X为任意整数）。
+- 元素checksumPolicy用来配置Maven检查检验和文件的策略。当构件被部署到Maven仓库中时，会同时部署对应的校验和文件。在下载构件的时候，Maven会验证校验和文件，如果校验和验证失败，怎么办？当checksumPolicy的值为默认的warn时，Maven会在执行构建时输出警告信息，其他可用的值包括：fail—Maven遇到校验和错误就让构建失败；ignore—使Maven完全忽略校验和错误。
+
+#远程仓库的认证
+- 大部分远程仓库无须认证就可以访问，但有时候出于安全方面的考虑，我们需要提供认证信息才能访问一些远程仓库。
+- 例如，组织内部有一个Maven仓库服务器，该服务器为每个项目都提供独立的Maven仓库，为了防止非法的仓库访问，管理员为每个仓库提供了一组用户名及密码。这时，为了能让Maven访问仓库内容，就需要配置认证信息。
+- 配置认证信息和配置仓库信息不同，仓库信息可以直接配置在POM文件中，但是认证信息必须配置在settings.xml文件中。这是因为POM往往是被提交到代码仓库中供所有成员访问的，而settings.xml一般只放在本机。
+<servers>
+    <server>
+      <id>deploymentRepo</id>
+      <username>repouser</username>
+      <password>repopwd</password>
+    </server>
+    <server>
+      <id>siteServer</id>
+      <privateKey>/path/to/private/key</privateKey>
+      <passphrase>optional; leave empty if not used.</passphrase>
+    </server>
+  </servers>
+- Maven使用settings.xml文件中并不显而易见的servers元素及其server子元素配置仓库认证信息。
+- 该仓库的认证用户名为repo-user，认证密码为repo-pwd。
+- 这里的关键是id元素，settings.xml中server元素的id必须与POM中需要认证的repository元素的id完全一致。换句话说，正是这个id将认证信息与仓库配置联系在了一起。
+
+#部署至远程仓库
+- 私服的一大作用是部署第三方构件，包括组织内部生成的构件以及一些无法从外部仓库直接获取的构件。无论是日常开发中生成的构件，还是正式版本发布的构件，都需要部署到仓库中，供其他团队成员使用。
+- Maven除了能对项目进行编译、测试、打包之外，还能将项目生成的构建部署到仓库中。首先，需要编辑项目的pom.xml文件。配置distributionManagement元素,配置构件部署地址:
+<distributionManagement>
+  <repository>
+    <id>project-releases</id>
+    <name>Project Release Repository</name>
+    <url>http://192.168.246.170/content/repository/project-releases</url>
+  </repository>
+  <snapshotRepository>
+    <id>project-snapshots</id>
+    <name>Project Snapshot Repository</name>
+    <url>http://192.168.246.170/content/repository/project-snapshots</url>
+  </snapshotRepository>
+</distributionManagement>
+- distributionManagement包含repository和snapshotRepository子元素，前者表示发布版本构件的仓库，后者表示快照版本的仓库。
+- 这两个元素下都需要配置id、name和url，id为该远程仓库的唯一标识，name是为了方便人阅读，关键的url表示该仓库的地址。
+- 往远程仓库部署构件的时候，往往需要认证。 like dependency repository authentication, 在settings.xml中创建一个server元素， 其id与仓库的id匹配，并配置正确的认证信息
+- 不论从远程仓库下载构件，还是部署构件至远程仓库，当需要认证的时候，配置的方式是一样的。
+- 配置正确后，在命令行运行mvn clean deploy ，Maven就会将项目构建输出的构件部署到配置对应的远程仓库，如果项目当前的版本是快照版本，则部署到快照版本仓库地址，否则就部署到发布版本仓库地址。
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#快照版本
+总而言之 (snapshot)
+1) 在Maven的世界中，任何一个项目或者构件都必须有自己的版本。
+2) 版本的值可能是1.0.0、1.3-alpha-4、2.0、2.1-SNAPSHOT或者2.1-20091214.221414-13。
+3) 其中，1.0.0、1.3-alpha-4和2.0是稳定的发布版本，而2.1-SNAPSHOT和2.1-20091214.221414-13是不稳定的快照版本。
+4) SNAPSHOT is used to solve the problem of frequent version publishing. instead of creating many small versions, keep the version as SNAPSHOT. When Maven build a project and see the version has SNAPSHOT, it will create a version of artifact using timestamp and install to remote repository.
+5) When another developer confiure the snapshot dependency, maven will check the most recent arctifact of the SNAPSHOT, if a newer version is found, then download to local repository.
+6) 默认情况下，Maven每天检查一次更新（由季MM项目pom.xml仓库配置的updatePolicy控制）
+7) 用户也可以使用命令行-U参数强制让Maven检查更新，如mvn clean install-U
+8) 项目经过完善的测试后发布的时候，就应该将快照版本更改为发布版本。例如，将2.1-SNAPSHOT更改为2.1，表示该版本已经稳定，且只对应了唯一的构件。
+9) 2.1-SNAPSHOT往往对应了大量的带有不同时间戳的构件，这也决定了其不稳定性。
+10) 快照版本只应该在组织内部的项目或模块间依赖使用，因为组织对于这些快照版本的依赖具有完全的理解及控制权。
+11) 项目不应该依赖于任何组织外部的快照版本依赖，由于快照版本的不稳定性，这样的依赖会造成潜在的危险。 即使项目构建今天是成功的， 由于外部的快照版本依赖实际对应的构件随时可能变化，项目的构建就可能由于这些外部的不受控制的因素而失败。
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- 在Maven的世界中，任何一个项目或者构件都必须有自己的版本。
+- 版本的值可能是1.0.0、1.3-alpha-4、2.0、2.1-SNAPSHOT或者2.1-20091214.221414-13。
+- 其中，1.0.0、1.3-alpha-4和2.0是稳定的发布版本，而2.1-SNAPSHOT和2.1-20091214.221414-13是不稳定的快照版本。
+- Maven为什么要区分发布版和快照版呢？简单的1.0.0、1.2、2.1等不就够了吗？为什么还要有2.1-SNAPSHOT，甚至是长长的
+2.1-20091214.221414-13？
+- 试想一下这样的情况，小张在开发模块A的2.1版本，该版本还未正式发布，与模块A一同开发的还有模块B，它由小张的同事季MM开发，B的功能依赖于A。在开发的过程中，小张需要经常将自己最新的构建输出，交给季MM，供她开发和集成调试，问题是，这个工作如何进行呢？
+1.方案一, 让季MM自己签出模块A的源码进行构建。 她不得自己不去构建模块A, build may fail and she is unlikely to be able to fix it.
+2.方案二, 重复部署模块A的2.1版本供季MM下载, 如果季MM在本机的本地仓库包含了模块A的2.1版本构件，Maven就不会再对照远程仓库进行更新。
+3.方案三，不停更新版本2.1.1、2.1.2、2.1.3……。 小张和季MM两人都需要频繁地更改POM，如果有更多的模块依赖于模块A， 就会涉及更多的POM更改；
+- Maven的快照版本机制就是为了解决上述问题。在该例中，小张只需要将模块A的版本设定为2.1-SNAPSHOT，然后发布到私服中，在发布的过程中，Maven会自动为构件打上时间戳。
+- 比如2.1-20091214.221414-13就表示2009年12月14日22点14分14秒的第13次快照。有了该时间戳，Maven就能随时找到仓库中该构件2.1-SNAPSHOT版本最新的文件。
+- 季MM配置对于模块A的2.1-SNAPSHOT版本的依赖，当她构建模块B的时候，Maven会自动从仓库中检查模块A的2.1-SNAPSHOT的最新构件，当发现有更新时便进行下载
+- 默认情况下，Maven每天检查一次更新（由仓库配置的updatePolicy控制）
+- 用户也可以使用命令行-U参数强制让Maven检查更新，如mvn clean install-U, 使用参数后，Maven就会忽略<updatePolicy>的配置。 。
+- 当项目经过完善的测试后需要发布的时候，就应该将快照版本更改为发布版本。例如，将2.1-SNAPSHOT更改为2.1，表示该版本已经稳定，且只对应了唯一的构件。相比之下，2.1-SNAPSHOT往往对应了大量的带有不同时间戳的构件，这也决定了其不稳定性。
+- 快照版本只应该在组织内部的项目或模块间依赖使用，因为这时，组织对于这些快照版本的依赖具有完全的理解及控制权。
+- 项目不应该依赖于任何组织外部的快照版本依赖，由于快照版本的不稳定性，这样的依赖会造成潜在的危险。
+- 也就是说，即使项目构建今天是成功的，由于外部的快照版本依赖实际对应的构件随时可能变化，项目的构建就可能由于这些外部的不受控制的因素而失败。
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#从仓库解析依赖的机制
+总而言之 （resolving dependency from repository）
+1）当本地仓库没有依赖构件的时候，Maven会自动从远程仓库下载
+2）当依赖版本为快照版本的时候，Maven会自动找到最新的快照
+3）依赖解析机制
+3.1) 当依赖的范围是system的时候，Maven直接从本地文件系统解析构件。
+3.2) 根据依赖坐标计算仓库路径后，尝试直接从本地仓库寻找构件，如果发现相应构件，则解析成功。
+3.3) 在本地仓库不存在相应构件的情况下，如果依赖的版本是显式的发布版本构件，如1.2、2.1-beta-1等，则遍历所有的远程仓库，发现后，下载并解析使用。
+3.4) 如果依赖的版本是SNAPSHOT，则"基于更新策略"读取所有远程仓库的元数据groupId/artifactId/version/maven-metadata.xml，
+将其与本地仓库的对应元数据合并后，"得到最新快照版本的值"，然后基于该值检查本地仓库，或者从远程仓库下载
+3.5) 如果最后解析得到的构件版本是时间戳格式的快照，如1.4.1-20091104.121450-121，则复制其时间戳格式的文件至非时间戳格式，如SNAPSHOT，并使用该非时间戳格式的构件。
+3.6) 如果依赖的版本是RELEASE或者LATEST，则基于更新策略读取所有远程仓库的元数据groupId/artifactId/mavenmetadata.xml， 将其与本地仓库的对应元数据合并后，计算出RELEASE或者LATEST真实的值，然后基于这个真实的值检查本地和远程仓库，如步骤2）和3）。
+4) 机制要点：
+4.1）当依赖的版本不明晰的时候，如RELEASE、LATEST和SNAPSHOT，Maven就需要基于更新远程仓库的更新策略来检查更新。
+4.2）仓库配置中，与依赖解析机制有关的一些配置：
+4.2.1) <releases><enabled>和<snapshots><enabled>:只有仓库开启了对于发布版本的支持时才能访问该仓库的发布版本构件信息，对于快照版本也是同理
+4.2.2) <releases>和<snapshots>的子元素<updatePolicy>，该元素配置了检查更新的频率，每日检查更新、永远检查更新、从不检查更新、 自定义时间间隔检查更新等。
+4.2.3) 用户还可以从命令行加入参数-U，强制检查更新，使用参数后，Maven就会忽略<updatePolicy>的配置。
+4.3) 当Maven检查完更新策略，并决定检查依赖更新的时候，就需要检查仓库元数据maven-metadata.xml。
+4.4) 回顾一下前面提到的RELEASE和LATEST版本，它们分别对应了仓库中存在的该构件的最新发布版本和最新版本（包含快照），而这两个“最新”是基于groupId/artifactId/maven-metadata.xml计算出来的
+4.5) 该XML文件列出了仓库中存在的该构件所有可用的版本，同时latest元素指向了这些版本中最新的那个版本，该例中是1.4.2-SNAPSHOT
+4.6) 而release元素指向了这些版本中最新的发布版本，该例中是1.4.0。
+4.7) Maven通过合并多个远程仓库及本地仓库的元数据，就能计算出基于所有仓库的latest和release分别是什么，然后再解析具体的构件。
+4.8) 需要注意的是，在依赖声明中使用LATEST和RELEASE是不推荐的做法，因为Maven随时都可能解析到不同的构件，可能今天LATEST是1.3.6，明天就成为1.4.0-SNAPSHOT了，且Maven不会明确告诉用户这样的变化。当这种变化造成构建失败的时候，发现问题会变得比较困难。
+4.9) RELEASE因为对应的是最新发布版构建，还相对可靠，LATEST就非常不可靠了，为此，Maven 3不再支持在插件配置中 使用LATEST和RELEASE
+4.10) 如果不设置插件版本，其效果就和RELEASE一样，Maven只会解析最新的发布版本构件。不过即使这样，也还存在潜在的问题。例如，某个依赖的1.1版本与1.2版本可能发生一些接口的变化，从而导致当前Maven构建的失败。
+4.11) 当依赖的版本设为快照版本的时候，Maven也需要检查更新，Maven会检查仓库元数据groupId/artifactId/version/mavenmetadata.xml，
+4.12) 该XML文件的snapshot元素包含了timestamp和buildNumber两个子元素，分别代表了这一快照的时间戳和构建号，基于这两个元素可以得到该仓库中此快照的最新构件版本实际为1.4.2-20091214.221414-13。通过合并所有远程仓库和本地仓库的元数据，Maven就能知道所有仓库中该构件的最新快照。
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- Maven是根据怎样的规则从仓库解析并使用依赖构件的呢？ 
+- 当本地仓库没有依赖构件的时候，Maven会自动从远程仓库下载；当依赖版本为快照版本的时候，Maven会自动找到最新的快照。
+- 这背后的依赖解析机制可以概括如下：
+1）当依赖的范围是system的时候，Maven直接从本地文件系统解析构件。
+2）根据依赖坐标计算仓库路径后，尝试直接从本地仓库寻找构件，如果发现相应构件，则解析成功。
+3）在本地仓库不存在相应构件的情况下，如果依赖的版本是显式的发布版本构件，如1.2、2.1-beta-1等，则遍历所有的远程仓库，发现后，下载并解析使用。
+4）如果依赖的版本是RELEASE或者LATEST，则基于更新策略读取所有远程仓库的元数据groupId/artifactId/mavenmetadata.xml， 将其与本地仓库的对应元数据合并后，计算出RELEASE或者LATEST真实的值，然后基于这个真实的值检查本地和
+远程仓库，如步骤2）和3）。
+5）如果依赖的版本是SNAPSHOT，则基于更新策略读取所有远程仓库的元数据groupId/artifactId/version/maven-metadata.xml，
+将其与本地仓库的对应元数据合并后，得到最新快照版本的值，然后基于该值检查本地仓库，或者从远程仓库下载。
+6）如果最后解析得到的构件版本是时间戳格式的快照，如1.4.1-20091104.121450-121，则复制其时间戳格式的文件至非时间戳格式，如SNAPSHOT，并使用该非时间戳格式的构件。
+
+- 当依赖的版本不明晰的时候，如RELEASE、LATEST和SNAPSHOT，Maven就需要基于更新远程仓库的更新策略来检查更新。
+- 仓库配置中，有一些配置与此有关：首先是<releases><enabled>和<snapshots><enabled>，只有仓库开启了对于发布版本的支持时， 才能访问该仓库的发布版本构件信息，对于快照版本也是同理；
+- 其次要注意的是<releases>和<snapshots>的子元素<updatePolicy>，该元素配置了检查更新的频率，每日检查更新、 永远检查更新、从不检查更新、自定义时间间隔检查更新等。
+- 最后，用户还可以从命令行加入参数-U，强制检查更新，使用参数后，Maven就会忽略<updatePolicy>的配置。
+- 当Maven检查完更新策略，并决定检查依赖更新的时候，就需要检查仓库元数据maven-metadata.xml。
+- 回顾一下前面提到的RELEASE和LATEST版本，它们分别对应了仓库中存在的该构件的最新发布版本和最新版本（包含快照），而这两个“最新”是基于groupId/artifactId/maven-metadata.xml计算出来的
+- 该XML文件列出了仓库中存在的该构件所有可用的版本，同时latest元素指向了这些版本中最新的那个版本，该例中是1.4.2-
+SNAPSHOT
+- 而release元素指向了这些版本中最新的发布版本，该例中是1.4.0。Maven通过合并多个远程仓库及本地仓库的元数据，就能计算出基于所有仓库的latest和release分别是什么，然后再解析具体的构件。
+- 需要注意的是，在依赖声明中使用LATEST和RELEASE是不推荐的做法，因为Maven随时都可能解析到不同的构件，可能今
+天LATEST是1.3.6，明天就成为1.4.0-SNAPSHOT了，且Maven不会明确告诉用户这样的变化。当这种变化造成构建失败的时候，
+发现问题会变得比较困难。
+- RELEASE因为对应的是最新发布版构建，还相对可靠，LATEST就非常不可靠了，为此，Maven 3不再支持在插件配置中 使用LATEST和RELEASE
+- 如果不设置插件版本，其效果就和RELEASE一样，Maven只会解析最新的发布版本构件。不过即使这样，也还存在潜在的问题。例如，某个依赖的1.1版本与1.2版本可能发生一些接口的变化，从而导致当前Maven构建的失败。
+- 当依赖的版本设为快照版本的时候，Maven也需要检查更新，这时，Maven会检查仓库元数据groupId/artifactId/version/mavenmetadata.xml，
+- 该XML文件的snapshot元素包含了timestamp和buildNumber两个子元素，分别代表了这一快照的时间戳和构建号，基于这两个元素可以得到该仓库中此快照的最新构件版本实际为1.4.2-20091214.221414-13。通过合并所有远程仓库和本地仓库的元数据，Maven就能知道所有仓库中该构件的最新快照。
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#镜像
+总而言之 （mirror）
+1) 如果仓库X可以提供仓库Y存储的所有内容，那么就可以认为X是Y的一个镜像。 换句话说，任何一个可以从仓库Y获得的构件，都能够从它的镜像中获取。
+2) e.g. http://maven.net.cn/content/groups/public/ 是中央仓库http://repo1.maven.org/maven2/ 在中国的镜像，
+3) 编辑settings.xml, 配置该镜像来替代中央仓库。
+<mirrors>
+  <mirror>
+    <id>maven.net.cn</id>
+    <mirrorOf>central</mirrorOf>
+    <name>one of the mirrors of central in China</name>
+    <url>http://maven.net.cn/content/groups/public/</url>
+  </mirror>
+</mirrors>
+4) <mirrorOf>的值为central，表示该配置为中央仓库的镜像，任何对于中央仓库的请求都会转至该镜像，
+5) 用户也可以使用同样的方法配置其他仓库的镜像。
+6) 另外三个元素id、name、url与一般仓库配置无异，表示该镜像仓库的唯一标识符、名称以及地址。
+7) 如果该镜像需要认证，也可以基于该id配置仓库认证。
+8) 镜像的一个更为常见的用法是结合私服。由于私服可以代理任何外部的公共仓库（包括中央仓库），因此，对于组织内部的Maven用户来说，使用一个私服地址就等于使用了所有需要的外部仓库，这可以将配置集中到私服，从而简化Maven本身的配置
+8.1) 在这种情况下，任何需要的构件都可以从私服获得，私服就是所有仓库的镜像
+<mirrors>
+  <mirror>
+    <id>internal-repository</id>
+    <mirrorOf>*</mirrorOf>
+    <name>Internal Repository Manager</name>
+    <url>http://192.168.1.100/maven2/</url>
+  </mirror>
+</mirrors>
+8.2) 该例中<mirrorOf>的值为星号，表示该配置是所有Maven仓库的镜像，任何对于远程仓库的请求都会被转至http://192.168.1.100/maven2/ 。
+8.3) 如果该镜像仓库需要认证，则配置一个id为internal-repository的<server>
+8.4) 为了满足一些复杂的需求，Maven还支持更高级的镜像配置：
+<mirrorOf>*</mirrorOf>： 匹配所有远程仓库。
+<mirrorOf>external：*</mirrorOf>： 匹配所有远程仓库，使用localhost的除外，使用file：// 协议的除外。也就是说， 匹配所有不在本机上的远程仓库。
+<mirrorOf>repo1，repo2</mirrorOf>： 匹配仓库repo1和repo2，使用逗号分隔多个远程仓库。
+<mirrorOf>*，！repo1</mirrorOf>： 匹配所有远程仓库，repo1除外，使用感叹号将仓库从匹配中排除。
+8.5) 由于镜像仓库完全屏蔽了被镜像仓库，当镜像仓库不稳定或者停止服务的时候，Maven仍将无法访问被镜像仓库。
+9) 我们可能只知道需要使用类库的项目名称，但添加Maven依赖要求提供确切的Maven坐标。这时，就可以使用仓库搜索服务来根据关键字得到Maven坐标。
+- MVNrepository: http://mvnrepository.com/
+- Sonatype Nexus: http://repository.sonatype.org/
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- 如果仓库X可以提供仓库Y存储的所有内容，那么就可以认为X是Y的一个镜像。
+- 换句话说，任何一个可以从仓库Y获得的构件，都能够从它的镜像中获取。
+- 举个例子，http://maven.net.cn/content/groups/public/ 是中央仓库http://repo1.maven.org/maven2/ 在中国的镜像， 由于地理位置的因素，该镜像往往能够提供比中央仓库更快的服务。
+- 因此，可以配置Maven使用该镜像来替代中央仓库。编辑settings.xml
+<mirrors>
+  <mirror>
+    <id>maven.net.cn</id>
+    <mirrorOf>central</mirrorOf>
+    <name>one of the mirrors of central in China</name>
+    <url>http://maven.net.cn/content/groups/public/</url>
+  </mirror>
+</mirrors>
+- <mirrorOf>的值为central，表示该配置为中央仓库的镜像，任何对于中央仓库的请求都会转至该镜像，
+- 用户也可以使用同样的方法配置其他仓库的镜像。
+- 另外三个元素id、name、url与一般仓库配置无异，表示该镜像仓库的唯一标识符、名称以及地址。
+- 类似地，如果该镜像需要认证，也可以基于该id配置仓库认证。
+- 关于镜像的一个更为常见的用法是结合私服。由于私服可以代理任何外部的公共仓库（包括中央仓库），因此，对于组织内部的Maven用户来说，使用一个私服地址就等于使用了所有需要的外部仓库，这可以将配置集中到私服，从而简化Maven本身的配置
+- 在这种情况下，任何需要的构件都可以从私服获得，私服就是所有仓库的镜像
+<mirrors>
+  <mirror>
+    <id>internal-repository</id>
+    <mirrorOf>*</mirrorOf>
+    <name>Internal Repository Manager</name>
+    <url>http://192.168.1.100/maven2/</url>
+  </mirror>
+</mirrors>
+- 该例中<mirrorOf>的值为星号，表示该配置是所有Maven仓库的镜像，任何对于远程仓库的请求都会被转至http://192.168.1.100/maven2/ 。
+- 如果该镜像仓库需要认证，则配置一个id为internal-repository的<server>
+- 为了满足一些复杂的需求，Maven还支持更高级的镜像配置：
+<mirrorOf>*</mirrorOf>： 匹配所有远程仓库。
+<mirrorOf>external：*</mirrorOf>： 匹配所有远程仓库，使用localhost的除外，使用file：// 协议的除外。也就是说， 匹配所有不在本机上的远程仓库。
+<mirrorOf>repo1，repo2</mirrorOf>： 匹配仓库repo1和repo2，使用逗号分隔多个远程仓库。
+<mirrorOf>*，！repo1</mirrorOf>： 匹配所有远程仓库，repo1除外，使用感叹号将仓库从匹配中排除。
+- 需要注意的是，由于镜像仓库完全屏蔽了被镜像仓库，当镜像仓库不稳定或者停止服务的时候，Maven仍将无法访问被镜像
+仓库，因而将无法下载构件。
+
+#仓库搜索服务
+- 使用Maven进行日常开发的时候，一个常见的问题就是如何寻找需要的依赖，我们可能只知道需要使用类库的项目名称，但
+添加Maven依赖要求提供确切的Maven坐标。这时，就可以使用仓库搜索服务来根据关键字得到Maven坐标。
+- 几个常用的、功能强大的公共Maven仓库搜索服务。
+- Sonatype Nexus: http://repository.sonatype.org/
+- Nexus提供了关键字搜索、类名搜索、坐标搜索、校验和搜索等功能。搜索后，页面清晰地列出了结果构件的坐标及所属仓库。用户可以直接下载相应构件，还可以直接复制已经根据坐标自动生成的XML依赖声明，
+
+MVNrepository: http://mvnrepository.com/
+- MVNrepository的界面比较清新，它提供了基于关键字的搜索、依赖声明代码片段、构件下载、依赖与被依赖关系信息、构件所含包信息等功能。MVNrepository还能提供一个简单的图表，显示某个构件各版本间的大小变化。
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Chapter 7 生命周期和插件
+总而言之 （Lifecycle）
+1）在Maven的日常使用中，命令行的输入往往就对应了生命周期，如mvn package就表示执行默认生命周期阶段package。
+2）生命周期和插件两者协同工作，密不可分：Maven的生命周期是抽象的，其实际行为都由插件来完成，如package阶段的任务可能由maven-jar-plugin完成。
+3）Maven的生命周期就是为了对所有的构建过程进行抽象和统一。 Maven从大量项目和构建工具中学习和反思，然后总结了一套高度完善的、易扩展的生命周期。
+4) Maven的生命周期包含了项目的清理、初始化、编译、测试、打包、集成测试、验证、部署和站点生成等几乎所有构建步骤。
+5) Maven的生命周期是抽象的，这意味着生命周期本身不做任何实际的工作，在Maven的设计中，实际的任务（如编译源代码）都交由插件来完成。
+6) 这种思想与设计模式中的模板方法（Template Method）非常相似。
+public abstract class AbstractBuild
+{
+    public void build()
+    {
+        initialize();
+        compile();
+        test();
+        packagee();
+        integrationTest();
+        deploy();
+    }
+    protected abstract void initialize();
+    protected abstract void compile();
+    protected abstract void test();
+    protected abstract void packagee();
+    protected abstract void integrationTest();
+    protected abstract void deploy();
+}
+7) 生命周期抽象了构建的各个步骤，定义了它们的次序，但没有提供具体实现。
+8) 那么谁来实现这些步骤呢？Maven设计了插件机制。 每个构建步骤都可以绑定一个或者多个插件行为
+9) 而且Maven为大多数构建步骤编写并绑定了默认插件。 例如，针对编译的插件有maven-compiler-plugin，针对测试的插件有maven-surefire-plugin等。
+10) 当用户有特殊需要的时候，也可以"配置插件定制构建行为"，甚至"自己编写插件"。
+11) Maven定义的生命周期和插件机制一方面保证了所有Maven项目有一致的构建标准，另一方面又通过默认插件简化和稳定了实际项目的构建。此外，该机制还提供了足够的扩展空间，用户可以通过配置现有插件或者自行编写插件来自定义构建行为。
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- 除了坐标、依赖以及仓库之外，Maven另外两个核心概念是生命周期和插件。
+- 在有关Maven的日常使用中，命令行的输入往往就对应了生命周期，如mvn package就表示执行默认生命周期阶段package。
+- Maven的生命周期是抽象的，其实际行为都由插件来完成，如package阶段的任务可能就会由maven-jar-plugin完成。生命周期和插件两者协同工作，密不可分
+
+#何为生命周期
+- 在Maven出现之前，项目构建的生命周期就已经存在，软件开发人员每天都在对项目进行清理、编译、测试及部署。
+- 虽然大家都在不停地做构建工作，但公司和公司间、项目和项目间，往往使用不同的方式做类似的工作。有的项目以手工的方式在执行编译测试，有的项目写了自动化脚本执行编译测试。
+- 可以想象的是，虽然各种手工方式十分类似，但不可能完全一样；同样地，对于自动化脚本，大家也是各写各的，能满足自身需求即可，换个项目就需要重头再来。
+
+- Maven的生命周期就是为了对所有的构建过程进行抽象和统一。
+- Maven从大量项目和构建工具中学习和反思，然后总结了一套高度完善的、易扩展的生命周期。
+- 这个生命周期包含了项目的清理、初始化、编译、测试、打包、集成测试、验证、部署和站点生成等几乎所有构建步骤。
+- 几乎所有项目的构建，都能映射到这样一个生命周期上。
+
+- Maven的生命周期是抽象的，这意味着生命周期本身不做任何实际的工作，
+- 在Maven的设计中，实际的任务（如编译源代码）都交由插件来完成。
+- 这种思想与设计模式中的模板方法（Template Method）非常相似。模板方法模式在父类中定义算法的整体结构，子类可以通过实现 或者重写父类的方法来 控制实际的行为， 这样既保证了算法有足够的可扩展性，又能够严格控制算法的整体结构。
+- 如下的模板方法抽象类能够很好地体现Maven生命周期的概念:
+public abstract class AbstractBuild
+{
+    public void build()
+    {
+        initialize();
+        compile();
+        test();
+        packagee();
+        integrationTest();
+        deploy();
+    }
+    protected abstract void initialize();
+    protected abstract void compile();
+    protected abstract void test();
+    protected abstract void packagee();
+    protected abstract void integrationTest();
+    protected abstract void deploy();
+}
+....
+- 这段代码非常简单，build（）方法定义了整个构建的过程，依次初始化、编译、测试、打包（由于package与Java关键字冲突，这里使用了单词packagee）、集成测试和部署，但是这个类中没有具体实现初始化、编译、测试等行为，它们都交由子类去实现。
+- 生命周期抽象了构建的各个步骤，定义了它们的次序，但没有提供具体实现。
+- 那么谁来实现这些步骤呢？不能让用户为了编译而写一堆代码，为了测试又写一堆代码，那不就成了大家在重复发明轮子吗？Maven当然必须考虑这一点，因此它设计了插件机制。每个构建步骤都可以绑定一个或者多个插件行为，
+- 而且Maven为大多数构建步骤编写并绑定了默认插件。例如，针对编译的插件有maven-compiler-plugin，针对测试的插件有maven-surefire-plugin等。虽然在大多数时间里，用户几乎都不会觉察到插件的存在，但实际上编译是由maven-compilerplugin完成的，而测试是由maven-surefire-plugin完成的。
+- 当用户有特殊需要的时候，也可以配置插件定制构建行为，甚至自己编写插件。
+
+**Maven定义的生命周期和插件机制一方面保证了所有Maven项目有一致的构建标准，另一方面又通过默认插件简化和稳定了实际项目的构建。此外，该机制还提供了足够的扩展空间，用户可以通过配置现有插件或者自行编写插件来自定义构建行为。
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#三套生命周期
+总而言之 （3 sets of lifecycles)
+1) Maven拥有三套相互独立的生命周期，它们分别为clean、default和site。clean生命周期的目的是清理项目; default生命周期的目的是构建项目; 而site生命周期的目的是建立项目站点。
+2) 每个生命周期包含一些阶段（phase），这些阶段是有顺序的，并且后面的阶段依赖于前面的阶段，
+3) 三套生命周期本身是相互独立的，可以仅仅调用clean生命周期的某个阶段，或者仅仅调用default生命周期的某个阶段，而不会对其他生命周期产生任何影响
+4) clean生命周期: 
+4.1）pre-clean 执行一些清理前需要完成的工作。
+4.2）clean 清理上一次构建生成的文件。
+4.3）post-clean 执行一些清理后需要完成的工作。
+5) default生命周期:  default生命周期定义了真正构建时所需要执行的所有步骤，它是所有生命周期中最核心的部分:
+5.1) validate
+5.2) initialize
+5.3) generate-sources
+5.4) process-sources 处理项目主资源文件。对src/main/resources目录的内容进行变量替换等工作后，复制到项目输出的主classpath目录中。
+5.5) generate-resources
+5.6) process-resources
+5.7) compile 编译项目的主源码。一般来说，是编译src/main/java目录下的Java文件至项目输出的主classpath目录中。
+5.8) process-classes
+5.9) generate-test-sources
+5.10) process-test-sources 处理项目测试资源文件。对src/test/resources目录的内容进行变量替换等工作后，复制到项目输出的测试classpath目录中。
+5.11) generate-test-resources
+5.12) process-test-resources
+5.13) test-compile 编译项目的测试代码。一般来说，是编译src/test/java目录下的Java文件至项目输出的测试classpath目录中。
+5.14) process-test-classes
+5.15) test 使用单元测试框架运行测试，测试代码不会被打包或部署。
+5.16) prepare-package
+5.17) package 接受编译好的代码，打包成可发布的格式，如JAR。
+5.18) pre-integration-test
+5.19) integration-test
+5.20) post-integration-test
+5.21) verify
+5.22) install 将包安装到Maven本地仓库，供本地其他Maven项目使用。
+5.23) deploy 将最终的包复制到远程仓库，供其他开发人员和Maven项目使用。
+5.24) 参阅官方的解释：http://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html 。
+6) site生命周期: 基于POM所包含的信息，自动生成一个友好的站点，方便团队交流和发布项目信息。
+6.1) pre-site 执行一些在生成项目站点之前需要完成的工作。
+6.2) site 生成项目站点文档。
+6.3) post-site 执行一些在生成项目站点之后需要完成的工作。
+6.4) site-deploy 将生成的项目站点发布到服务器上。
+7) command line vs. lifecycle
+7.1) 从命令行执行Maven任务的最主要方式就是调用Maven的生命周期阶段。
+7.2) 各个生命周期是相互独立的，而一个生命周期的阶段是有前后依赖关系的。
+7.3) $mvn clean： 调用clean生命周期的clean阶段。实际执行的阶段为clean生命周期的pre-clean和clean阶段。
+7.4) $mvn test： 调用default生命周期的test阶段。实际执行的阶段为default生命周期的validate、initialize等，直到test的所有阶段。这也解释了为什么在执行测试的时候，项目的代码能够自动得以编译。
+7.5) $mvn clean install：调用clean生命周期的clean阶段和default生命周期的install阶段。实际执行的阶段为clean生命周期的pre-clean、clean阶段，以及default生命周期的从validate至install的所有阶段。 该命令结合了两个生命周期，在执行真正的项目构建之前清理项目是一个很好的实践。
+7.6) $mvn clean deploy site-deploy： 调用clean生命周期的clean阶段、default生命周期的deploy阶段，以及site生命周期的site-deploy阶段。 实际执行的阶段为clean生命周期的pre-clean、clean阶段，default生命周期的所有阶段，以及site生命周期的所有阶段。该命令结合了Maven所有三个生命周期，且deploy为default生命周期的最后一个阶段，site-deploy为site生命周期的最后一个阶段。
+7.7) Maven中主要的生命周期阶段并不多，而常用的Maven命令实际都是基于这些阶段简单组合而成的
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- Maven拥有三套相互独立的生命周期，它们分别为clean、default和site。
+- clean生命周期的目的是清理项目，
+- default生命周期的目的是构建项目
+- 而site生命周期的目的是建立项目站点。
+
+- 每个生命周期包含一些阶段（phase），这些阶段是有顺序的，并且后面的阶段依赖于前面的阶段，
+- 用户和Maven最直接的交互方式就是调用这些生命周期阶段
+- 以clean生命周期为例，它包含的阶段有pre-clean、clean和post-clean。
+- 当用户调用pre-clean的时候，只有pre-clean阶段得以执行；当用户调用clean的时候，pre-clean和clean阶段会得以顺序执行；当用户调用post-clean的时候，pre-clean、clean和post-clean会得以顺序执行。
+- 较之于生命周期阶段的前后依赖关系，三套生命周期本身是相互独立的，用户可以仅仅调用clean生命周期的某个阶段，或者仅仅调用default生命周期的某个阶段，而不会对其他生命周期产生任何影响
+- 例如，当用户调用clean生命周期的clean阶段的时候，不会触发default生命周期的任何阶段，反之亦然，当用户调用default生命周期的compile阶段的时候，也不会触发clean生命周期的任何阶段。
+
+#clean生命周期: 
+目的是清理项目，它包含三个阶段：
+1）pre-clean 执行一些清理前需要完成的工作。
+2）clean 清理上一次构建生成的文件。
+3）post-clean 执行一些清理后需要完成的工作。
+
+default生命周期
+- default生命周期定义了真正构建时所需要执行的所有步骤，它是所有生命周期中最核心的部分，其包含的阶段如下：
+·validate
+·initialize
+·generate-sources
+·process-sources 处理项目主资源文件。一般来说，是对src/main/resources目录的内容进行变量替换等工作后，复制到项目输出的主classpath目录中。
+·generate-resources
+·process-resources
+·compile 编译项目的主源码。一般来说，是编译src/main/java目录下的Java文件至项目输出的主classpath目录中。
+·process-classes
+·generate-test-sources
+·process-test-sources 处理项目测试资源文件。一般来说，是对src/test/resources目录的内容进行变量替换等工作后，复制到项目输出的测试classpath目录中。
+·generate-test-resources
+·process-test-resources
+·test-compile 编译项目的测试代码。一般来说，是编译src/test/java目录下的Java文件至项目输出的测试classpath目录中。
+·process-test-classes
+·test 使用单元测试框架运行测试，测试代码不会被打包或部署。
+·prepare-package
+·package 接受编译好的代码，打包成可发布的格式，如JAR。
+·pre-integration-test
+·integration-test
+·post-integration-test
+·verify
+·install 将包安装到Maven本地仓库，供本地其他Maven项目使用。
+·deploy 将最终的包复制到远程仓库，供其他开发人员和Maven项目使用。
+
+- 参阅官方的解释：http://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html 。
+
+#site生命周期
+- site生命周期的目的是建立和发布项目站点，Maven能够基于POM所包含的信息，自动生成一个友好的站点，方便团队交流和发布项目信息。
+·pre-site 执行一些在生成项目站点之前需要完成的工作。
+·site 生成项目站点文档。
+·post-site 执行一些在生成项目站点之后需要完成的工作。
+·site-deploy 将生成的项目站点发布到服务器上。
+
+#命令行与生命周期
+- 从命令行执行Maven任务的最主要方式就是调用Maven的生命周期阶段。
+- 需要注意的是，各个生命周期是相互独立的，而一个生命周期的阶段是有前后依赖关系的。
+·＄mvn clean： 该命令调用clean生命周期的clean阶段。实际执行的阶段为clean生命周期的pre-clean和clean阶段。
+
+·＄mvn test：该命令调用default生命周期的test阶段。实际执行的阶段为default生命周期的validate、initialize等， 直到test的所有阶段。 这也解释了为什么在执行测试的时候，项目的代码能够自动得以编译。
+
+·＄mvn clean install： 该命令调用clean生命周期的clean阶段和default生命周期的install阶段。实际执行的阶段为clean生命周期的pre-clean、clean阶段， 以及default生命周期的从validate至install的所有阶段。该命令结合了两个生命周期，在执行真正的项目构建之前清理项目是一个很好的实践。
+
+·＄mvn clean deploy site-deploy： 该命令调用clean生命周期的clean阶段、default生命周期的deploy阶段，以及site生命周期的site-deploy阶段。 实际执行的阶段为clean生命周期的pre-clean、clean阶段，default生命周期的所有阶段，以及site生命周期的所有阶段。该命令结合了Maven所有三个生命周期，且deploy为default生命周期的最后一个阶段，site-deploy为site生命周期的最后一个阶段。
+
+- 由于Maven中主要的生命周期阶段并不多，而常用的Maven命令实际都是基于这些阶段简单组合而成的，因此只要对Maven生命周期有一个基本的理解，读者就可以正确而熟练地使用Maven命令。
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#插件目标
+总而言之 （plugin goal）
+1）plugin goal: 在进一步详述插件和生命周期的绑定关系之前，必须先了解插件目标（Plugin Goal）的概念。
+1.1）Maven的核心仅仅定义了抽象的生命周期，具体的任务是交由插件完成的，插件以独立的构件形式存在，Maven会在需要的时候下载并使用插件。
+1.2）插件目标是插件一个功能：对于插件本身，为了能够复用代码，它往往能够完成多个任务。为每个功能编写一个独立的插件显然是不可取的，因为这些任务背后有很多可以复用的代码，因此，这些功能聚集在一个插件里，每个功能就是一个插件目标。
+1.3）maven-dependency-plugin有十多个目标，每个目标对应了一个功能。它能够分析项目依赖，帮助找出潜在的无用依赖；它能够列出项目的依赖树，帮助分析依赖来源；它能够列出项目所有已解析的依赖，这几个功能分别对应的插件目标为dependency：analyze、dependency：tree和dependency：list；  compiler：compile是maven-compiler-plugin的compile目标; surefire：test是maven-surefire-plugin的test目标。
+1.4）这是一种通用插件目标的写法，冒号前面是插件前缀，冒号后面是插件目标。
+2) 插件绑定
+2.1) Maven的生命周期与插件相互绑定，用以完成实际的构建任务。
+2.2) 具体而言，是生命周期的阶段<->插件目标相互绑定，以完成某个具体的构建任务。
+2.3) 例如项目编译这一任务，对应了default生命周期的compile这一阶段，而maven-compiler-plugin这一插件的compile目标能够完成该任务。因此，将它们绑定，就能实现项目编译的目的
+3) 内置绑定
+3.1) 为了能让用户几乎不用任何配置就能构建Maven项目，Maven为一些主要的生命周期阶段绑定了很多插件的目标，当用户通过命令行调用生命周期阶段的时候，
+对应的插件目标就会执行相应的任务
+3.2) clean生命周期仅有pre-clean、clean和post-clean三个阶段，其中的clean与maven-clean-plugin：clean绑定。maven-clean-plugin仅有clean这一个目标，其作用就是删除项目的输出目录。
+3.3) site生命周期有pre-site、site、post-site和site-deploy四个阶段，site阶段和maven-site-plugin：site目标相互绑定，site-deploy阶段和maven-site-plugin：depoy目标绑定。 maven-site-plugin：site目标用来生成项目站点，maven-site-plugin：deploy目标用来将项目站点部署到远程服务器上。
+3.4）default生命周期与插件目标的绑定关系较为复杂。因为对于任何项目来说，例如jar项目和war项目，它们的项目清理和站点生成任务是一样的，不过构建过程会有区别。例如jar项目需要打成JAR包，而war项目需要打成WAR包。
+3.5）default生命周期的内置插件绑定关系及具体任务（打包类型：jar）:
+生命周期阶段            插件目标                              Tasks
+process-resources      maven-resources-plugin:resources     copy main resources to main output directory                    
+compile                maven-compiler-plugin:compile        compile main sources to main output directory                      
+process-test-resources maven-resources-plugin:testResources copy test resources to test output directory                         
+test-compile           maven-compiler-plugin:testCompile    compile test sources to test output directory                      
+test                   maven-surefire-plugin:test           run test cases             
+package                maven-jar-plugin:jar                 create jar from main output directory                           
+install                maven-install-plugin:install         install jar to local repo                 
+deploy                 maven-deploy-plugin:deploy           deploy jar to remote repo
+3.6) 上表只列出了拥有插件绑定关系的阶段，default生命周期还有很多其他阶段，默认它们没有绑定任何插件，因此也没有任何实际行为。
+3.7) 除了默认的打包类型jar之外，常见的打包类型还有war、pom、maven-plugin、ear等。它们的default生命周期与插件目标的绑定关系可参阅Maven官方文
+档：http://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html#Built-in_Lifecycle_Bindings
+4) 自定义绑定
+4.1) 除了内置绑定以外，用户还能够自己选择"将某个插件:目标绑定到生命周期的某个阶段上"，这种自定义绑定方式能让Maven项目在构建过程中执行更多更富特色的任务。
+4.2) 一个常见的例子是创建项目的源码jar包，内置的插件绑定关系中并没有涉及这一任务，因此需要用户自行配置。
+4.3) maven-source-plugin的jar-no-fork目标能够将项目的主代码打包成jar文件，将其绑定到default生命周期的verify阶段上，在执行完集成测试后、安装构件前创建源码jar包。
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-source-plugin</artifactId>
+    <version>2.1.1</version>
+    <executions>
+        <execution>
+            <id>attach-sources</id>
+            <phase>verify</phase>
+            <goals>
+                <goal>jar-no-fork</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+4.4）pom.xml中，在build/plugins/plugin中定义插件的绑定，声明插件坐标，该例中用到的是maven-source-plugin，其groupId=org.apache.maven.plugins，这也是Maven官方插件的groupId，artifactId=maven-source-plugin，version=2.1.1。
+4.5）对于自定义绑定的插件，用户应该声明一个非快照版本，这样可以避免由于插件版本变化造成的构建不稳定性。
+4.6）插件执行配置，executions/execution子元素可以用来配置执行一个任务。配置了一个id为attach-sources的任务，通过phase配置将其绑定到verify生命周期阶段上，再通过goals配置指定要执行的插件目标。
+4.7）mvn verify：当执行verify生命周期阶段的时候，maven-source-plugin：jar-no-fork会得以执行，它会创建一个以-sources.jar结尾的源码文件包。
+4.8）有时候，即使不通过phase元素配置生命周期阶段，插件目标也能够绑定到生命周期中去。例如，可以尝试删除上述配置中的phase一行，再次执行mvn verify ，仍然可以看到maven-source-plugin：jar-no-fork得以执行。原因是有很多插件的目标在编写时已经定义了默认绑定阶段。
+4.9）可以使用maven-help-plugin查看插件详细信息，了解插件目标的默认绑定阶段 - Bound to phase: package。
+mvn help:describe -Dplugin=org.apache.maven.plugins:maven-source-plugin:2.1.1 -Ddetail
+Description: Aggregate sources for all modules in an aggregator project.
+  Implementation: org.apache.maven.plugin.source.AggregatorSourceJarMojo
+  Language: java
+  Bound to phase: package
+  Before this mojo executes, it will call:
+    Phase: 'generate-sources'
+4.10）当插件目标被绑定到不同的生命周期阶段的时候，其执行顺序会由生命周期阶段的先后顺序决定。
+4.11）当多个插件目标绑定到同一个阶段的时候，这些插件声明的先后顺序决定了目标的执行顺序。   
+5）插件配置
+5.1）完成了插件和生命周期的绑定之后，用户还可以配置插件目标的参数，进一步调整插件目标所执行的任务，以满足项目的需求。
+5.2）几乎所有Maven插件的目标都有一些可配置的参数，用户可以通过命令行和POM配置等方式来配置这些参数。
+5.3）命令行插件配置
+5.3.1）在日常的Maven使用中，我们会经常从命令行输入并执行Maven命令。 如果能够方便地更改某些插件的行为，无疑会十分方便。
+5.3.2）很多插件目标的参数都支持从命令行配置，用户可以在Maven命令中使用-D参数，并伴随一个参数键=参数值的形式，来配置插件目标的参数。
+5.3.3）例如，maven-surefire-plugin提供了一个maven.test.skip参数，当其值为true的时候，就会跳过执行测试：
+mvn install -Dmaven.test.skip=true
+5.3.4）参数-D是Java自带的，其功能是通过命令行设置一个Java系统属性，Maven简单地重用了该参数，在准备插件的时候检查系统属性，便实现了插件参数的配置。
+5.4）pom.xml中插件全局配置
+5.4.1）并不是所有的插件参数都适合从命令行配置，有些参数的值从项目创建到项目发布都不会改变，或者说很少改变，对于这种情况，在POM文件中一次性配置比重复在命令行输入要方便。
+5.4.2）可以在声明插件的时候进行一个全局的配置。所有使用该插件的任务，都会使用这些配置。
+5.4.3）例如，我们通常会需要配置maven-compiler-plugin告诉它编译Java 1.5版本的源文件，生成与JVM 1.5兼容的字节码文件
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+        <source>1.5</source>
+        <target>1.5</target>
+    </configuration>
+</plugin>
+5.4.4）不管绑定到compile阶段的maven-compiler-plugin：compile任务，还是绑定到test-compiler阶段的maven-compiler-plugin：testCompile任务，就都能够使用该配置，基于Java 1.5版本进行编译。
+5.5）pom.xml中插件任务配置
+5.5.1）除了为插件配置全局的参数，用户还可以为某个插件任务配置特定的参数。
+5.5.2）以maven-antrun-plugin为例，它有一个目标run，可以用来在Maven中调用Ant任务。用户将maven-antrun-plugin：run绑定到多个生命周期阶段上，再加以不同的配置，就可以让Maven在不同的生命阶段执行不同的任务，
+6）获取插件信息
+6.1）仅仅理解如何配置使用插件是不够的。当遇到一个构建任务的时候，用户还需要知道去哪里寻找合适的插件，以帮助完成任务。
+6.2）找到正确的插件之后，还要详细了解该插件的配置点。
+6.3）在线插件信息
+6.3.1）基本上所有主要的Maven插件都来自Apache和Codehaus。详细的列表可以在这个地址得到：http://maven.apache.org/plugins/index.html，单击某个插件的链接便可以得到进一步的信息。所有官方插件能在这里下载：http://repo1.maven.org/maven2/org/apache/maven/plugins/ 。
+6.3.2）Codehaus上的Mojo项目也提供了大量了Maven插件，详细的列表可以访问：http://mojo.codehaus.org/plugins.html。 所有Codehaus的Maven插件能在这里下载：http://repository.codehaus.org/org/codehaus/mojo/ 。
+6.3.3）通过阅读插件文档中的使用介绍和实例，应该能够很好地使用该插件。但想了解非常细节的目标参数时，就需要进一步访问该插件每个目标的文档
+6.3.4）文档详细解释了该参数的作用、类型等信息。基于该信息，用户可以在POM中配置maven-surefire-plugin的skip参数为true来跳过测试。从命令行传入的参数不同于该插件目标的参数名称。命令行参数是由该插件参数的表达式（Expression）决定的。surefire：test skip参数的表达式为＄{maven.test.skip}， 它表示可以在命令行以-Dmaven.test.skip=true的方式配置该目标。并不是所有插件目标参数都有表达式，一些插件目标参数只能在POM中配置。
+6.4）使用maven-help-plugin描述插件
+6.4.1）除了访问在线的插件文档之外，还可以借助maven-help-plugin来获取插件的详细信息：
+mvn help:describe -Dplugin=org.apache.maven.plugins:maven-source-plugin:2.1.1
+mvn help:describe -Dplugin=org.apache.maven.plugins:maven-compiler-plugin:2.1
+6.4.2）执行的是maven-help-plugin的describe目标，在参数plugin中输入插件的groupId、artifactId和version。Maven输出plugin的简要信息，包括该插件的坐标、目标前缀和目标等
+6.4.3）目标前缀（Goal Prefix），其作用是方便在命令行直接运行插件。 maven-compiler-plugin的目标前缀是compiler。
+6.4.4) 在描述插件的时候，还可以省去版本信息，让Maven自动获取最新版本:
+mvn help:describe -Dplugin=org.apache.maven.plugins:maven-compiler-plugin
+6.4.5) 可以使用插件目标前缀替换坐标
+mvn help:describe -Dplugin=compiler
+6.4.6) 如果想仅仅描述某个插件目标的信息，可以加上goal参数：
+mvn help:describe -Dplugin=compiler -Dgoal=compile
+6.4.7) 如果想输出更详细的信息，可以加上detail参数：
+mvn help:describe -Dplugin=compiler -Dgoal=compile -Ddetail
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- 在进一步详述插件和生命周期的绑定关系之前，必须先了解插件目标（Plugin Goal）的概念。
+- 我们知道，Maven的核心仅仅定义了抽象的生命周期，具体的任务是交由插件完成的，插件以独立的构件形式存在，Maven会在需要的时候下载并使用插件。
+- 对于插件本身，为了能够复用代码，它往往能够完成多个任务。
+- 例如maven-dependency-plugin，它能够基于项目依赖做很多事情。它能够分析项目依赖，帮助找出潜在的无用依赖；它能够列出项目的依赖树，帮助分析依赖来源；它能够列出项目所有已解析的依赖，等等。
+- 为每个这样的功能编写一个独立的插件显然是不可取的，因为这些任务背后有很多可以复用的代码，因此，这些功能聚集在一个插件里，"每个功能就是一个插件目标"。
+- maven-dependency-plugin有十多个目标，每个目标对应了一个功能，上述提到的几个功能分别对应的插件目标为dependency：analyze、dependency：tree和dependency：list。这是一种通用的写法，冒号前面是插件前缀，冒号后面是该插件的目标。
+- 类似地，还可以写出compiler：compile（这是maven-compiler-plugin的compile目标）和surefire：test（这是maven-surefire-plugin的test目标）。
+
+#插件绑定
+- Maven的生命周期与插件相互绑定，用以完成实际的构建任务。
+- 具体而言，是生命周期的阶段与插件的目标相互绑定，以完成某个具体的构建任务。
+- 例如项目编译这一任务，它对应了default生命周期的compile这一阶段，而maven-compiler-plugin这一插件的compile目标能够完成该任务。因此，将它们绑定，就能实现项目编译的目的，
+
+#内置绑定
+- 为了能让用户几乎不用任何配置就能构建Maven项目，Maven在核心为一些主要的生命周期阶段绑定了很多插件的目标，当用户通过命令行调用生命周期阶段的时候，对应的插件目标就会执行相应的任务
+- clean生命周期仅有pre-clean、clean和post-clean三个阶段，其中的clean与maven-clean-plugin：clean绑定。maven-clean-plugin仅有clean这一个目标，其作用就是删除项目的输出目录。
+- site生命周期有pre-site、site、post-site和site-deploy四个阶段，其中，site和maven-site-plugin：site相互绑定，site-deploy和maven-site-plugin：depoy相互绑定。maven-site-plugin有很多目标，其中，site目标用来生成项目站点，deploy目标用来将项目站点部署到远程服务器上。
+- 对于clean和site生命周期来说，default生命周期与插件目标的绑定关系就显得复杂一些。这是因为对于任何项目来说，例如jar项目和war项目，它们的项目清理和站点
+生成任务是一样的，不过构建过程会有区别。例如jar项目需要打成JAR包，而war项目需要打成WAR包。
+- default生命周期的内置插件绑定关系及具体任务（打包类型：jar）:
+生命周期阶段            插件目标                              Tasks
+process-resources      maven-resources-plugin:resources     copy main resources to main output directory                    
+compile                maven-compiler-plugin:compile        compile main sources to main output directory                      
+process-test-resources maven-resources-plugin:testResources copy test resources to test output directory                         
+test-compile           maven-compiler-plugin:testCompile    compile test sources to test output directory                      
+test                   maven-surefire-plugin:test           run test cases             
+package                maven-jar-plugin:jar                 create jar from main output directory                           
+install                maven-install-plugin:install         install jar to local repo                 
+deploy                 maven-deploy-plugin:deploy           deploy jar to remote repo
+
+-上表只列出了拥有插件绑定关系的阶段，default生命周期还有很多其他阶段，默认它们没有绑定任何插件，因此也没有任何实际行为。
+- 除了默认的打包类型jar之外，常见的打包类型还有war、pom、maven-plugin、ear等。它们的default生命周期与插件目标的绑定关系可参阅Maven官方文
+档：http://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html#Built-in_Lifecycle_Bindings
+
+#自定义绑定
+- 除了内置绑定以外，用户还能够自己选择"将某个插件:目标绑定到生命周期的某个阶段上"，这种自定义绑定方式能让Maven项目在构建过程中执行更多更富特色的任务。
+- 一个常见的例子是创建项目的源码jar包，内置的插件绑定关系中并没有涉及这一任务，因此需要用户自行配置。
+- maven-source-plugin可以帮助我们完成该任务，它的jarno-fork目标能够将项目的主代码打包成jar文件，可以将其绑定到default生命周期的verify阶段上，在执行完集成测试后和安装构件之前创建源码jar包。
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-source-plugin</artifactId>
+    <version>2.1.1</version>
+    <executions>
+        <execution>
+            <id>attach-sources</id>
+            <phase>verify</phase>
+            <goals>
+                <goal>jar-no-fork</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+- 在POM的build元素下的plugins子元素中声明插件的使用，该例中用到的是maven-source-plugin，其groupId为org.apache.maven.plugins，这也是Maven官方插件的groupId，紧接着artifactId为maven-source-plugin，version为2.1.1。
+- 对于自定义绑定的插件，用户总是应该声明一个非快照版本，这样可以避免由于插件版本变化造成的构建不稳定性。
+- 除了基本的插件坐标声明外，还有插件执行配置，executions下每个execution子元素可以用来配置执行一个任务。该例中配置了一个id为attach-sources的任
+务，通过phrase配置，将其绑定到verify生命周期阶段上，再通过goals配置指定要执行的插件目标。至此，自定义插件绑定完成。
+mvn verify
+- 当执行verify生命周期阶段的时候，maven-source-plugin：jar-no-fork会得以执行，它会创建一个以-sources.jar结尾的源码文件包。
+
+- 有时候，即使不通过phase元素配置生命周期阶段，插件目标也能够绑定到生命周期中去。例如，可以尝试删除上述配置中的phase一行，再次执行mvn verify ，仍然可
+以看到maven-source-plugin：jar-no-fork得以执行。原因是有很多插件的目标在编写时已经定义了默认绑定阶段。
+
+- 可以使用maven-help-plugin查看插件详细信息，了解插件目标的默认绑定阶段。
+mvn help:describe -Dplugin=org.apache.maven.plugins:maven-source-plugin:2.1.1 -Ddetail
+
+Description: Aggregate sources for all modules in an aggregator project.
+  Implementation: org.apache.maven.plugin.source.AggregatorSourceJarMojo
+  Language: java
+  Bound to phase: package
+  Before this mojo executes, it will call:
+    Phase: 'generate-sources'
+
+- 我们知道，当插件目标被绑定到不同的生命周期阶段的时候，其执行顺序会由生命周期阶段的先后顺序决定。
+- 当多个插件目标绑定到同一个阶段的时候，这些插件声明的先后顺序决定了目标的执行顺序。   
+
+#插件配置
+- 完成了插件和生命周期的绑定之后，用户还可以配置插件目标的参数，进一步调整插件目标所执行的任务，以满足项目的需求。
+- 几乎所有Maven插件的目标都有一些可配置的参数，用户可以通过命令行和POM配置等方式来配置这些参数。
+
+#命令行插件配置
+- 在日常的Maven使用中，我们会经常从命令行输入并执行Maven命令。 在这种情况下，如果能够方便地更改某些插件的行为，无疑会十分方便。
+- 很多插件目标的参数都支持从命令行配置，用户可以在Maven命令中使用-D参数，并伴随一个参数键=参数值的形式，来配置插件目标的参数。
+- 例如，maven-surefire-plugin提供了一个maven.test.skip参数，当其值为true的时候，就会跳过执行测试。 于是，在运行命令的时候，加上如下-D参数就能跳过测试：
+mvn install -Dmaven.test.skip=true
+- 参数-D是Java自带的，其功能是通过命令行设置一个Java系统属性，Maven简单地重用了该参数，在准备插件的时候检查系统属性，便实现了插件参数的配置。
+
+#POM中插件全局配置
+- 并不是所有的插件参数都适合从命令行配置，有些参数的值从项目创建到项目发布都不会改变，或者说很少改变，对于这种情况，在POM文件中一次性配置就显然比
+重复在命令行输入要方便。
+- 用户可以在声明插件的时候，对此插件进行一个全局的配置。也就是说，所有该基于该插件目标的任务，都会使用这些配置。
+- 例如，我们通常会需要配置maven-compiler-plugin告诉它编译Java 1.5版本的源文件，生成与JVM 1.5兼容的字节码文件
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+        <source>1.5</source>
+        <target>1.5</target>
+    </configuration>
+</plugin>
+- 这样，不管绑定到compile阶段的maven-compiler-plugin：compile任务，还是绑定到test-compiler阶段的maven-compiler-plugin：testCompiler任务，就都能够使用该配置，基于Java 1.5版本进行编译。
+
+#POM中插件任务配置
+- 除了为插件配置全局的参数，用户还可以为某个插件任务配置特定的参数。
+- 以maven-antrun-plugin为例，它有一个目标run，可以用来在Maven中调用Ant任务。用户将maven-antrun-plugin：run绑定到多个生命周期阶段上，再加以不同的配置，就可以让Maven在不同的生命阶段执行不同的任务，
+
+#获取插件信息
+- 仅仅理解如何配置使用插件是不够的。当遇到一个构建任务的时候，用户还需要知道去哪里寻找合适的插件，以帮助完成任务。
+- 找到正确的插件之后，还要详细了解该插件的配置点。由于Maven的插件非常多，而且这其中的大部分没有完善的文档，因此，使用正确的插件并进行正确的配置，其实并不是一件容易的事。
+
+#在线插件信息
+- 基本上所有主要的Maven插件都来自Apache和Codehaus。
+- 由于Maven本身是属于Apache软件基金会的，因此它有很多官方的插件，每天都有成千上万的Maven用户在使用这些插件，它们具有非常好的稳定性。详细的列表可以在这个地址得到：http://maven.apache.org/plugins/index.html，单击某个插件的链接便可以得到进一步的信息。所有官方插件能在这里下载：http://repo1.maven.org/maven2/org/apache/maven/plugins/ 。
+
+- 除了Apache上的官方插件之外，托管于Codehaus上的Mojo项目也提供了大量了Maven插件，详细的列表可以访问：http://mojo.codehaus.org/plugins.html。 需要注意的是，这些插件的文档和可靠性相对较差，在使用时，如果遇到问题，往往只能自己去看源代码。所有Codehaus的Maven插件能在这里下载：http://repository.codehaus.org/org/codehaus/mojo/ 。
+- 一般来说，通过阅读插件文档中的使用介绍和实例，就应该能够在自己的项目中很好地使用该插件。但当我们想了解非常细节的目标参数时，就需要进一步访问该插
+件每个目标的文档
+- 文档详细解释了该参数的作用、类型等信息。基于该信息，用户可以在POM中配置maven-surefire-plugin的skip参数为true来跳过测试。这个时候读者可能会不理解了，
+之前在命令行传入的参数不是maven.test.skip吗？的确如此，虽然对于该插件目标的作用是一样的，但从命令行传入的参数确实不同于该插件目标的参数名称。命令行参数
+是由该插件参数的表达式（Expression）决定的。surefire：test skip参数的表达式为＄{maven.test.skip}，它表示可以在命令行以-Dmaven.test.skip=true的方
+式配置该目标。并不是所有插件目标参数都有表达式，也就是说，一些插件目标参数只能在POM中配置。
+
+#使用maven-help-plugin描述插件
+- 除了访问在线的插件文档之外，还可以借助maven-help-plugin来获取插件的详细信息。可以运行如下命令来获取maven-compiler-plugin 2.1版本的信息：
+mvn help:describe -Dplugin=org.apache.maven.plugins:maven-source-plugin:2.1.1
+mvn help:describe -Dplugin=org.apache.maven.plugins:maven-compiler-plugin:2.1
+- 这里执行的是maven-help-plugin的describe目标，在参数plugin中输入需要描述插件的groupId、artifactId和version。Maven在命令行输出maven-compiler-plugin的简要信息，包括该插件的坐标、目标前缀和目标等
+Name: Maven Compiler Plugin
+Description: The Compiler Plugin is used to compile the sources of your
+  project.
+Group Id: org.apache.maven.plugins
+Artifact Id: maven-compiler-plugin
+Version: 2.1
+Goal Prefix: compiler
+
+This plugin has 3 goals:
+
+compiler:compile
+  Description: Compiles application sources
+
+compiler:help
+  Description: Display help information on maven-compiler-plugin.
+    Call
+      mvn compiler:help -Ddetail=true -Dgoal=<goal-name>
+    to display parameter details.
+
+compiler:testCompile
+  Description: Compiles application test sources.
+
+For more information, run 'mvn help:describe [...] -Ddetail'
+
+- 目标前缀（Goal Prefix），其作用是方便在命令行直接运行插件。 maven-compiler-plugin的目标前缀是compiler。
+- 在描述插件的时候，还可以省去版本信息，让Maven自动获取最新版本来进行表述
+mvn help:describe -Dplugin=org.apache.maven.plugins:maven-compiler-plugin
+- 进一步简化，可以使用插件目标前缀替换坐标
+mvn help:describe -Dplugin=compiler
+- 如果想仅仅描述某个插件目标的信息，可以加上goal参数：
+mvn help:describe -Dplugin=compiler -Dgoal=compile
+如果想让maven-help-plugin输出更详细的信息，可以加上detail参数：
+mvn help:describe -Dplugin=compiler -Dgoal=compile -Ddetail
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#从命令行调用插件
+总而言之 (调用plugin+插件解析机制)
+1）在命令行运行mvn -h 来显示mvn命令帮助: usage: mvn [options] [<goal(s)>] [<phase(s)>]
+2) 该信息告诉了我们mvn命令的基本用法，options表示可用的选项，mvn命令有20多个选项。
+3) 除了选项之外，mvn命令后面可以添加一个或者多个goal和phase，它们分别是指插件目标和生命周期阶段。
+4) 可以通过mvn命令激活生命周期阶段，从而执行那些绑定在生命周期阶段上的插件目标。
+5) Maven还支持直接从命令行调用插件目标。 Maven支持这种方式是因为有些任务不适合绑定在生命周期上，
+6) 例如maven-help-plugin：describe，我们不需要在构建项目的时候去描述插件信息，又如maven-dependency-plugin：tree，我们也不需要在构建项目的时候去显示依赖树。因此这些插件目标应该通过如下方式使用：
+mvn org.apache.maven.plugins:maven-help-plugin:describe -Dplugin=compiler or mvn help:describe -Dplugin=compiler
+mvn org.apache.maven.plugins:maven-dependency-plugin:2.1:tree or mvn dependency：tree
+7) 目标前缀: help是maven-help-plugin的目标前缀，dependency是maven-dependency-plugin的前缀，通过插件前缀，Maven就能找到对应的artifactId。除了artifactId，Maven还需要得到groupId和version才能精确定位到某个插件。
+8）插件解析机制
+8.1）为了方便用户使用和配置插件，Maven不需要用户提供完整的插件坐标信息，就可以解析得到正确的插件，Maven的这一特性是一把双刃剑，虽然它简化了插件的使用和配置，可一旦插件的行为出现异常，用户就很难快速定位到出问题的插件构件。
+8.2）e.g. mvn help：system 到底执行了什么插件？该插件的groupId、artifactId和version分别是什么？这个构件是从哪里来的？
+#　插件仓库
+8.3)与依赖构件一样，插件构件同样基于坐标存储在Maven仓库中。在需要的时候，Maven会从本地仓库寻找插件，如果不存在，则从远程仓库查找。 找到插件之后，再下载到本地仓库使用。
+8.4) Maven会区别对待依赖的远程仓库与插件的远程仓库，依赖远程仓库配置只对一般依赖有效果。
+8.5）当Maven需要的插件在本地仓库不存在时，它就不会去依赖远程仓库查找，而去插件远程仓库查找。
+8.6）不同于repositories及其repository子元素，插件的远程仓库使用pluginRepositories和pluginRepository配置。Maven内置了如下的插件远程仓库配置
+<pluginRepositories>
+    <pluginRepository>
+      <id>central</id>
+      <name>Central Repository</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+      <layout>default</layout>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <releases>
+        <updatePolicy>never</updatePolicy>
+      </releases>
+    </pluginRepository>
+</pluginRepositories>
+8.7）除了pluginRepositories和pluginRepository标签不同之外，其余所有子元素表达的含义与依赖远程仓库配置完全一样。
+8.8）这个默认插件仓库的地址就是中央仓库，它关闭了对SNAPSHOT的支持，以防止引入SNAPSHOT版本的插件而导致不稳定的构建。
+8.9）一般来说，中央仓库所包含的插件完全能够满足我们的需要，不需要配置其他的插件仓库。只有在很少的情况下，项目使用的插件无法在中央仓库找到，或者
+自己编写了插件，这个时候可以参考上述的配置，在POM或者settings.xml中加入其他的插件仓库配置。
+8.10）在POM中配置插件的时候，如果该插件是Maven的官方插件（即如果其groupId为org.apache.maven.plugins），就可以省略groupId配置； 不推荐使用Maven的这一机制，虽然这么做可以省略一些配置，但这样的配置会让团队中不熟悉Maven的成员感到费解
+9）解析插件版本
+9.1）为了简化插件的配置和使用，在用户没有提供插件版本的情况下，Maven会自动解析插件版本
+9.2) Maven在超级POM中为所有核心插件设定了版本，超级POM是所有Maven项目的父POM，所有项目都继承这个超级POM的配置，
+9.3) 因此，即使用户不加任何配置，Maven使用核心插件的时候，它们的版本就已经确定了。这些核心插件包括maven-clean-plugin、maven-compiler-plugin、maven-surefire-plugin等。
+9.4）如果用户使用某个插件时没有设定版本，而这个插件又不属于核心插件的范畴，Maven就会去检查所有仓库中可用的版本，然后做出选择。
+9.5）以maven-compiler-plugin为例，它在中央仓库的仓库元数据为http://repo1.maven.org/maven2/org/apache/maven/plugins/maven-compiler-plugin/maven-metadata.xml:
+<metadata>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <versioning>
+        <latest>3.7.0</latest>
+        <release>3.7.0</release>
+        <versions>
+            <version>2.0-beta-1</version>
+            <version>2.0</version>
+            <version>2.0.1</version>
+            <version>2.0.2</version>
+            <version>2.1</version>
+            <version>2.2</version>
+            <version>2.3</version>
+            <version>2.3.1</version>
+            <version>2.3.2</version>
+            <version>2.4</version>
+            <version>2.5</version>
+            <version>2.5.1</version>
+            <version>3.0</version>
+            <version>3.1</version>
+            <version>3.2</version>
+            <version>3.3</version>
+            <version>3.5</version>
+            <version>3.5.1</version>
+            <version>3.6.0</version>
+            <version>3.6.1</version>
+            <version>3.6.2</version>
+            <version>3.7.0</version>
+        </versions>
+        <lastUpdated>20170904193138</lastUpdated>
+    </versioning>
+</metadata>
+9.6）Maven3当插件没有声明版本的时候，解析使用release版本， 即3.7.0。
+9.7）依赖Maven解析插件版本其实是不推荐的做法，即使Maven 3将版本解析到最新的非快照版，也还是会有潜在的不稳定性。
+9.8) 例如，可能某个插件发布了一个新的版本，而这个版本的行为与之前的版本发生了变化，这种变化就可能导致项目构建失败。因此，使用插件的时候，应该一直显式地设定版本，这也解释了Maven为什么要在超级POM中为核心插件设定版本。
+10) 解析插件前缀
+10.1) mvn命令行支持使用插件前缀来简化插件的调用，Maven如何根据插件前缀解析得到插件的坐标?
+10.2) 插件前缀与groupId：artifactId是一一对应的，这种匹配关系存储在仓库元数据中。
+10.3) 与之前提到的groupId/artifactId/maven-metadata.xml不同，这里的仓库元数据为groupId/maven-metadata.xml
+10.4) 默认使用org.apache.maven.plugins和org.codehaus.mojo两个groupId。 因为主要的插件都位于http://repo1.maven.org/maven2/org/apache/maven/plugins/和http://repository.codehaus.org/org/codehaus/mojo/；也可以通过配置settings.xml让Maven检查其他groupId上的插件仓库元数据：
+<pluginGroups>
+   <pluginGroup>com.your.plugins</pluginGroup>
+</pluginGroups>
+10.5）基于该配置，Maven就不仅仅会检查org/apache/maven/plugins/maven-metadata.xml和org/codehaus/mojo/maven-metadata.xml，还会检查com/your/plugins/maven-metadata.xml。
+10.6）从中央仓库的org.apache.maven.plugins groupId下插件仓库元数据中截取的一些片段：http://repo1.maven.org/maven2/org/apache/maven/plugins/maven-metadata.xml
+<plugin>
+    <name>Apache Maven Clean Plugin</name>
+    <prefix>clean</prefix>
+    <artifactId>maven-clean-plugin</artifactId>
+</plugin>
+<plugin>
+    <name>Maven Clover Plugin</name>
+    <prefix>clover</prefix>
+    <artifactId>maven-clover-plugin</artifactId>
+</plugin>
+<plugin>
+    <name>Apache Maven Compiler Plugin</name>
+    <prefix>compiler</prefix>
+    <artifactId>maven-compiler-plugin</artifactId>
+</plugin>
+10.7）从这段数据中就能看到maven-clean-plugin的前缀为clean，maven-compilerplugin的前缀为compiler，maven-dependency-plugin的前缀为dependency。
+10.8）完整过程：当Maven解析到dependency：tree这样的命令后，它首先基于默认的groupId归并所有插件仓库的元数据org/apache/maven/plugins/maven-metadata.xml； 其次检查归并后的元数据，找到对应的artifactId为maven-dependency-plugin；然后结合当前元数据的groupId org.apache.maven.plugins；解析得到version， 这时就得到了完整的插件坐标。如果org/apache/maven/plugins/maven-metadata.xml 没有记录该插件前缀，则接着检查其他groupId下的元数据，如org/codehaus/mojo/maven-metadata.xml，以及用户自定义的插件组。 如果所有元数据中都不包含该前缀，则报错。
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+- 在命令行运行mvn -h 来显示mvn命令帮助:
+usage: mvn [options] [<goal(s)>] [<phase(s)>]
+Options:
+...
+- 该信息告诉了我们mvn命令的基本用法，options表示可用的选项，mvn命令有20多个选项。
+- 除了选项之s外，mvn命令后面可以添加一个或者多个goal和phase，它们分别是指插件目标和生命周期阶段。
+- 第7.2.5节已经详细介绍了如何通过该参数控制Maven的生命周期。现在我们关心的是另外一个参数：goal。
+- 我们知道，可以通过mvn命令激活生命周期阶段，从而执行那些绑定在生命周期阶段上的插件目标。
+- 但Maven还支持直接从命令行调用插件目标。Maven支持这种方式是因为有些任务不适合绑定在生命周期上，
+- 例如maven-help-plugin：describe，我们不需要在构建项目的时候去描述插件信息，又如maven-dependency-plugin：tree，我们也不需要在构建项目的时候去显示依赖树。因此这些插件目标应该通过如下方式使用：
+mvn org.apache.maven.plugins:maven-help-plugin:describe -Dplugin=compiler == mvn help:describe -Dplugin=compiler
+mvn org.apache.maven.plugins:maven-dependency-plugin:2.1:tree == mvn dependency：tree
+- Maven引入了目标前缀的概念，help是maven-help-plugin的目标前缀，dependency是maven-dependency-plugin的前缀，有了插件前缀，Maven就能找到对应的artifactId。不过，除了artifactId，Maven还需要得到groupId和version才能精确定位到某个插件
+
+#插件解析机制
+- 为了方便用户使用和配置插件，Maven不需要用户提供完整的插件坐标信息，就可以解析得到正确的插件，Maven的这一特性是一把双刃剑，虽然它简化了插件的使用和配置，可一旦插件的行为出现异常，用户就很难快速定位到出问题的插件构件。
+- 例如mvn help：system 这样一条命令，它到底执行了什么插件？该插件的groupId、artifactId和version分别是什么？这个构件是从哪里来的？本节就详细介绍Maven的运行机制，以让读者不仅知其然，更知其所以然。
+
+#　插件仓库
+- 与依赖构件一样，插件构件同样基于坐标存储在Maven仓库中。在需要的时候，Maven会从本地仓库寻找插件，如果不存在，则从远程仓库查找。找到插件之后，再下
+载到本地仓库使用。
+- 值得一提的是，Maven会区别对待依赖的远程仓库与插件的远程仓库，第6.4节介绍了如何配置远程仓库，但那种配置只对一般依赖有效果。
+- 当Maven需要的依赖在本地仓库不存在时，它会去所配置的远程仓库查找，可是当Maven需要的插件在本地仓库不存在时，它就不会去这些远程仓库查找。
+- 不同于repositories及其repository子元素，插件的远程仓库使用pluginRepositories和pluginRepository配置。例如，Maven内置了如下的插件远程仓库配置:
+<pluginRepositories>
+    <pluginRepository>
+      <id>central</id>
+      <name>Central Repository</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+      <layout>default</layout>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <releases>
+        <updatePolicy>never</updatePolicy>
+      </releases>
+    </pluginRepository>
+</pluginRepositories>
+
+- 除了pluginRepositories和pluginRepository标签不同之外，其余所有子元素表达的含义与第6.4节所介绍的依赖远程仓库配置完全一样。
+- 我们甚至看到，这个默认插件仓库的地址就是中央仓库，它关闭了对SNAPSHOT的支持，以防止引入SNAPSHOT版本的插件而导致不稳定的构建。
+- 一般来说，中央仓库所包含的插件完全能够满足我们的需要，因此也不需要配置其他的插件仓库。只有在很少的情况下，项目使用的插件无法在中央仓库找到，或者
+自己编写了插件，这个时候可以参考上述的配置，在POM或者settings.xml中加入其他的插件仓库配置。
+
+#插件的默认groupId
+在POM中配置插件的时候，如果该插件是Maven的官方插件（即如果其groupId为org.apache.maven.plugins），就可以省略groupId配置:
+<plugin>
+    <!--<groupId>org.apache.maven.plugins</groupId>-->
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+        <source>1.5</source>
+        <target>1.5</target>
+    </configuration>
+</plugin>
+- 上述配置中省略了maven-compiler-plugin的groupId，Maven在解析该插件的时候，会自动用默认groupId org.apache.maven.plugins补齐。
+- 不推荐使用Maven的这一机制，虽然这么做可以省略一些配置，但这样的配置会让团队中不熟悉Maven的成员感到费解
+
+#解析插件版本
+- 同样是为了简化插件的配置和使用，在用户没有提供插件版本的情况下，Maven会自动解析插件版本
+- 首先，Maven在超级POM中为所有核心插件设定了版本，超级POM是所有Maven项目的父POM，所有项目都继承这个超级POM的配置，
+- 因此，即使用户不加任何配置，Maven使用核心插件的时候，它们的版本就已经确定了。这些插件包括maven-clean-plugin、maven-compiler-plugin、maven-surefire-plugin等。
+- 如果用户使用某个插件时没有设定版本，而这个插件又不属于核心插件的范畴，Maven就会去检查所有仓库中可用的版本，然后做出选择。
+- 读者可以回顾一下第6.6节中介绍的仓库元数据groupId/artifactId/maven-metadata.xml。以maven-compiler-plugin为例，它在中央仓库的仓库元数据
+为http://repo1.maven.org/maven2/org/apache/maven/plugins/maven-compiler-plugin/maven-metadata.xml:
+<metadata>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <versioning>
+        <latest>3.7.0</latest>
+        <release>3.7.0</release>
+        <versions>
+            <version>2.0-beta-1</version>
+            <version>2.0</version>
+            <version>2.0.1</version>
+            <version>2.0.2</version>
+            <version>2.1</version>
+            <version>2.2</version>
+            <version>2.3</version>
+            <version>2.3.1</version>
+            <version>2.3.2</version>
+            <version>2.4</version>
+            <version>2.5</version>
+            <version>2.5.1</version>
+            <version>3.0</version>
+            <version>3.1</version>
+            <version>3.2</version>
+            <version>3.3</version>
+            <version>3.5</version>
+            <version>3.5.1</version>
+            <version>3.6.0</version>
+            <version>3.6.1</version>
+            <version>3.6.2</version>
+            <version>3.7.0</version>
+        </versions>
+        <lastUpdated>20170904193138</lastUpdated>
+    </versioning>
+</metadata>
+
+- Maven 3调整了解析机制，当插件没有声明版本的时候，不再解析至latest，而是使用release。这样就可以避免由于快照频繁更新而导致的插件行为不稳定。
+- 依赖Maven解析插件版本其实是不推荐的做法，即使Maven 3将版本解析到最新的非快照版，也还是会有潜在的不稳定性。
+- 例如，可能某个插件发布了一个新的版本，而这个版本的行为与之前的版本发生了变化，这种变化就可能导致项目构建失败。因此，使用插件的时候，应该一直显式地设定版本，这也解释了Maven为什么要在超级POM中为核心插件设定版本。
+
+#解析插件前缀
+- 前面讲到mvn命令行支持使用插件前缀来简化插件的调用，现在解释Maven如何根据插件前缀解析得到插件的坐标。
+- 插件前缀与groupId：artifactId是一一对应的，这种匹配关系存储在仓库元数据中。
+- 与之前提到的groupId/artifactId/maven-metadata.xml不同，这里的仓库元数据为groupId/maven-metadata.xml，那么这里的groupId是什么呢？ 
+- 第7.6.1节提到主要的插件都位于http://repo1.maven.org/maven2/org/apache/maven/plugins/和http://repository.codehaus.org/org/codehaus/mojo/ ，相应地，Maven在解析插件仓库元数据的时候，会默认使用org.apache.maven.plugins和org.codehaus.mojo两个groupId。也可以通过配置settings.xml让Maven检查其他groupId上的插件仓库元数据：
+<pluginGroups>
+   <pluginGroup>com.your.plugins</pluginGroup>
+</pluginGroups>
+- 基于该配置，Maven就不仅仅会检查org/apache/maven/plugins/maven-metadata.xml和org/codehaus/mojo/maven-metadata.xml，还会检查com/your/plugins/maven-metadata.xml。
+
+http://repo1.maven.org/maven2/org/apache/maven/plugins/maven-metadata.xml
+<plugin>
+    <name>Apache Maven Clean Plugin</name>
+    <prefix>clean</prefix>
+    <artifactId>maven-clean-plugin</artifactId>
+</plugin>
+<plugin>
+    <name>Maven Clover Plugin</name>
+    <prefix>clover</prefix>
+    <artifactId>maven-clover-plugin</artifactId>
+</plugin>
+<plugin>
+    <name>Apache Maven Compiler Plugin</name>
+    <prefix>compiler</prefix>
+    <artifactId>maven-compiler-plugin</artifactId>
+</plugin>
+- 上述内容是从中央仓库的org.apache.maven.pluginsgroupId下插件仓库元数据中截取的一些片段，从这段数据中就能看到maven-clean-plugin的前缀为clean，
+maven-compilerplugin的前缀为compiler，maven-dependency-plugin的前缀为dependency。
+- 当Maven解析到dependency：tree这样的命令后，它首先基于默认的groupId归并所有插件仓库的元数据org/apache/maven/plugins/maven-metadata.xml；其次检查归并后的元
+数据，找到对应的artifactId为maven-dependency-plugin；然后结合当前元数据的groupId org.apache.maven.plugins；最后使用第7.8.3节描述的方法解析得到version， 这时就得到了完整的插件坐标。如果org/apache/maven/plugins/maven-metadata.xml没有记录该插件前缀，则接着检查其他groupId下的元数据，如org/codehaus/mojo/maven-metadata.xml，以及用户自定义的插件组。如果所有元数据中都不包含该前缀，则报错。
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+Chapter8 聚合与继承
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
