@@ -84,7 +84,7 @@ git reset --hard 4551b71: HEAD is now at 4551b71 remove test.txt and working and
 9）创建与合并分支流程
 9.1) 每次提交，Git都把版本串成一条时间线，这条时间线就是一个分支。
 9.2）截止到目前，只有一条时间线，在Git里，这个分支叫主分支，即master分支。
-9.3) 一开始的时候，master分支是一条线，Git用master指向最新的提交，再用HEAD指向master，就能确定当前分支，以及当前分支的提交点
+9.3) 一开始的时候，master分支是一条线，Git用master指向最新的commit，再用HEAD指向master，就能确定当前分支，以及当前分支的提交点
 9.4) 每次提交，master分支都会向前移动一步，这样，随着你不断提交，master分支的线也越来越长
 9.5）HEAD是一个指针，指向master，master也是一个指针，指向commit。 HEAD指向的就是当前分支。
 9.6) 当我们创建新的分支，例如dev时，Git新建了一个指针叫dev，指向master相同的commit，再把HEAD指向dev，就表示当前分支在dev上
@@ -284,6 +284,23 @@ git:x:1001:1001:,,,:/home/git:/usr/bin/git-shell
 git clone git@server:/srv/sample.git
 剩下的推送就简单了。
 
+26) .gitconfig
+26.1) cd-> user home
+26.2) vim .gitconfig
+[user]
+	name = Rosen
+	email = wendaniel@hotmail.com
+[alias]
+	co=checkout
+	ci=commit
+	st=status
+	pl=pull
+	ps=push
+	dt=difftool
+	ca=commit -am
+	b=branch
+[push]
+	default = simple
 
 
 

@@ -1,15 +1,26 @@
-In Summary:
+﻿In Summary:
 
-1) Basis: Core Java(Apache Commons, Common lang, common io, common pool, common fileipload common collections, guava...), JEE, Spring Framework(AOP, MVC, Data, Integration), OOP, design patterns (Spring Boot, Resrful MicroServices)
+1) Basis: Core Java(Apache Commons, Common lang, common io, common pool, common fileupload common collections, guava...), JEE, Spring Framework(AOP, MVC, Data, Integration), OOP, design patterns (Spring Boot, Restful MicroServices)
 2) Web Tier: JSP/JSF/JS/JQuery (Angular/BootStrap/React.js)
 3) Database: RDBMS/SQL/PL SQL/Hibernate, Mongo DB, Oracle, DB2, SQLServer
-4) Testing/Deployment: Maven/Git/Jenkins (Gradle/Ant/SVN/Nexus), (NodeJS, NPM, grunt)
+4) Testing/Deployment: Git/SVN, Ant/Maven(Nexus)/Gradle, Jenkins
 5) Application Server: Tomcat (WebSphere, WebLogic, JBOSS)
 6) IDE: Eclipse/IDEA
 7) Unix scripting
 8) SOLR / ELASTIC Search
 9) Messaging: message queues, event listeners, MQ, Tibco
-10) cloud: Salesforce, MS Azure, Adobe AWS
+10) cloud: Salesforce, MS Azure, Amazon AWS
+11) 自动化的Web测试技术如Selenium，它能够录制Web操作，生成各种语言脚本，然后自动重复这些操作以进行测试
+12) JIRA: issue management
+13) JVM, memory tuning. java8 permem gen removed??
+- The JDK 8 HotSpot JVM is now using native memory for the representation of class metadata and is called Metaspace.
+- The permanent generation has been removed. The PermSize and MaxPermSize are ignored and a warning is issued if they are present on the command line.
+
+frontend skills
+1) Basics: js
+2) Framework: jquery, angular, react, vue, avalon, hogan template engine
+3) Testing/Deployment: Nodejs, npm, Grunt/Gulp/Webpack, Chrome debugger, Fiddler
+4) IDE: sublime
 
 #procom java developer
 

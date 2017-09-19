@@ -1,0 +1,283 @@
+Gradle blog (https://waynell.github.io/2015/04/03/gradle-use-01/)
+Chapter 1 Gradle的基本使用（一）
+1) Gradle是一种依赖管理工具，基于Groovy语言，面向Java应用为主，
+2) 它抛弃了基于XML的各种繁琐配置，取而代之的是一种基于Groovy的内部领域特定（DSL）语言。
+3) 它提供灵活的通用构建工具，就像ant。同时完美兼容Maven或Ivy仓库
+
+#Gradle的特点：
+一个像Ant一样非常灵活的通用构建工具
+一种可切换的，像Maven一样基于约定的构建框架，约定优于配置
+强大的对于多工程构建的支持
+完全支持现有的Maven和lvy仓库
+支持传递性依赖管理，而不需要远程仓库或者是pom.xml和ivy.xml文件
+非常适合构建Ant tasks和build
+支持Groovy构建脚本
+非常丰富的域模型来描述你的构建
+
+#安装Gradle
+- 安装一个 Java JDK 或者 JRE. 而且 Java 版本必须至少是 6 以上
+- 从 Gradle网站http://www.gradle.org/downloads下载任意一个已经发布的版本，并解压到任意目录
+- 添加一个 GRADLE_HOME 环境变量来指明 Gradle 的安装路径
+- 添加 GRADLE_HOME/bin 到您的 PATH 环境变量中
+export GRADLE_HOME={your gradle path}
+export PATH=$PATH:GRADLE_HOME/bin
+
+#Gradle的基本组成
+- 项目(Project) 和 任务(tasks)，Gradle 里的任何东西都是基于这两个基础概念。
+- 项目是指我们的构建产物（比如Jar包）或实施产物（将应用程序部署到生产环境）。
+- 任务是指不可分的最小工作单元，执行构建工作（比如编译项目或执行测试）。
+- 每一个构建都是由一个或多个 projects 构成的，每一个 project 是由一个或多个 tasks 构成的，一个task是指不可分的最小工作单元， 执行构建工作（比如编译项目或执行测试）
+- 一个工程的Build，是由多个Project组成，而一个Project又是由task组成的
+
+Chapter 2 Gradle的基本使用（二）
+- 任何一个构建系统都是由多个构建文件组成，如Ant是由build.xml组成，Maven是由pom.xml组成，Make是由makefile组成。这些构建脚本定义了一系列的规则来指定项目编译流程。
+- Gradle构建系统的组成:
+1) build.gradle: 我们称这个文件为一个构建脚本，这个脚本定义了一个模块和编译用的tasks，它一般是放在项目的模块中，也可以放在项目的根目录用来作为编译结构全局设置，它是必须的
+2) settings.gradle 它描述了哪一个模块需要参与构建。每一个多模块的构建都必须在项目结构的根目录中加入这个设置文件，它也是必须的
+3) gradle.properties 用来配置构建属性，这个不是必须的
+4) settings.gradle和gradle.properties的用法都十分简单，这里就不再多加说明，后面会给出示例，看示例就能明白其用法，现在主要对build.gradle的进行说明。
+
+Hello World
+- Gradle是基于Groovy语言的构建系统（这里并不会详细解释Groovy语法的使用，有需要请参考Groovy的官方文档 — Groovy语法）， 所以在构建脚本中可以使用Groovy语言来执行一些任务.
+- 下面编写一个简单的build.gradle文件，定义一个task来打印hell world，如下所示：
+task hello { //先定义一个hello的task
+    doLast { //实现doLast方法
+        println 'Hello world!'
+    }
+}
+- 然后在终端中运行gradle hello命令来执行这个task：
+> gradle hello
+:hello
+Hello world!
+
+对于hello这个task，还可以使用更简单的定义方式，如下：
+task hello << {
+    println 'Hello world!'
+}
+
+- << 就等价于 doLast，doLast 是gradle提供访问task任务的一个API，类似的还有 doFirst，当一个task被执行的时候，可以通过 doFirst 和 doLast 向task中动态添加操作。doFirst 和 doLast 会在task本身被执行之后才会被执行。例如：
+
+task hello {
+    println 'Hello Earth'
+}
+hello.doFirst {
+    println 'Hello Venus'
+}
+hello.doFirst {
+    println 'Hello Mercury'
+}
+hello.doLast {
+    println 'Hello Mars'
+}
+hello << {
+    println 'Hello Jupiter'
+}
+
+输出：
+Hello Earth
+:hello
+Hello Mercury
+Hello Venus
+Hello Mars
+Hello Jupiter
+
+#Task依赖
+- 上面示例展示了如何编写一个hello world的task，在Gradle中各个task并不是孤立的，它们可以是相互依赖的。 -
+- 要让一个task依赖另外一个task，只需要在task定义时加入 dependsOn: 说明即可，被依赖的task会优先依赖者被执行，例如：
+> gradle intro
+Hello world!
+I'm Gradle
+
+Gradle的基本使用（三）
+- Gradle的设计理念是，所有有用的特性都由Gradle插件提供，
+- 例如编写一个Java项目时，需要使用到 Java 插件，它会将许多任务自动的加入到你项目里。 
+- Gradle本身提供了一系列的标准插件，无需多余配置只需要在你的build.gradle文件中加入 apply plugin: 'java'
+
+#Gradle插件
+- 这样就可以引入许多task，只需要使用相应的task命令就可以进行项目构建。例如下列一些task:
+gradle build：编译整个项目，它会执行代码编译、代码检测和单元测试等
+gradle assemble：编译并打包你的代码, 但是并不运行代码检测和单元测试
+gradle clean：删除 build 生成的目录和所有生成的文件
+gradle check：编译并测试你的代码。其它的插件会加入更多的检查步骤，如使用 checkstyle、pmd、findbugs
+
+- 从上图可以看出，我们通常在执行一个build命令时其实是将一些零散的命令批量执行了，我们也可以根据自己的需求执行其中某一个命令
+
+#外部依赖
+- 通常, 一个 Java 项目将有许多外部的依赖, 既指向外部的 JAR 文件. 为了在项目里引用这些 JAR 文件, 你需要告诉 Gradle 去哪里找它们. 
+- 在 Gradle 中, JAR 文件位于一个仓库中，这里的仓库类似于 maven 的仓库。
+指定maven的仓库地址：
+repositories {
+	mavenCentral()
+}
+- mavenCentral() 是Gradle内置的一个maven仓库地址，加入maven仓库后，就可以直接加入maven仓库中的外部依赖，如果这个外部依赖不存在，gradle会联网去maven仓库中自动下载它，并将它缓存到本地，下次再使用时会优先从本地缓存中查找该依赖
+dependencies {
+	compile group: 'commons-collections', name: 'commons-collections', version: '3.2'
+}
+- 简化写法
+dependencies {
+	compile 'commons-collections:commons-collections:3.2'
+}
+- 引用一个外部依赖需要指定使用的group, name 和 version 属性，三者缺一不可。那从哪里得知JAR包的这三个属性呢？我们可以从mvnrepository中搜索到。
+
+#本地依赖
+- Gradle也可以从本地目录中引入JAR包依赖，可以单一引入指定的某一JAR包，也可以引入某目录下所有的JAR包
+dependencies {
+	compile files('dir/file.jar')
+	compile fileTree(dir: 'libs', include: '*.jar')
+}
+
+#项目依赖
+- 往往一个完整的项目由多个子项目构成。在Gradle中，使用文件settings.gradle定义当前项目的子项目。默认情况下，每个子项目的名称对应着当前操作系统目录下的一个子目录。
+include 'sub-project1', 'sub-project2', 'sub-project3'
+如sub-project1依赖sub-project2，则在sub-project1的build.gradle中加入以下配置即可：
+dependencies {
+	compile project(':sub-project2')
+}
+
+#依赖关系管理
+- 从宏观上说，依赖关系管理分为两个方面。
+- 首先，gradle需要知道你要构建或者运行的项目，以便找到它们。我们将这些导入的文件视为项目的依赖。
+- 第二，gradle需要构建或者打包你的项目产品。我们将这些导出的文件视为项目的发布。
+
+- 例如在编译源码时项目需要Hibernate的某些jar包被加入到工程中，而在进行单元测试时还另需要Junit的某些jar被加入。这些被引入的jar包就是项目的依赖。
+- Gradle允许对依赖进行相应的配置，通过不同的配置可以形成不同的依赖效果。例如：
+
+apply plugin: 'java'
+repositories {
+    mavenCentral()
+}
+dependencies {
+    compile group: 'org.hibernate', name: 'hibernate-core', version: '3.6.7.Final'
+    testCompile group: 'junit', name: 'junit', version: '4.+'
+}
+- 在项目编译时期，junit的jar包不会被引入，只有在单元测试时才会被引入。这样，就可以在不同的场景下加入相应的依赖关系，非常的灵活
+- Java 插件中定义了许多标准的配置，例如如下
+compile: 用来编译项目源代码的依赖
+runtime: 在运行时被生成的类使用的依赖。 默认的, 也包含了compile时的依赖。
+testCompile: 编译测试代码的依赖。 默认的, 包含runtime时的依赖和compile时的依赖。
+testRuntime: 运行测试所需要的依赖。 默认的, 包含上面三个依赖。
+
+http://www.yiibai.com/gradle/gradle_build_script.html
+
+Gradle如何使用Groovy
+
+Gradle 构建脚本使用 Groovy API。 
+Groovy增加了很多有用的方法到标准的Java类。 例如，从Java API可迭代实现它遍历Iterable接口的元素的each() 方法。
+
+
+
+Chapter 1 Introduction to project automation
+#Benefits of project automation
+- Prevents manual intervention
+- Creates repeatable builds
+- Makes builds portable
+
+#Types of project automation
+- On-demand builds
+- Triggered builds
+- Scheduled builds: The practice that implements scheduled and triggered builds is commonly referred to as continuous integration (CI).
+
+#Build tools
+- You could just write the logic as an executable script, such as a shell script. but you want a tool that allows you to create a repeatable, reliable, and portable build without manual intervention. A shell script wouldn’t be easily portable from a UNIX-based system
+to a Windows-based system, so it doesn’t meet your criteria.
+
+Summary
+1) Life for developers and QA personnel without project automation is repetitive, tedious, and error-prone. Every step along the software delivery process—from source code compilation to packaging the software to releasing the deliverable to test and production environments—has to be done manually. 
+2) Project automation helps remove the burden of manual intervention, makes your team more efficient, and leads the way to a push-button, fail-safe software release process.
+3) the different types of project automation—on-demand, scheduled, and triggered build initiation—and covered their specific use cases. 
+4) the different types of project automation are not exclusive. In fact, they complement each other.
+5) A build tool is one of the enablers for project automation. It allows you to declare the ordered set of rules that you want to execute when initiating a build. 
+5.1) build engine (the build tool executable) processes the rule set defined in the build script and translates it into executable tasks.
+5.2) build script
+5.3) task
+5.4) Each task may require input data to get its job done. 
+5.5) As a result, a build output is produced. 
+5.6) The dependency manager is an optional component of the build tool architecture that lets you declare references to external libraries that your build process needs to function correctly.
+6) We saw the materialized characteristics of build tools in action by taking a deeper look at two popular Java build tool implementations: Ant and Maven. 
+6.1) Ant provides a very flexible and versatile way of defining your build logic, but doesn’t provide guidance on a standard project layout or sensible defaults to tasks that repeat over and over in projects. It also doesn’t come with an out-of-the-box dependency manager,
+which requires you to manage external dependencies yourself. 
+6.2) Maven follows the convention over configuration paradigm by supporting sensible default configuration for your project as well as a standardized build lifecycle. Automated dependency management for external libraries and between Maven projects is a built-in feature. Maven falls short on easy extensibility for custom logic and support for nonconventional project layouts and tasks. 
+6.3) an advanced build tool needs to find a middle ground between flexibility and configurable conventions to support the requirements of modern-day software projects.
+
+Chapter 2 Next-generation builds with Gradle
+- Following a build-by-convention approach, Gradle allows for declaratively modeling your problem domain using a powerful and expressive domain-specific language (DSL) implemented in Groovy instead of XML. 
+- Because Gradle is a JVM native, it allows you to write custom logic in the language you’re most comfortable with, be it
+Java or Groovy.
+- build logic has to be described in XML. XML is great for describing hierarchical data, but falls short on expressing program flow and conditional logic.
+- We’re on the cusp of a new era of application development: polyglot programming. Many applications today incorporate multiple programming languages, each of which is best suited to implement a specific problem domain.
+
+- Gradle combines the best features from other build tools.
+Ant:
+Flexibility
+Full control
+Chaining of targets
+
+Ivy:
+Dependency management
+
+Maven:
+Convention over configuration
+Multimodule projects
+Extensibility via plugins
+
+Gant:
+Groovy DSL on top of Ant
+
+- your build tool needs to fluently support this infrastructure as well. JavaScript needs to be merged, minified, and zipped,
+and your server-side and legacy code needs to be compiled, packaged, and deployed.
+
+- Gradle build scripts are declarative, readable, and clearly express their intention. Writing code in Groovy instead of XML, sprinkled with Gradle’s build-by-convention philosophy, significantly cuts down the size of a build script and is far more readable
+
+Summary
+- Existing tools can’t meet the build needs of today’s industry. Improving on the best ideas of its competitors, Gradle provides a build-by-convention approach, reliable dependency management, and support for multiproject builds without having to sacrifice the flexibility and descriptiveness of your build.
+- In this chapter, we explored how Gradle can be used to deliver in each of the phases of a deployment pipeline in the context of continuous delivery. 
+- Throughout the book, we’ll pick up on each of the phases by providing practical examples. Next, you got a first taste of Gradle’s powerful features in action. You installed the runtime, wrote a first simple build script, and executed it. 
+- By implementing a more complex build script, you found out how easy it is to define task dependencies using Gradle’s DSL. 
+- Knowing the mechanics of Gradle’s command line and its options is key to becoming highly productive. 
+- Gradle offers a wide variety of command-line switches for changing runtime behavior, passing properties to your project, and changing the
+logging level. 
+- We explored how running Gradle can be a huge timesaver if you have to continuously execute tasks, such as during test-driven development.
+
+Chapter3 Building a Gradle project by example
+
+- Gradle wrapper: The wrapper is a core feature and enables a machine to run a Gradle build script without having to install the runtime.
+- The ultimate goal is to create reliable and reproducible builds independent of the operating system, system setup, or installed Gradle version.
+- To set up the wrapper for your project, you’ll need to do two things: create a wrapper task and execute the task to generate the wrapper files
+
+Summary
+- implemented a full-stack Java application and used Gradle to build it. 
+- Many Java projects are similar in nature. They need to compile Java source code, run tests, and bundle a JAR file containing the classes. Luckily, you didn’t have to write these tasks yourself to make this happen in your project. Through the use of Gradle plugins, you merely had to write code in your build script.
+- You started out by using the Java plugin that ships with Gradle. Applying the plugin to your project added preconfigured tasks and a standardized project structure wrapped by an opinionated framework. 
+- Custom project requirements call for flexible conventions. We explored the option of customizing the default conventions introduced by the
+plugin. 
+- Key to knowing your options are the Gradle DSL and API documentation.
+- After a short recap of the fundamentals of Java web application development, we discussed how to extend the example project by Java EE–compatible web components.
+- Gradle helps you with simplifying web development through the War and Jetty plugins.
+- The War plugin assists in assembling a WAR file, and the Jetty plugin provides efficient deployment to a lightweight Servlet container. 
+- You also learned that using the wrapper is a best practice for every Gradle project. Not only does it allow you to run the project on a machine that doesn’t have Gradle installed, it also prevents version compatibility issues.
+- The presented plugins provide far more functionality than we’ve discussed. For a detailed view on their capabilities, you can go to the online user guide (http://www.gradle.org/docs/current/userguide/standard_plugins.html). 
+
+Chapter 4 Build script essentials
+- basic building blocks of a Gradle build, namely projects and tasks, and how they map to the classes in the Gradle API. 
+- Properties are exposed by methods of these classes and help to control the build. You’ll also learn how to control the build’s behavior through properties
+
+
+Chapter 6 Mutiproject build
+- Modularizing a project improves the quality attributes of your system—that is, reusability, maintainability, and separation of concerns. 
+- Two guidelines: minimize coupling and maximize cohesion.
+- you split the To Do application code base into modules. You created one module that holds the model classes, one that deals with the persistence of
+the data, and one that exposes the web application capabilities.
+- Gradle treats every module as a separate project. Every project can declare dependencies on other projects. Gradle’s toolbox provides extensive support for modeling and executing multiproject builds either as hierarchical or flat project structures. 
+- the settings file, executed during the initialization phase of the build lifecycle, determines which of the projects should be part of the build.
+- The Project API provides methods for declaring project-specific build code. It also allows for configuring common or subproject-specific build behavior. 
+- You learned that dependencies between projects in the current project hierarchy are declared using the same dependency mechanism as external dependencies. 
+- The organization of your multiproject build code is very flexible. You can choose to use a single master build script, individual build scripts per project, or a mixed approach. 
+- organizing build logic into individual scripts improves maintainability of your code the more subprojects you add to your build.
+- The Settings API available in your settings file can be used to adapt to unconventional multiproject layouts. 
+
+Chapter 7 Testing with Gradle
+- focus on Gradle’s support for organizing, configuring, and executing test code.
+- Gradle integrates with a wide range of Java and Groovy unit testing frameworks. By the end of this chapter, you’ll write tests with JUnit, TestNG, and Spock, and execute them as part of the build lifecycle.
+
+Chapter 8  Extending Gradle
+

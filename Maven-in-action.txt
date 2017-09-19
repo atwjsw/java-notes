@@ -967,7 +967,7 @@ Chapter6　Repository
 #远程仓库的配置
 总而言之 (configuration and authentication of remote repository other than central)
 1）在POM中配置, 例如当默认的中央仓库无法满足项目的需求，可能项目需要的构件存在于另外一个远程仓库中，如JBoss Maven仓库：
-repositories>
+<repositories>
     <repository>
       <id>jboss</id>
       <name>JBOSS repository</name>
@@ -1998,100 +1998,2667 @@ maven-compilerplugin的前缀为compiler，maven-dependency-plugin的前缀为de
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 Chapter8 聚合与继承
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- 软件本身也变得越来越复杂,往往会需要划分模块，以得到更清晰的设计及更高的重用性。
+- 当把Maven应用到实际项目中的时候，也需要将项目分成不同的模块，本书的背景案例账户注册服务就被划分成了accountemail、account-persist等五个模块。
+- Maven的聚合特性能够把项目的各个模块聚合在一起构建，
+- 而Maven的继承特性则能帮助抽取各模块相同的依赖和插件等配置，在简化POM的同时，还能促进各个模块配置的一致性。
+- account-persist: 在讨论多模块Maven项目的聚合与继承之前，本书先引入账户注册服务的account-persist模块。该模块负责账户数据的持久化，以XML文件的形式保存账户数据，并支持账户的创建、读取、更新、删除等操作。
+- account-persist的POM
+- 该模块groupId和version与account-email模块完全一致，而且artifactId也有相同的前缀。
+- 一般来说，一个项目的子模块都应该使用同样的groupId，如果它们一起开发和发布，还应该使用同样的version，此外，它们的artifactId
+还应该使用一致的前缀，以方便同其他项目区分。
+- 接着是build元素，它先是包含了一个testResources子元素，这是为了开启资源过滤。
+- build元素下还包含了两个插件的配置。首先是配置maven-compiler-plugin支持Java1.5，我们知道，虽然这里没有配置插件版本，但由于maven-compiler-plugin是核心插件，它的版本已经在超级POM中设定了。
+- 如果这里不配置groupId，会使用默认的groupId org.apache.maven.plugins。
+- 除了maven-compiler-plugin， 这里还配置了mavenre-sources-plugin使用UTF-8编码处理资源文件。
+
+- SpringFramework的定义要求项目classpath下有一个名为account-service.properties的文件，并且该文件中需要包含一个persist.file属性，以定义文件存储的位置。为了能够测试账户数据的持久化，在测试资源目录下创建属性文件account-service.properties。
+- persist.file=${project.build.testOutputDirectory}/persist-data.xml
+- persist.file包含了＄{project.build.testOutputDirectory}。这是一个Maven属性，表示了Maven的测试输出目录， 其默认的地址为项目根目录下的target/test-classes文件夹。
+
+#聚合
+- 到目前为止，本书实现了用户注册服务的两个模块，它们分别是account-email和account-persist。
+- 一个简单的需求就会自然而然地显现出来：我们会想要一次构建两个项目，而不是到两个模块的目录下分别执行mvn命令。
+- Maven聚合（或者称为多模块）这一特性就是为该需求服务的。
+- 为了能够使用一条命令就能构建account-email和account-persist两个模块，我们需要创建一个额外的名为account-aggregator的模块，然后通过该模块构建整个项目的所有模块。
+- account-aggregator本身作为一个Maven项目，它必须要有自己的POM，不过，同时作为一个聚合项目，其POM又有特殊的地方。
+- 如下为account-aggregator的pom.xml
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.juvenxu.mvnbook.account</groupId>
+  <artifactId>account-aggregator</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>Account Aggregator</name>
+  <modules>
+    <module>account-email</module>
+    <module>account-persist</module>
+    <module>account-parent</module>
+  </modules>
+</project>
+- 上述POM依旧使用了账户注册服务共同的groupId com.juvenxu.mvnbook.account，artifactId为独立的account-aggregator， 
+- 版本也与其他两个模块一致， 为1.0.0-SNAPSHOT。 
+- 这里的第一个特殊的地方为packaging，其值为POM。 回顾account-email和account-persist，它们都没有声明packaging，即使用了默认值jar。 
+- 对于聚合模块来说，其打包方式packaging的值必须为pom，否则就无法构建。
+- POM的name字段是为了给项目提供一个更容易阅读的名字。
+- 之后是本书之前都没提到过的元素modules，这是实现聚合的最核心的配置。 
+- 用户可以通过在一个打包方式为pom的Maven项目中声明任意数量的module元素来实现模块的聚合。
+- 这里每个module的值都是一个当前POM的相对目录，譬如该例中，account-aggregator的POM的路径为D：\…\code\ch-8\account-aggregator\pom.xml，那么account-email就对应了目录D：\…\code\ch-8\account-aggregator\account-email/，而account-persist对应于目录D：\…\code\ch-
+8\account-aggregator\account-persist/。 这两个目录各自包含了pom.xml、src/main/java/、src/test/java/等内容， 离开account-aggregator也能独立构建。
+- 一般来说，为了方便快速定位内容，模块所处的目录名称应当与其artifactId一致，不过这不是Maven的要求，用户也可以将account-email项目放到email-account/目录下。
+- 这时，聚合的配置就需要相应地改成<module>email-account</module>。
+- 了方便用户构建项目，通常将聚合模块放在项目目录的最顶层，其他模块则作为聚合模块的子目录存在，这样当用户得到源码的时候，第一眼发现的就是聚合模块
+的POM，不用从多个模块中去寻找聚合模块来构建整个项目。
+- account-aggregator的内容仅是一个pom.xml文件，它不像其他模块那样有src/main/java、src/test/java等目录。 因为聚合模块仅仅是帮助聚合其他模块构建的工具， 它本身并无实质的内容。
+- 关于目录结构还需要注意的是，聚合模块与其他模块的目录结构并非一定要是父子关系
+- 如果使用平行目录结构，聚合模块的POM也需要做相应的修改，以指向正确的模块目录：
+<modules>
+    <module>../account-email</module>
+    <module>../account-persist</module>
+    <module>../account-parent</module>
+</modules>
+- mvn clean install
+- 首先解析聚合模块的POM、分析要构建的模块、并计算出一个反应堆构建顺序（Reactor Build Order），然后根据这个顺序依次构建各个模块。 
+- 反应堆是所有模块组成的一个构建结构。
+- 上述输出中显示的是各模块的名称，而不是artifactId，这也解释了为什么要在POM中配置合理的name字段，其目的是让Maven的构建输出更清晰。
+
+#继承
+- 到目前为止，我们已经能够使用Maven的聚合特性通过一条命令同时构建account-email和account-persist两个模块，不过这仅仅解决了多模块Maven项目的一个问题。
+- 这两个POM有着很多相同的配置，有相同的groupId和version，有相同的spring-core、spring-beans、spring-context
+和junit依赖，还有相同的maven-compiler-plugin与maven-resources-plugin配置。这是重复！
+- 在Maven的世界中，也有类似的机制能让我们抽取出重复的配置，这就是POM的继承。
+
+#account-parent
+- 向对象设计中，程序员可以建立一种类的父子结构，然后在父类中声明一些字段和方法供子类继承，这样就可以做到“一处声明，多处使用”。
+- 我们需要创建POM的父子结构，然后在父POM中声明一些配置供子POM继承，以实现“一处声明，多处使用”的目的。
+- 在account-aggregator下创建一个名为account-parent的子目录，然后在该子目录下建立一个所有除account-aggregator之外模块的父模
+块。为此，在该子目录创建一个pom.xml文件:
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.juvenxu.mvnbook.account</groupId>
+  <artifactId>account-parent</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>Account Parent</name>  
+</project>
+- 该POM使用了与其他模块一致的groupId和version，使用的artifactId为account-parent表示这是一个父模块。
+- packaging为pom，这一点与聚合模块一样，作为父模块的POM，其打包类型也必须为pom。
+- 由于父模块只是为了帮助消除配置的重复，因此它本身不包含除POM之外的项目文件，也就不需要src/main/java/之类的文件夹了。
+- 有了父模块，就需要让其他模块来继承它。首先将account-email的POM修改如下:
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>  
+  <parent>
+    <groupId>com.juvenxu.mvnbook.account</groupId>
+    <artifactId>account-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <relativePath>../account-parent/pom.xml</relativePath>
+  </parent>
+  
+  <artifactId>account-email</artifactId>
+  <name>Account Email</name>
+
+  <dependencies>
+    ...
+  </dependencies>
+
+  <build>
+    <plugins>
+    ...
+    </plugins>
+  </build>
+</project>
+- 上述POM中使用parent元素声明父模块，parent下的子元素groupId、artifactId和version指定了父模块的坐标，这三个元素是必须的。元素relativePath表示父模块POM的相对路径，该例中的../account-parent/pom.xml表示父POM的位置在与account-email/目录平行的account-parent/目录下。 
+- 当项目构建时，Maven会首先根据relativePath检查父POM，如果找不到，再从本地仓库查找。relativePath的默认值是../pom.xml， 也就是说， Maven默认父POM在上一层目录下。正确设置relativePath非常重要。
+- 考虑这样一个情况，开发团队的新成员从源码库签出一个包含父子模块关系的Maven项目。由于只关心其中的某一个子模块，它就直接到该模块的目录下执行构建，这个时候，父模块是没有被安装到本地仓库的，因此如果子模块没有设置正确的relativePath，Maven将无法找到父POM，这将直接导致构建失败。如果Maven能够根据relativePath找到父POM，它就不需要再去检查本地仓库。
+- 这个更新过的POM没有为account-email声明groupId和version，不过这并不代表account-email没有groupId和version。实际上，这个子模块隐式地从父模块继承了这两个元素，这也就消除了一些不必要的配置。在该例中，父子模块使用同样的groupId和version，如果遇到子模块需要使用和父模块不一样的groupId或者version的情况，那么用户完全可以在子模块中显式声明。
+- 对于artifactId元素来说，子模块应该显式声明，一方面，如果完全继承groupId、artifactId和version，会造成坐标冲突；另一方面，即使使用
+不同的groupId或version，同样的artifactId容易造成混淆。
+- 以下是account-persist更新后的POM:
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>  
+  <parent>
+    <groupId>com.juvenxu.mvnbook.account</groupId>
+    <artifactId>account-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <relativePath>../account-parent/pom.xml</relativePath>
+  </parent>  
+  <artifactId>account-persist</artifactId>
+  <name>Account Persist</name>
+
+  <dependencies>
+    ...
+  </dependencies>
+
+  <build>
+    <testResources>
+      <testResource>
+        <directory>src/test/resources</directory>
+        <filtering>true</filtering>
+      </testResource>
+    </testResources>
+  </build>
+
+- 还需要把account-parent加入到聚合模块account-aggregator中
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.juvenxu.mvnbook.account</groupId>
+  <artifactId>account-aggregator</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>Account Aggregator</name>
+  <modules>
+    <module>account-email</module>
+    <module>account-persist</module>
+    <module>account-parent</module>
+  </modules>
+</project>
+
+#可继承的POM元素
+- groupId和version是可以被继承的，那么还有哪些POM元素可以被继承呢?
+·groupId：项目组ID，项目坐标的核心元素。
+·version：项目版本，项目坐标的核心元素。
+·description：项目的描述信息。
+·organization：项目的组织信息。
+·inceptionYear：项目的创始年份。
+·url：项目的URL地址。
+·developers：项目的开发者信息。
+·contributors：项目的贡献者信息。
+·distributionManagement：项目的部署配置。
+·issueManagement：项目的缺陷跟踪系统信息。
+·ciManagement：项目的持续集成系统信息。
+·scm：项目的版本控制系统信息。
+·mailingLists：项目的邮件列表信息。
+·properties：自定义的Maven属性。
+·dependencies：项目的依赖配置。
+·dependencyManagement：项目的依赖管理配置。
+·repositories：项目的仓库配置。
+·build：包括项目的源码目录配置、输出目录配置、插件配置、插件管理配置等。
+·reporting：包括项目的报告输出目录配置、报告插件配置等。
+
+#依赖管理
+- 可继承元素列表包含了dependencies元素，说明依赖是会被继承的，这时我们就会很容易想到将这一特性应用到account-parent中。子模块account-email和
+account-persist同时依赖了org.springframework：spring-core：2.5.6、org.springframework：spring-beans：2.5.6、org.springframework：spring-context：2.5.6和junit：junit：4.7，因此可以将这些依赖配置放到父模块account-parent中，两个子模块就能移除这些依赖，简化配置。
+- 上述做法是可行的，但却存在问题。到目前为止，我们能够确定这两个子模块都包含那四个依赖，不过我们无法确定将来添加的子模块就一定需要这四个依赖。 假设将来项目中需要加入一个account-util模块，该模块只是提供一些简单的帮助工具，与springframework完全无关，难道也让它依赖spring-core、spring-beans和spring-context吗？那显然是不合理的。
+- Maven提供的dependencyManagement元素既能让子模块继承到父模块的依赖配置，又能保证子模块依赖使用的灵活性。
+- 在dependencyManagement元素下的依赖声明不会引入实际的依赖，不过它能够约束dependencies下的依赖使用。例如，可以在account-parent中加入这样的dependencyManagement配置:
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.juvenxu.mvnbook.account</groupId>
+  <artifactId>account-parent</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>Account Parent</name>
+  <properties>
+    <springframework.version>2.5.6</springframework.version>
+    <junit.version>4.7</junit.version>
+  </properties>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-core</artifactId>
+        <version>${springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-beans</artifactId>
+        <version>${springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context</artifactId>
+        <version>${springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context-support</artifactId>
+        <version>${springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement> 
+</project>
+- 首先该父POM将springframework和junit依赖的版本以Maven变量的形式提取了出来，不仅消除了一些重复，也使得各依赖的版本处于更加明显的位置。 
+- 这里使用dependencyManagement声明的依赖既不会给account-parent引入依赖，也不会给它的子模块引入依赖，不过这段配置是会被继承的。
+- 现在修改account-email的POM如下:
+<properties>
+    <javax.mail.version>1.4.1</javax.mail.version>
+    <greenmail.version>1.3.1b</greenmail.version>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-core</artifactId>    
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-beans</artifactId>     
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>     
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context-support</artifactId>     
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>javax.mail</groupId>
+      <artifactId>mail</artifactId>
+      <version>${javax.mail.version}</version>
+    </dependency>   
+    <dependency>
+      <groupId>com.icegreen</groupId>
+      <artifactId>greenmail</artifactId>
+      <version>${greenmail.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+- 上述POM中的依赖配置较原来简单了一些，所有的springframework依赖只配置了groupId和artifactId，省去了version，而junit依赖不仅省去了version，还省去了依赖范围scope。
+- 这些信息可以省略是因为account-email继承了account-parent中的dependencyManagement配置，完整的依赖声明已经包含在父POM中，子模块只需要配置简单的groupId和artifactId就能获得对应的依赖信息，从而引入正确的依赖。
+- 使用这种依赖管理机制似乎不能减少太多的POM配置，但父POM中使用dependencyManagement声明依赖能够统一项目范围中依赖的版本，当依赖版本在父POM中声明之后，子模块在使用依赖的时候就无须声明版本，也就不会发生多个子模块使用依赖版本不一致的情况。这可以帮助降低依赖冲突的几率。
+- 如果子模块不声明依赖的使用，即使该依赖已经在父POM的dependencyManagement中声明了，也不会产生任何实际的效果：
+<properties>
+    <dom4j.version>1.6.1</dom4j.version>
+</properties>
+<dependencies>
+  <dependency>
+    <groupId>dom4j</groupId>
+    <artifactId>dom4j</artifactId>
+    <version>${dom4j.version}</version>
+  </dependency>
+  <dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-core</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-beans</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-context</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+  </dependency>
+</dependencies>
+- 这里没有声明spring-context-support，那么该依赖就不会被引入。这正是dependencyManagement的灵活性所在。
+
+- 在介绍依赖范围的时候提到了名为import的依赖范围，推迟到现在介绍是因为该范围的依赖只在dependencyManagement元素下才有效果
+- 使用该范围的依赖通常指向一个POM，作用是将目标POM中的dependencyManagement配置导入并合并到当前POM的dependencyManagement元素中。
+- 例如想要在另外一个模块中使用与代码清单8-14完全一样的dependencyManagement配置，除了复制配置或者继承这两种方式之外，还可以使用import范围依赖将这一配置导入:
+- 使用import范围依赖导入依赖管理配置
+<dependencyManagement>
+  <dependencies>
+    <groupId>com.juvenxu.mvnbook.account</groupId>
+    <artifactId>account-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <type>pom</type>
+    <scope>import</scope>
+   ...
+</dependencyManagement>
+- 上述代码中依赖的type值为pom，import范围依赖由于其特殊性，一般都是指向打包类型为pom的模块。
+- 如果有多个项目，它们使用的依赖版本都是一致的，则就可以定义一个使用dependencyManagement专门管理依赖的POM，然后在各个项目中导入这些依赖管理配置。
+
+#插件管理
+- Maven提供了dependencyManagement元素帮助管理依赖，类似地，Maven也提供了pluginManagement元素帮助管理插件。
+- 在该元素中配置的依赖不会造成实际的插件调用行为，当POM中配置了真正的plugin元素，并且其groupId和artifactId与pluginManagement中配置的插件匹配时，pluginManagement的配置才会影响实际的插件行为。
+- 7.4.2节中配置了maven-source-plugin，将其jar-no-fork目标绑定到了verity生命周期阶段，以生成项目源码包。
+- 如果一个项目中有很多子模块，并且需要得到所有这些模块的源码包，那么很显然，为所有模块重复类似的插件配置不是最好的办法。这时更好的方法是在父POM中使用pluginManagement配置插件，
+- 在父POM中配置pluginManagement：
+<build>
+  <pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>2.1.1</version>
+        <executions>
+            <execution>
+                <id>attach-sources</id>
+                <phase>verify</phase>
+                <goals>
+                    <goal>jar-no-fork</goal>
+                </goals>
+            </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </pluginManagement>
+</build>
+
+- 当子模块需要生成源码包的时候，只需要如下简单的配置：
+<build>  
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>        
+      </plugin>
+    </plugins>
+</build>
+- 子模块声明使用了maven-source-plugin插件，同时又继承了父模块的pluginManagement配置，两者基于groupId和artifactId匹配合并之后就相当于7.4.2节中的插件配置。
+- 如果子模块不需要使用父模块中pluginManagement配置的插件，可以尽管将其忽略。
+- 如果子模块需要不同的插件配置，则可以自行配置以覆盖父模块的pluginManagement配置。
+
+- 有了pluginManagement元素，account-email和account-persist的POM也能得以简化了，它们都配置了maven-compiler-plugin和maven-resources-plugin。可以将这两个插件的配置移到account-parent的pluginManagement元素中
+<build>
+  <pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.5</source>
+          <target>1.5</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <configuration>
+          <encoding>UTF-8</encoding>
+        </configuration>
+      </plugin>
+    </plugins>
+  </pluginManagement>
+</build>
+
+- account-email和account-persist可以完全地移除关于maven-compiler-plugin和maven-resources-plugin的配置，但它们仍能享受这两个插件的服务，前一插件开启了Java 5编译的支持，后一插件也会使用UTF-8编码处理资源文件。
+- 这背后涉及了很多Maven机制，首先，内置的插件绑定关系将两个插件绑定到了account-email和account-persist的生命周期上；
+- 其次，超级POM为这两个插件声明了版本；
+- 最后，account-parent中的pluginManagement对这两个插件的行为进行了配置。
+- 当项目中的多个模块有同样的插件配置时，应当将配置移到父POM的pluginManagement元素中。即使各个模块对于同一插件的具体配置不尽相同，也应当使用父POM的pluginManagement元素统一声明插件的版本。甚至可以要求将所有用到的插件的版本在父POM的pluginManagement元素中声明，子模块使用插件时不配置版本信息，这么做可以统一项目的插件版本，避免潜在的插件不一致或者不稳定问题，也更易于维护。
+
+#聚合与继承的关系
+- 多模块Maven项目中的聚合与继承其实是两个概念，其目的完全是不同的。
+- 前者主要是为了方便快速构建项目，后者主要是为了消除重复配置。
+- 对于聚合模块来说，它知道有哪些被聚合的模块，但那些被聚合的模块不知道这个聚合模块的存在。
+- 对于继承关系的父POM来说，它不知道有哪些子模块继承于它，但那些子模块都必须知道自己的父POM是什么。
+- 如果非要说这两个特性的共同点，1)聚合POM与继承关系中的父POM的packaging都必须是pom，2)聚合模块与继承关系中的父模块除了POM之外都没有实际的内容，
+- 在现有的实际项目中，读者往往会发现一个POM既是聚合POM，又是父POM，这么做主要是为了方便。
+- 一般来说，融合使用聚合与继承也没有什么问题，例如可以将account-aggregator和account-parent合并成一个新的account-parent:
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.juvenxu.mvnbook.account</groupId>
+  <artifactId>account-parent</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>Account Parent</name>
+  <modules>
+    <module>account-email</module>
+    <module>account-persist</module>
+  </modules>
+  <properties>
+    <springframework.version>2.5.6</springframework.version>
+    <junit.version>4.7</junit.version>
+  </properties>  
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-core</artifactId>
+        <version>${springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-beans</artifactId>
+        <version>${springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context</artifactId>
+        <version>${springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context-support</artifactId>
+        <version>${springframework.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <source>1.5</source>
+            <target>1.5</target>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <configuration>
+            <encoding>UTF-8</encoding>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>
+- 该POM的打包方式为pom，
+- 包含了一个modules元素，表示用来聚合account-persist和account-email两个模块，
+- 还包含了properties、dependencyManagement和pluginManagement元素供子模块继承。
+- 相应地，account-email和account-persist的POM配置也要做微小的修改。本来account-parent和它们位于同级目录，因此需要使用值为../account-parent/pom.xml的relativePath元素。现在新的account-parent在上一层目录， 这是Maven默认能识别的父模块位置， 因此不再需要配置relativePath，
+- 当父模块在上级目录时不再需要relativePath
+
+<parent>
+  <groupId>com.juvenxu.mvnbook.account</groupId>
+  <artifactId>account-parent</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+</parent>
+
+<artifactId>account-email</artifactId>
+<name>Account Email</name>
+
+#约定优于配置
+- Maven提倡“约定优于配置”（Convention Over Configuration），这是Maven最核心的设计理念之一。
+- 那么为什么要使用约定而不是自己更灵活的配置呢？原因之一是，使用约定可以大量减少配置。先看一个简单的Ant配置文件：
+- 这段代码做的事情就是清除构建目录、创建目录、编译代码、复制依赖至目标目录，最后打包。这是一个项目构建要完成的最基本的事情，不过为此还是需要写很多的XML配置：源码目录是什么、编译目标目录是什么、分发目录是什么，等等。用户还需要记住各种Ant任务命令，如delete、mkdir、javac和jar。 
+- 做同样的事情，Maven需要什么配置呢？Maven只需要一个最简单的POM
+- 构建简单项目使用的Maven配置文件
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.juvenxu.mvnbook.account</groupId>
+  <artifactId>my-project</artifactId>
+  <version>1.0</version>
+</project>
+- 这段配置简单得令人惊奇，但为了获得这样简洁的配置，用户是需要付出一定的代价的，那就是遵循Maven的约定。 Maven会假设用户的项目是这样的：
+·源码目录为src/main/java/
+·编译输出目录为target/classes/
+·打包方式为jar
+·包输出目录为target/
+- 遵循约定虽然损失了一定的灵活性，用户不能随意安排目录结构，但是却能减少配置。
+- 更重要的是，遵循约定能够帮助用户遵守构建标准。
+- 如果没有约定，10个项目可能使用10种不同的项目目录结构，这意味着交流学习成本的增加，当新成员加入项目的时候，它就不得不花时间去学习这种构建配置。而有了Maven的约定，大家都知道什么目录放什么内容。
+- 此外，与Ant的自定义目标名称不同，Maven在命令行暴露的用户接口是统一的，像mvn clean install这样的命令可以用来构建几乎任何的 Maven项目。
+- 也许这时候有读者会问，如果我不想遵守约定该怎么办？这时，请首先问自己三遍，你真的需要这么做吗？如果仅仅是因为喜好，就不要耍个性，个性往往意味着牺牲通用性，意味着增加无谓的复杂度。
+- Maven允许你自定义源码目录:
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.juvenxu.mvnbook.account</groupId>
+  <artifactId>my-project</artifactId>
+  <version>1.0</version>
+  <build>
+    <sourceDirectory>src/java</sourceDirectory>
+  </build>
+</project>
+- 该例中源码目录就成了src/java而不是默认的src/main/java。但这往往会造成交流问题，习惯Maven的人会奇怪，源代码去哪里了？ 当这种自定义大量存在的时候， 交流成本就会大大提高。
+- 只有在一些特殊的情况下，这种自定义配置的方式才应该被正确使用以解决实际问题。例如你在处理遗留代码，并且没有办法更改原来的目录结构，
+这个时候就只能让Maven妥协。
+- 本书曾多次提到超级POM，任何一个Maven项目都隐式地继承自该POM，这有点类似于任何一个Java类都隐式地继承于Object类。因此，大量超级POM的配置都会被所有Maven项目继承，这些配置也就成为了Maven所提倡的约定。
+
+- 对于Maven 3，超级POM在文件＄MAVEN_HOME/lib/maven-model-builder-x.x.x.jar中的org/apache/maven/model/pom-4.0.0.xml路径下：
+- 超级POM中关于仓库的定义:
+  <repositories>
+    <repository>
+      <id>central</id>
+      <name>Central Repository</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+      <layout>default</layout>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>central</id>
+      <name>Central Repository</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+      <layout>default</layout>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <releases>
+        <updatePolicy>never</updatePolicy>
+      </releases>
+    </pluginRepository>
+  </pluginRepositories>
+- 首先超级POM定义了仓库及插件仓库，两者的地址都为中央仓库https://repo.maven.org/maven2 ，并且都关闭了SNAPSHOT的支持。 这也就解释了为什么Maven默认就可以按需要从中央仓库下载构件。
+- 超级POM中关于项目结构的定义:
+  <build>
+    <directory>${project.basedir}/target</directory>
+    <outputDirectory>${project.build.directory}/classes</outputDirectory>
+    <finalName>${project.artifactId}-${project.version}</finalName>
+    <testOutputDirectory>${project.build.directory}/test-classes</testOutputDirectory>
+    <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+    <scriptSourceDirectory>${project.basedir}/src/main/scripts</scriptSourceDirectory>
+    <testSourceDirectory>${project.basedir}/src/test/java</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>${project.basedir}/src/main/resources</directory>
+      </resource>
+    </resources>
+    <testResources>
+      <testResource>
+        <directory>${project.basedir}/src/test/resources</directory>
+      </testResource>
+    </testResources>
+   ...
+  </build>
+- 依次定义了项目的主输出目录、主代码输出目录、最终构件的名称格式、测试代码输出目录、主源码目录、脚本源码目录、测试源码目录、主资源目录和测试资源目录。这就是Maven项目结构的约定。
+- ？？ ${project.basedir}从哪里获得？
+- 　超级POM中关于插件版本的定义：
+    <pluginManagement>
+      <!-- NOTE: These plugins will be removed from future versions of the super POM -->
+      <!-- They are kept for the moment as they are very unlikely to conflict with lifecycle mappings (MNG-4453) -->
+      <plugins>
+        <plugin>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>1.3</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>2.2-beta-5</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>2.8</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>2.3.2</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+- Maven设定核心插件的原因是防止由于插件版本的变化而造成构建不稳定。 
+- 超级POM的最后是关于项目报告输出目录的配置和一个关于项目发布的profile
+- 从超级POM能够知晓Maven约定的由来，不仅理解了什么是约定，为什么要遵循约定，还能明白约定是如何实现的。
+- ??但Maven 3.5 没有默认插件版本, Maven3.5是如何知道使用那个版本的呢？
+
+#Reactor
+- 在一个多模块的Maven项目中，Reactor是指所有模块组成的一个构建结构。对于单模块的项目，反应堆就是该模块本身，
+- 对于多模块项目来说，反应堆就包含了各模块之间继承与依赖的关系，从而能够自动计算出合理的模块构建顺序。
+
+#反应堆的构建顺序
+- 首先，为了能更清楚地解释反应堆的构建顺序，将account-aggregator的聚合配置修改如下
+- 构建acco上述输出告诉了我们反应堆的构建顺序，它们依次为account-aggregator、account-parent、account-email和account-persist。unt-aggregator会看到如下的输出：上述输出告诉了我们反应堆的构建顺序，它们依次为account-aggregator、account-parent、account-email和account-persist。
+- POM的读取次序不足以决定反应堆的构建顺序，Maven还需要考虑模块之间的继承和依赖关系，
+- account-email和account-persist依赖于account-parent，那么account-parent就必须先于另外两个模块构建。
+- 实际的构建顺序是这样形成的：Maven按序读取POM，如果该POM没有依赖模块，那么就构建该模块，否则就先构建其依赖模块，如果该依赖还依赖于其他模块，则进一步先构建依赖的依赖。 account-aggregator没有依赖模块，因此先构建它，接着到account-email，它依赖于account-parent模块，必须先构建account-parent，然后再构建account-email，最后到account-persist的时候，由于其依赖模块已经被构建，因此直接构建它。
+
+#裁剪反应堆
+一般来说，用户会选择构建整个项目或者选择构建单个模块，
+- 但有些时候，用户会想要仅仅构建完整反应堆中的某些个模块。换句话说，用户需要实时地裁剪反应堆。
+- Maven提供很多的命令行选项支持裁剪反应堆，输入mvn -h可以看到这些选项：
+·-am，--also-make同时构建所列模块的依赖模块
+·-amd --also-make-dependents同时构建依赖于所列模块的模块
+·-pl，--projects<arg> 构建指定的模块，模块间用逗号分隔
+·-rf-resume-from<arg>从指定的模块回复反应堆
+- 默认情况从account-aggregator执行mvn clean install 会得到如下完整的反应堆：
+Reactor Build Order:
+Account Parent
+Account Email
+Account Persist
+Account Aggregator]
+- 使用-pl选项指定构建某几个模块: mvn clean install -pl account-email,account-persist
+Reactor Build Order:
+Account Email
+Account Persist
+- 使用-am选项可以同时构建所列模块的依赖模块: mvn clean install -pl account-email -am
+Reactor Build Order:
+Account Parent
+Account Email
+- 使用-amd选项可以同时构建依赖于所列模块的模块: mvn clean install -pl account-parent -amd
+Reactor Build Order:
+Account Parent
+Account Email
+Account Persist
+- 使用-rf (--resume-from)选项可以在完整的反应堆构建顺序基础上指定从哪个模块开始构建: mvn clean install -rf account-email
+Reactor Build Order:
+Account Email
+Account Persist
+Account Aggregator
+- 在-pl-am或者-pl-amd的基础上，还能应用-rf参数，以对裁剪后的反应堆再次裁剪: 
+mvn clean install -pl account-parent -amd -rf account-email
+- 在开发过程中，灵活应用上述4个参数，可以帮助我们跳过无须构建的模块，加速构建。在项目庞大、模块特别多的时候，这种效果就会异常明显。
+
+Chapter9  使用Nexus创建私服
+- 私服不是Maven的核心概念，它仅仅是一种衍生出来的特殊的Maven仓库
+- 通过建立自己的私服，就可以降低中央仓库负荷、节省外网带宽、加速Maven构建、自己部署构件等，从而高效地使用Maven。
+- 有三种专门的Maven仓库管理软件可以用来帮助大家建立私服：Apache基金会的Archiva、JFrog的Artifactory和Sonatype的Nexus。
+- 其中，Archiva是开源的，而Artifactory和Nexus的核心也是开源的。
+
+-Nexus分为开源版和专业版，其中开源版本基于GPLv3许可证，其特性足以满足大部分Maven用户的需要。以下是一些Nexus开源版本的特性：
+·较小的内存占用（最少仅为28MB）
+·基于ExtJS的友好界面
+·基于Restlet的完全REST API
+·支持代理仓库、宿主仓库和仓库组
+·基于文件系统，不需要数据库
+·支持仓库索引和搜索
+·支持从界面上传Maven构件
+·细粒度的安全控制
+
+- Nexus专业版本是需要付费购买的，除了开源版本的所有特性之外，它主要包含一些企业安全控制、发布流程控制等需要的特性
+- 安装Nexus： Nexus是典型的Java Web应用，它有两种安装包，一种是包含Jetty容器的Bundle包，另一种是不包含Web容器的war包。
+
+#Bundle方式安装Nexus
+- Nexus的Bundle自带了Jetty容器，因此用户不需要额外的Web容器就能直接启动Nexus。
+- 首先将Bundle文件解压（例如笔者将其解压到D：\bin\目录），这时就会得到如下两个子目录：
+·nexus-webapp-1.7.2/： 该目录包含了Nexus运行所需要的文件，如启动脚本、依赖jar包等。
+·sonatype-work/： 该目录包含Nexus生成的配置文件、日志文件、仓库文件等。
+- 其中，第一个目录是运行Nexus所必需的，而且所有相同版本Nexus实例所包含的该目录内容都是一样的。而第二个目录不是必须的，Nexus会在运行的时候动态创建该目录，不过它的内容对于各个Nexus实例是不一样的，因为不同用户在不同机器上使用的Nexus会有不同的配置和仓库内容。
+- 当用户需要备份Nexus的时候，默认备份sonatype-work/目录，因为该目录包含了用户特定的内容， 而nexus-webapp-1.7.2目录下的内容是可以从安装包直接获得的。 用户只需要调用对应操作系统的脚本就可以启动Nexus， 这里介绍主流的在Windows和Linux平台上启动Nexus的方式
+- 在Windows操作系统上，用户需进入nexus-3.5.1-02-win64\nexus-3.5.1-02\bin目录
+nexus.exe /run
+安装：nexus.exe /install
+卸载：nexus.exe /unistall
+启动：nexus.exe /start
+停止：neuxs.exe /stop
+- localhost:8081
+- right up corner: sign-> admin, admin123
+
+#仓库配置
+仓库配置详见官方文档：http://books.sonatype.com/nexus-book/reference3/admin.html#admin-repositories
+
+#Nexus的仓库与仓库组
+- 作为Maven仓库服务软件，仓库自然是Nexus中最重要的概念。Nexus包含了各种类型的仓库概念，包括代理仓库、宿主仓库和仓库组等。每一种仓库都提供了丰富实用的配置参数，方便用户根据需要进行定制。
+- 点击页面上部的齿轮进入配置页面：
+- 单击Nexus界面左边导航栏中的Repositories链接：
+- 这个列表已经包含了所有类型的Nexus仓库。
+- repository type：group（仓库组）、hosted（宿主）、proxy（代理). 
+- format: 每个仓库的格式为maven2, docker, raw, nuget。
+- url: 仓库的路径。
+- online: ture/false
+Maven 2
+- version policy: release/snapshot/mixed
+- Layout: strict/permissive
+Storage:
+blob storage: default
+
+maven-central：maven中央库，默认从https://repo1.maven.org/maven2/拉取jar 
+maven-releases：私库发行版jar 
+maven-snapshots：私库快照（调试版本）jar 
+maven-public：仓库分组，把上面三个仓库组合在一起对外提供服务，在本地maven基础配置settings.xml中使用。
+
+- 举一个简单的例子。假设某公司建立了Maven项目X，公司内部建立了Nexus私服，为所有Maven项目提供服务。
+- 项目X依赖于很多流行的开源类库如JUnit等，这些构件都能从Maven中央仓库获得，因此Maven Central代理仓库会被用来代理中央仓库的内容， 并在私服上缓存下来， 
+- X还依赖于某个Google Code的项目，其构件在中央仓库中不存在，只存在于Google Code的仓库中，因此上述列表中的Google Code代理仓库会被用来代理并缓存这样的构件。
+- X还依赖于Oracle的JDBC驱动，由于版权的因素，该类库无法从公共仓库获得，因此公司管理员将其部署到3rd party宿主仓库中， 供X使用。
+- X的快照版本构件成功后，会被部署到Snapshots宿主仓库中，供其他项目使用。当X发布正式版本的时候，其构件会被部署到Release宿主仓库中。
+- 由于X用到了上述列表中的很多仓库，为每个仓库声明Maven配置又比较麻烦，因此可以直接使用仓库组Public Repositories和Public Snapshot Repositories，当X需要JUnit的时候，它直接从Public Repositories下载，Public Repositories会选择Maven Central提供实际的内容。
+
+#Nexus仓库分类的概念
+- hosted, proxy and group:  
+- Maven可以直接从宿主仓库下载构件； 
+- Maven也可以从代理仓库下载构件，代理仓库会间接地从远程仓库下载并缓存构件； 
+- Maven可以从仓库组下载构件，而仓库组没有实际内容（图中用虚线表示），它会转向其包含的宿主仓库或者代理仓库获得实际构件的内容。
+
+#创建Nexus宿主仓库
+- 要创建一个宿主仓库，首先单击界面左边导航栏中的Repositories链接，单击create repository-> select recipe-> maven(hosted)
+- 填入仓库的ID和名称，
+- version policy，根据自己的需要来配置该仓库是发布版构件仓库(release)还是快照版构件仓库(snapshot) or mixed。
+- layout policy??: strict/permissive
+- Deployment Policy用来配置该仓库的部署策略，选项有read only只读（禁止部署）、 disable redeploy关闭重新部署（同一构件只能部署一次）以及 allow redploy允许重新部署。
+- Storage/Blob store=default: custom repository local storage (you can define custom blob store and ref blob store as storage location)
+
+#创建Nexus代理仓库
+- 对于代理仓库来说，最重要的是远程仓库的地址，即Remote Storage，用户必须在这里输入有效的值。
+- Authentication: 远程仓库认证配置
+- Maximum Component Age: 前者表示构件缓存的最长时间. 对于发布版仓库来说，默认值为-1， 表示构件缓存后就一直保存着，不再重新下载; 对于快照版仓库来说，默认值为1440分钟，表示每隔一天重新缓存代理的构件。
+- Maximum Metadata age: 仓库元数据文件缓存的最长时间。
+- HTTP Request Settings: Nexus访问远程仓库时HTTP请求的参数
+
+#创建Nexus仓库组
+- 要创建一个仓库组，首先单击界面左边导航栏中的Repositories链接，单击create repository
+- Name等信息这里不再赘述。 
+- 在配置界面中，用户可以非常直观地选择Nexus中仓库，将其聚合成一个虚拟的仓库组。
+- 仓库组所包含的仓库的顺序决定了仓库组遍历其所含仓库的次序，因此最好将常用的仓库放在前面，当用户从仓库组下载构件的时候，就能够尽快地访问到包含构件的仓库。
+
+#Nexus的索引与构件搜索
+- 既然Nexus能够维护宿主仓库并代理缓存远程仓库（如Maven中央库），那么一个简单的需求就自然浮现出来了，这就是搜索。
+- Maven中央库有几十万构件供用户使用，但有时我们往往仅仅知道某个关键字，如Ehcache，而不知道其确切的Maven坐标。
+- Nexus通过维护仓库的索引来提供搜索功能，能在很大程度上方便Maven用户定位构件坐标。
+- 6.8.1节介绍了Sonatype提供的在线免费搜索服务，其实用户可以很方便地自己维护一个Nexus实例，并提供搜索服务。
+- 为了能够搜索Maven中央库，首先需要设置Nexus中的Maven Central代理仓库下载远程索引。需要注意的是，默认这个配置的值是关闭的。 (??) 
+- 由于中央库的内容比较多，因此其索引文件比较大，Nexus下载该文件也需要比较长的时间。 可以想象到，Nexus在后台运行了一个任务来下载中央仓库的索引，幸运的是，用户可以通过界面直接观察这一任务的状态。单击界面左边导航栏中的Scheduled Tasks (??)
+- 有了索引，用户即可搜索Maven构件了。Nexus界面上部有一个快捷搜索框，在其中输入关键字后，单击搜索按钮就能快速得到搜索结果
+- Nexus Repository Manager 3.2 does NOT support usage of remote index for searches (and other purposes) at all. If you want this feature I suggest to stick with Nexus Repository Manager 2 for now.
+- 该例使用了ehcache关键字进行搜索，因此得到了大量与ehcache相关的结果，结果中的每一行都表示了一类构件，信息包括GroupId、ArtifactId、最新版本以及最新版本的相关文件下载等。单击其中的某一行，界面的下端会浮出一个更具体的构件信息面板
+- 该面板除了显示构件的坐标，还包含了一段XML依赖声明，用户可以直接复制粘贴到项目的POM中。
+- 此外，用户还能从该面板获知构件在仓库中的相对位置。
+- 除了简单的关键字搜索，Nexus还提供了GAV搜索、类名搜索和校验和搜索等功能，用户可以单击搜索页面左上角的下拉菜单选择高级搜索功能：
+·GAV搜索 （GAV Search）允许用户通过设置GroupId、ArtifactId和Version等信息来进行更有针对性的搜索。
+·类名搜索 （Classname Search）允许用户搜索包含某个Java类的构件。
+·校验和搜索 （Checksum Search）允许用户直接使用构件的校验和来搜索该构件。
+
+#本地maven库配置settings.xml
+- 有了中央仓库的索引，用户不仅能够搜索构件，还能够直接浏览中央仓库的内容。这便是Nexus的索引浏览功能。 在Repositories页面中， 选择Browse Index选项卡，就能看到中央仓库内容的树形结构，
+- 以上的搜索及浏览功能都是基于Nexus索引而实现的，确切地应该称之为nexus-indexer。Nexus能够遍历一个Maven仓库所有的内容，搜集它们的坐标、校验和及所含的Java类信息，然后以nexus-indexer的形式保存起来。中央仓库维护了这样的一个nexus-indexer，因此本地的Nexus下载到这个索引之后，就能在此基础上提供搜索和浏览等服务。
+- 不是任何一个公共仓库都提供nexus-indexer，对于那些不提供索引的仓库来说，我们就无法对其进行搜索。
+- 除了下载使用远程仓库的索引，我们也能为宿主仓库和代理仓库建立索引。只需要在仓库上右击，从弹出的快捷菜单中选择ReIndex即可，如图9-15所示。待索引编纂任务完成之后，就能搜索该仓库所包含的构件。
+- 对于宿主仓库来说，ReIndex任务会扫描该仓库包含的所有构件建立索引。对于代理仓库来说，ReIndex任务会扫描所有缓存的构件建立索引，如果远程仓库也有索引，则下载后与本地的索引合并。对于仓库组来说，ReIndex任务会合并其包含的所有仓库的索引。
+
+#配置Maven从Nexus下载构件
+- 6.4节与7.5.1节已经详细介绍了如何在POM中为Maven配置仓库和插件仓库。例如，当需要为项目添加Nexus私服上的public仓库时:
+- 在POM中配置Nexus仓库
+<repositories>
+    <repository>
+      <id>nexus</id>
+      <name>Nexus</name>
+      <url>http://localhost:8081/repository/maven-public/</url>
+      <releases><enabled>true</enabled></releases>
+      <snapshots><enabled>true</enabled></snapshots>      
+    </repository>
+</repositories>
+<pluginRepositories>
+    <pluginRepository>
+      <id>nexus</id>
+      <name>Nexus</name>
+      <url>http://localhost:8081/repository/maven-public/</url>
+      <releases><enabled>true</enabled></releases>
+      <snapshots><enabled>true</enabled></snapshots>    
+    </pluginRepository>
+</pluginRepositories>
+- 这样的配置只对当前Maven项目有效，想要通过一次配置就能让本机所有的Maven项目都使用自己的Maven私服。
+- settings.xml文件中的配置对所有本机Maven项目有效，但是settings.xml并不支持直接配置repositories和pluginRepositories。所幸Maven还提供了Profile机制，能让用户将仓库配置放到setting.xml中的Profile中:
+- 在settings.xml中配置Nexus仓库：
+<profiles>
+  <profile>
+    <id>nexus</id>
+      <repositories>
+        <repository>
+          <id>nexus</id>
+          <name>Nexus</name>
+          <url>http://localhost:8081/repository/maven-public/</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>      
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <repository>
+          <id>nexus</id>
+          <name>Nexus</name>
+          <url>http://localhost:8081/repository/maven-public/</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>      
+        </repository>
+      </pluginRepositories>
+    </repositories>
+  </profile>
+  <activeProfiles>
+    <activeProfile>nexus</activeProfile>
+  </activeProfiles>
+</profiles>
+- 该配置中使用了一个id为nexus的profile，这个profile包含了相关的仓库配置，同时配置中又使用activeProfile元素将nexus这个profile激活，这样当执行Maven构建的时候，激活的profile会将仓库配置应用到项目中去
+- 配置已经能让本机所有的Maven项目从Nexus私服下载构件, 然而，Maven除了从Nexus下载构件之外，还会不时地访问中央仓库central，我们希望的是所有Maven下载请求都仅仅通过Nexus，以全面发挥私服的作用。这个时候就需要借助于Maven镜像配置了。可以创建一个匹配任何仓库的镜像，镜像的地址为私服，这样，Maven对任何仓库的构件下载请求都会转到私服中。
+- 配置镜像让Maven只使用私服：  
+  <mirrors>
+    <mirror>
+      <id>nexus</id>
+      <mirrorOf>*</mirrorOf>
+      <url>http://localhost:8081/repository/maven-public/</url>
+    </mirror>
+  </mirrors>
+
+  <profiles>
+    <profile>
+      <id>nexus</id>
+      <repositories>
+        <repository>
+          <id>central</id>
+          <url>http://central</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </repository>
+      </repositories>
+     <pluginRepositories>
+        <pluginRepository>
+          <id>central</id>
+          <url>http://central</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+
+  </profiles>
+  <activeProfiles>
+    <activeProfile>nexus</activeProfile>
+  </activeProfiles>
+- 关于镜像、profile及profile激活的配置不再赘述，这里需要解释的是仓库及插件仓库配置，它们的id都为central，也就是说，覆盖了超级POM中央仓库的配置，它们的url已无关紧要，因为所有请求都会通过镜像访问私服地址。配置仓库及插件仓库的主要目的是开启对快照版本下载的支持，当Maven需要下载发布版或快照版构件的时候，
+它首先检查central，看该类型的构件是否支持，得到正面的回答之后，再根据镜像匹配规则转而访问私服仓库地址。
+
+#部署构件至Nexus
+- 如果只为代理外部公共仓库，那么Nexus的代理仓库就已经能够完全满足需要了。对于另一类Nexus仓库——宿主仓库来说，它们的主要作用是储存组织内部的，或者一些无法从公共仓库中获得的第三方构件，供大家下载使用。用户可以配置Maven自动部署构件至Nexus的宿主仓库，也可以通过界面手动上传构件。
+- 日常开发生成的快照版本构件可以直接部署到Nexus中策略为Snapshot的宿主仓库中，项目正式发布的构件则应该部署到Nexus中策略为Release的宿主仓库中。POM的配置方式:
+<distributionManagement>
+    <repository>
+      <id>project-releases</id>
+      <!--<id>nexus</id>-->
+      <name>Project Release Repository</name>
+      <url>http://localhost:8081/repository/maven-releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>project-snapshots</id>
+      <!--<id>nexus</id>-->
+      <name>Project Snapshot Repository</name>
+      <url>http://localhost:8081/repository/maven-snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
+
+Nexus的仓库对于匿名用户是只读的。为了能够部署构件，还需要在settings.xml中配置认证信息:
+    <server>
+      <id>project-releases</id>
+      <username>admin</username>
+      <password>admin123</password>
+    </server>
+
+    <server>
+      <id>project-snapshots</id>
+      <username>admin</username>
+      <password>admin123</password>
+    </server>
+
+#手动部署第三方构件至Nexus
+- 某些Java Jar文件（如Oracle）的JDBC驱动，由于许可证的因素，它们无法公开地放在公共仓库中。
+- 大量的小型开源项目，它们没有把自己的构件分发到中央仓库中，也没有维护自己的仓库，因此也无法从公共仓库获得。这个时候用户就需要将这类构件手动下载到本地，然后通过Nexus的界面上传到私服中。 
+- 把nexus换成2.x的版本就好了，看样子是nexus3把管理第三方jar包给阉割掉了。
+
+- 选择maven2(hosted), 可以上传私有的项目到hosted，以及配置proxy以获取第三方的依赖（比如可以配置中央仓库的地址）。
+    <repository>
+      <id>3rdParty</id>
+      <name>3rdParty Repository</name>
+      <url>http://localhost:8081/repository/3rdParty/</url>
+    </repository>
+- 如果已经有了jar包，可以通过下面的命令直接上传，cmd中输入下列命令
+mvn deploy:deploy-file -DgroupId=com.alibaba.alipay -DartifactId=alipay-sdk-java -Dversion=0.0.1 -Dpackaging=jar -Dfile="C:\Users\wenda\Documents\1 Apps\060 webmall\webmall\target\mmall-1.0-SNAPSHOT\WEB-INF\lib\alipay-sdk-java20161213173952.jar" -Durl=http://localhost:8081/repository/3rdParty/ -DrepositoryId=3rdParty
+mvn deploy:deploy-file -DgroupId=com.alibaba.alipay -DartifactId=alipay-trade-sdk -Dversion=0.0.1 -Dpackaging=jar -Dfile="C:\Users\wenda\Documents\1 Apps\060 webmall\webmall\target\mmall-1.0-SNAPSHOT\WEB-INF\lib\alipay-trade-sdk-20161215.jar" -Durl=http://localhost:8081/repository/3rdParty/ -DrepositoryId=3rdParty
+
+#Nexus的权限管理
+- 在组织中使用Nexus的时候往往会有一些安全性需求，例如希望只有管理员才能配置Nexus，只有某些团队成员才能部署构件，
+- 或者更细一些的要求，例如每个项目有自己的Nexus宿主仓库，且只能部署项目构件至该仓库中。
+- Nexus提供了全面的权限控制特性，能让用户自由地根据需要配置Nexus用户、角色、权限等。
+
+#Nexus的访问控制模型
+- Nexus是基于权限（Privilege）做访问控制的，服务器的每一个资源都有相应的权限来控制，因此用户执行特定的操作时就必须拥有必要的权限。管理员必须以角色（Role）的方式将权限赋予Nexus用户。
+- 例如要访问Nexus界面，就必须拥有Status-（read）这个权限，而Nexus默认配置的角色UI：Basic UI Privileges就包含了这个权限，再
+将这个角色分配给某个用户，这个用户就能访问Nexus界面了。
+- 用户可以被赋予一个或者多个角色，角色可以包含一个或者多个权限，角色还可以包含一个或者多个其他角色。
+- Nexus预定义了两个用户，以admin登录后，单击页面左边导航栏中的User链接，就能看到所有已定义用户的列表
+对应了三个权限级别：
+·admin： 该用户拥有对Nexus服务的完全控制，默认密码为admin123。
+·anonymous： 该用户对应了所有未登录的匿名用户，它们可以浏览仓库并进行搜索。
+- 在Users页面中，管理员还可以添加用户。单击上方的Add按钮，选择Nexus User，然后在用户配置面板中配置要添加用户的ID、 名称、Email、状态、密码以及包含的角色，最后单击Save按钮即可。
+- Nexus包含了一个特殊的匿名用户角色（Nexus Anonymous Role），默认配置下没有登录的用户都会拥有该匿名角色的权限。 这个匿名用户角色实际包含了上述所列角色中，除Repo：All Repositories（Full Control）之外的所有角色所包含的权限。 也就是说，匿名用户可以访问基本的Nexus界面、浏览仓库内容及搜索构件。
+
+#为项目分配独立的仓库
+- 在组织内部，如果所有项目都部署快照及发布版构件至同样的仓库，就会存在潜在的冲突及安全问题，我们不想让项目A的部署影响到项目B，反之亦然。
+- 解决的方法就是为每个项目分配独立的仓库，并且只将仓库的部署、修改和删除权限赋予该项目的成员，其他用户只能读取、 下载和搜索该仓库的内容。 
+- 假设项目名称为foo，首先为该项目建立两个宿主仓库Foo Snapshots和Foo Releases，分别用来部署快照构件和发布构件。 。
+- 有了仓库之后，就需要创建基于仓库的增、删、改、查权限。
+- 在Nexus中，这样的权限是基于Repository Target建立的，Repository Target实际上是一系列正则表达式，在访问仓库某路径下内容的时候， Nexus会将仓库路径与Repository Target的正则表达式一一匹配，以检查权限是否正确。
+。。。
+
+#其他私服软件
+- Nexus不是唯一的Maven私服软件，正如本章一开始所提到的，用户还有另外两个选择，它们分别为Apache的Archiva与JFrog的Artifactory。
+- 在Nexus发布之前，笔者曾一度是Artifactory的忠实用户，当时它是唯一的支持从用户界面配置仓库的私服。Artifactory的一大特点是使用数据库来存储仓库内容。读者可以自行访问JFrog
+
+#使用Maven进行测试
+- 随着敏捷开发模式的日益流行，软件开发人员也越来越认识到日常编程工作中单元测试的重要性。
+- Maven的重要职责之一就是自动运行单元测试，它通过mavensurefire-plugin与主流的单元测试框架JUnit 3、JUnit 4以及TestNG集成， 并且能够自动生成丰富的结果报告。
+- 本章将介绍Maven关于测试的一些重要特性，但不会深入解释单元测试框架本身及相关技巧，重点是介绍如何通过Maven控制单元测试的运行。
+
+- 报告中的Failures、Errors、Skipped信息来源于JUnit测试框架。
+- Failures（失败）表示要测试的结果与预期值不一致，例如测试代码期望返回值为true，但实际为false；
+- Errors（错误）表示测试代码或产品代码发生了未预期的错误，例如产品代码抛出了一个空指针错误，该错误又没有被测试代码捕捉到；
+- Skipped表示那些被标记为忽略的测试方法，在JUnit中用户可以使用@Ignore注解标记忽略测试方法。
+
+#maven-surefire-plugin简介
+- Maven本身并不是一个单元测试框架，Java世界中主流的单元测试框架为JUnit（http://www.junit.org/ ）和TestNG（http://testng.org/ ）。
+- Maven所做的只是在构建执行到特定生命周期阶段的时候，通过插件来执行JUnit或者TestNG的测试用例。这一插件就是maven-surefire-plugin，可以称之为测试运行器（Test Runner），它能很好地兼容JUnit 3、JUnit 4以及TestNG。
+- 可以回顾一下default生命周期，其中的test阶段被定义为“使用单元测试框架运行测试”。我们知道，生命周期阶段需要绑定到某个插件的目标才能完成真正的工作，test阶段正是与maven-surefire-plugin的test目标相绑定了，这是一个内置的绑定。
+- 在默认情况下，maven-surefire-plugin的test目标会自动执行测试源码路径（默认为src/test/java/所有符合一组命名模式的测试类。 这组模式为：
+·**/Test*.java： 任何子目录下所有命名以Test开头的Java类。
+·**/*Test.java： 任何子目录下所有命名以Test结尾的Java类。
+·**/*TestCase.java： 任何子目录下所有命名以TestCase结尾的Java类。
+- 只要将测试类按上述模式命名，Maven就能自动运行它们，用户也就不再需要定义测试集合（TestSuite）来聚合测试用例（TestCase）。
+- 如果有需要，可以自己定义要运行测试类的模式，此外，maven-surefire-plugin还支持更高级的TestNG测试集合xml文件。
+- 为了能够运行测试，Maven需要在项目中引入测试框架的依赖，本书已经多次涉及了如何添加JUnit测试范围依赖.
+
+#10.3　跳过测试
+- 日常工作中，软件开发人员总有很多理由来跳过单元测试，“我敢保证这次改动不会导致任何测试失败”，“测试运行太耗时了，暂时跳过一下”，“有持续集成服务跑所有测试呢，我本地就不执行啦”。
+- 在大部分情况下，这些想法都是不对的，任何改动都要交给测试去验证，测试运行耗时过长应该考虑优化测试，更不要完全依赖持续集成服务来报告错误，测试错误应该尽早在尽小范围内发现，并及时修复。
+- Maven跳过测试在命令行加入参数skipTests就可以了
+mvn clean package -DskipTests
+--- maven-surefire-plugin:2.12.4:test (default-test) @ account-captcha ---
+Tests are skipped.
+- 也可以在POM中配置maven-surefire-plugin插件来提供该属性，如代码清单10-12所示。但这是不推荐的做法，如果配置POM让项目长时间地跳过测试，则还要测试代码做什么呢？
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+            <skipTests>true</skipTests>
+          </configuration>
+        </plugin>
+mvn clean compile:
+Tests are skipped.
+- 有时候用户不仅仅想跳过测试运行，还想临时性地跳过测试代码的编译，Maven也允许你这么做，但记住这是不推荐的：
+mvn package -Dmaven.test.skip=skipTests
+--- maven-compiler-plugin:3.1:testCompile (default-testCompile) @ account-captcha ---
+Nothing to compile - all classes are up to date
+--- maven-surefire-plugin:2.12.4:test (default-test) @ account-captcha ---
+Tests are skipped.
+- 参数maven.test.skip同时控制了maven-compiler-plugin和maven-surefire-plugin两个插件的行为，测试代码编译和测试运行都跳过了。
+
+#动态指定要运行的测试用例
+- 反复运行单个测试用例是日常开发中很常见的行为。例如，项目代码中有一个失败的测试用例，开发人员就会想要再次运行这个测试以获得详细的错误报告，在修复该测试的过程中，开发人员也会反复运行它，以确认修复代码是正确的。
+- 如果仅仅为了一个失败的测试用例而反复运行所有测试，未免太浪费时间了，当项目中测试的数目比较大的时候，这种浪费尤为明显。
+- maven-surefire-plugin提供了一个test参数让Maven用户能够在命令行指定要运行的测试用例。例如，如果只想运行account-captcha的RandomGeneratorTest，就可以使用如下命令：
+mvn test -Dtest=RandomGeneratorTest
+- 这里test参数的值是测试用例的类名，这行命令的效果就是只有RandomGeneratorTest这一个测试类得到运行。
+- maven-surefire-plugin的test参数还支持高级一些的赋值方式，能让用户更灵活地指定需要运行的测试用例。例如：
+mvn test -Dtest=Random*Test -DfailIfNoTests=false
+Running com.juvenxu.mvnbook.account.captcha.RandomGeneratorTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.037 sec
+- 除了星号匹配，还可以使用逗号指定多个测试用例：
+mvn test -Dtest=RandomGeneratorTest,AccountCaptchaServiceTest
+- 也可以结合使用星号和逗号
+mvn test -Dtest=Random*Test,AccountCaptchaServiceTest
+- 上述几种从命令行动态指定测试类的方法都应该只是临时使用，如果长时间只运行项目的某几个测试，那么测试就会慢慢失去其本来的意义。
+- test参数的值必须匹配一个或者多个测试类，如果maven-surefire-plugin找不到任何匹配的测试类，就会报错并导致构建失败。
+mvn test -Dtest
+- 根据错误提示可以加上-DfailIfNoTests=false，告诉maven-surefire-plugin即使没有任何测试也不要报错：
+mvn test -Dtest -DfailIfNoTests=false
+- 实际上使用命令行参数-Dtest-DfailIfNoTests=false是另外一种跳过测试的方法。
+- 使用test参数用户可以从命令行灵活地指定要运行的测试类。可惜的是，maven-surefire-plugin并没有提供任何参数支持用户从命令行跳过指定的测试类，好在用户可以通过在POM中配置maven-surefire-plugin排除特定的测试类。
+#包含与排除测试用例
+- 10.2节介绍了一组命名模式，符合这一组模式的测试类将会自动执行。
+- Maven提倡约定优于配置原则，因此用户应该尽量遵守这一组模式来为测试类命名。
+- 即便如此，maven-surefire-plugin还是允许用户通过额外的配置来自定义包含一些其他测试类，或者排除一些符合默认命名模式的测试类。
+- 例如，由于历史原因，有些项目所有测试类名称都以Tests结尾，这样的名字不符合默认的3种模式，因此不会被自动运行，可以配置让Maven自动运行这些测试
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.5</version>
+          <configuration>
+            <includes>
+              <include>**/*Tests.java</include>
+            </includes>
+          </configuration>
+        </plugin>
+类似地，也可以使用excludes元素排除一些符合默认命名模式的测试类
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.5</version>
+          <configuration>
+            <excludes>
+              <exclude>**/*ServiceTests.java</exclude>
+              <exclude>**/TempDaoTest.java</exclude>
+            </excludes>
+          </configuration>
+        </plugin>
+- 上述代码清单排除了所有以ServiceTest结尾的测试类，以及一个名为TempDaoTest的测试类。它们都符合默认的命名模式**/*Test.java，不过，有了excludes配置后，maven-surefire-plugin将不再自动运行它们。
+
+#测试报告
+- 除了命令行输出，Maven用户可以使用maven-surefire-plugin等插件以文件的形式生成更丰富的测试报告。
+#基本的测试报告
+- 默认情况下，maven-surefire-plugin会在项目的target/surefire-reports目录下生成两种格式的错误报告：
+·简单文本格式 (获得信息足够了)，
+·与JUnit兼容的XML格式 (XML格式的测试报告主要是为了支持工具的解析，如Eclipse的JUnit插件可以直接打开这样的报告)
+
+- 由于这种XML格式已经成为了Java单元测试报告的事实标准，一些其他工具也能使用它们。例如，持续集成服务器Hudson就能使用这样的文件提供持续集成的测试报告。
+- 以上展示了一些运行正确的测试报告，实际上，错误的报告更具价值
+- 报告说明了哪个测试方法失败、哪个断言失败以及具体的堆栈信息，用户可以据此快速地寻找失败原因。
+- 该测试的XML格式报告用Eclipse JUnit插件打开
+
+#测试覆盖率报告
+- 测试覆盖率是衡量项目代码质量的一个重要的参考指标。 
+- Cobertura是一个优秀的开源测试覆盖率统计工具（详见http://cobertura.sourceforge.net/ ），
+- Maven通过coberturamaven-plugin与之集成，用户可以使用简单的命令为Maven项目生成测试覆盖率报告
+- 例如，可以在account-captcha目录下运行如下命令生成报告：接着打开项目目录target/site/cobertura/下的index.html文件:
+mvn cobertura:cobertura
+
+#单击具体的类，还能看到精确到行的覆盖率报告
+
+#运行TestNG测试
+- TestNG是Java社区中除JUnit之外另一个流行的单元测试框架。
+- NG是Next Generation的缩写，译为“下一代”。TestNG在JUnit的基础上增加了很多特性，http://testng.org/ 
+- 使用Maven运行TestNG十分方便。首先需要删除POM中的JUnit依赖，加入TestNG依赖
+
+- 与JUnit类似，TestNG的依赖范围应为test。
+- 此外，TestNG使用classifier jdk15和jdk14为不同的Java平台提供支持。
+- 下一步需要将对JUnit的类库引用更改成对TestNG的类库引用。
+- 将JUnit的类库引用改成TestNG之后，在命令行输入mvn test，Maven就会自动运行那些符合命名模式的测试类。与运行JUnit测试没有区别。
+- TestNG允许用户使用一个名为testng.xml的文件来配置想要运行的测试集合。例如，可以在account-captcha的项目根目录下创建一个testng.xml文件，配置只运行RandomGeneratorTest
+- 同时再配置maven-surefire-plugin使用该testng.xml
+- TestNG较JUnit的一大优势在于它支持测试组的概念，如下的注解会将测试方法加入到两个测试组util和medium中：
+- 由于用户可以自由地标注方法所属的测试组，因此这种机制能让用户在方法级别对测试进行归类。 
+- 这一点JUnit无法做到，它只能实现类级别的测试归类。 Maven用户可以使用代码清单10-19所示的配置运行一个或者多个TestNG测试组。
+
+#重用测试代码
+- 优秀的程序员会像对待产品代码一样细心维护测试代码，尤其是那些供具体测试类继承的抽象类，它们能够简化测试代码的编写。还有一些根据具体项目环境对测试框架的扩展，也会被大范围地重用。
+- 在命令行运行mvn package 的时候，Maven会将项目的主代码及资源文件打包，将其安装或部署到仓库之后，这些代码就能为他人使用， 从而实现Maven项目级别的重用。
+- 默认的打包行为是不会包含测试代码的，因此在使用外部依赖的时候，其构件一般都不会包含测试代码。 
+- 然而，在项目内部重用某个模块的测试代码是很常见的需求，可能某个底层模块的测试代码中包含了一些常用的测试工具类，或者一些高质量的测试基类供继承。这个时候Maven用户就需要通过配置maven-jar-plugin将测试类打包：
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>2.2</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>test-jar</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
+- maven-jar-plugin有两个目标，分别是jar和test-jar，前者通过Maven的内置绑定在default生命周期的package阶段运行，其行为就是对项目主代码进行打包，而后者并没有内置绑定，因此上述的插件配置显式声明该目标来打包测试代码。通过查询该插件的具体信息可以了解到，test-jar的默认绑定生命周期阶段为package:
+mvn clean package
+account-captcha-1.0.0-SNAPSHOT-tests.jar
+可以通过依赖声明使用这样的测试包构件了:
+      dependency>
+        <groupId>com.javenxu.mvnbook.account</groupId>
+        <artifactId>account-captcha</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <type>test-jar</type>
+        <scope>test</scope>
+      </dependency>
+上述依赖声明中有一个特殊的元素type，所有测试包构件都使用特殊的test-jar打包类型:
+
+#第11章　使用Hudson进行持续集成
+- 作为最核心的敏捷实践之一——持续集成（Continuous Integration）越来越受到广大开发人员的喜爱和推崇。 
+- 借助Maven所实现的自动化构建正是持续集成的一个必要前提，持续集成还要求开发人员使用版本控制工具和持续集成服务器。
+- 例如Subversion就是当前最流行的版本控制工具，而Hudson则是最流行的开源持续集成服务器软件。
+- 本章将简要介绍持续集成的概念和Subversion的基本使用，主要关注如何使用Hudson，尤其是如何结合Maven与Hudson持续集成我们的项目。
+
+- 持续集成的作用、过程和优势
+简单地说，持续集成就是快速且高频率地自动构建项目的所有源码，并为项目成员提供丰富的反馈信息。这句话有很多关键的词：
+·快速： 集成的速度要尽可能地快，开发人员不希望自己的代码提交半天之后才得到反馈。
+·高频率： 频率越高越好，例如每隔一小时就是个不错的选择，这样问题才能尽早地被反映出来。
+·自动： 持续集成应该是自动触发并执行的，不应该有手工参与。
+·构建： 包括编译、测试、审查、打包、部署等工作。
+·所有源码： 所有团队成员提交到代码库里的最新的源代码。
+·反馈： 持续集成应该通过各种快捷的方式告诉团队成员最新的集成状态，当集成失败的时候，反馈报告应该尽可能地反映失败的具体细节。
+
+一个典型的持续集成场景是这样的：
+- 开发人员对代码做了一些修改，在本地运行构建并确认无误之后，将更改提交到代码库。
+- 具有高配置硬件的持续集成服务器每隔30分钟查询代码库一次，发现更新之后，签出所有最新的源代码，然后调用自动化构建工具（如Maven）构建项目，该过程包括编译、测试、审查、打包和部署等。
+- 然而不幸的是，另外一名开发人员在这一时间段也提交了代码更改，两处更改导致了某些测试的失败，持续集成服务器基于这些失败的测试创建一个报告，并自动发送给相关开发人员。
+- 开发人员收到报告后，立即着手调查原因，并尽快修复。
+
+
+通过图11-1可知，当持续集成服务器构建项目成功后，还可以自动将项目构件部署到Nexus私服中。
+一次完整的集成往往会包括以下6个步骤：
+1）持续编译： 所有正式的源代码都应该提交到源码控制系统中（如Subversion），持续集成服务器按一定频率检查源码控制系统，如果有新的代码，就触发一次集
+成，旧的已编译的字节码应当全部清除，然后服务器编译所有最新的源码。
+2）持续数据库集成： 在很多项目中，源代码不仅仅指Java代码，还包括了数据库SQL脚本，如果单独管理它们，很容易造成与项目其他代码的不一致，并造成混
+乱。持续集成也应该包括数据库的集成，每次发现新的SQL脚本，就应该清理集成环境的数据库，重新创建表结构，并填入预备的数据。这样就能随时发现脚本的错误，此外，基于这些脚本的测试还能进一步发现其他相关的问题。
+3）持续测试： 有了JUnit之类的框架，自动化测试就成了可能。编写优良的单元测试并不容易，好的单元测试必须是自动化的、可重复执行的、不依赖于环境的，并
+且能够自我检查的。除了单元测试，有些项目还会包含一些依赖外部环境的集成测试。所有这些测试都应该在每次集成的时候运行，并且在发生问题的时候能产生具体报告。
+4）持续审查： 诸如Checkstyle和PMD之类的工具能够帮我们发现代码中潜在问题，持续集成可以使用这些工具来生成各类报告，如测试覆盖率报告、
+Checkstyle报告、PMD报告等。这些报告的生成频率可以低一些，如每日生成一次，当审查发现问题的时候，可以给开发人员反馈警告信息。
+5）持续部署： 有些错误只有在部署后才能被发现，它们往往是具体容器或者环境相关的，自动化部署能够帮助我们尽快发现这类问题。
+6）持续反馈： 持续集成的最后一步的反馈，通常是一封电子邮件。在重要的时候将正确的信息发送给正确的人。如果开发者一直受到与自己无关的持续集成报告，
+他慢慢地就会忽略这些报告。基本的规则是：将集成失败报告发送给这次集成相关的代码提交者，项目经理应该收到所有失败报告。
+成本：
+- 持续集成需要引入额外的硬件设置，特别是对于持续集成服务器来说，性能越高，集成的速度就越快，反馈的速度也就越快。
+- 持续集成还要求开发者使用各种工具，如源码控制工具、自动化构建工具、自动化测试工具、持续集成软件等。
+好处：
+- 尽早暴露问题： 越早地暴露问题，修复问题代码的成本就越低。持续集成高频率地编译、测试、审查、部署项目代码，能够快速地发现问题并及时反馈。
+·减少重复操作： 持续集成是完全自动化的，这就避免了大量重复的手工劳动，开发人员不再需要手动地去签出源码，一步步地编译、测试、审查、部署。
+·简化项目发布： 每日高频率的集成保证了项目随时都是可以部署运行的，如果没有持续集成，项目发布之前将不得不手动地集成，然后花大量精力修复集成问题。
+·建立团队信心： 一个优良的持续集成环境能让团队随时对项目的状态保持信心，因为项目的大部分问题区域已经由持续集成环境覆盖了。
+
+#　Hudson简介
+- 优秀的持续集成工具有很多，如老牌的开源工具CruiseControl、商业的Bamboo和TeamCity等。
+- Hudson以其强大的功能和易用的界面征服了大量的用户，它与主流的构建工具、版本控制系统以及自动化测试框架都能进行很好的集成。因此，很多组织和公司选择它作为自己的持续集成工具，如JBoss的http://hudson.jboss.org/hudson/ 和Sonatype的https://grid.sonatype.org/ci/ 。
+- Hudson还有一个优秀之处就是它提供了灵活的插件扩展框架，大量开发者基于这种机制对Hudson进行了扩展。
+
+#安装Hudson
+- 安装Hudson是十分简便的。需要注意的是，Hudson必须运行在JRE 1.5或更高的版本上。可以从http://hudson-ci.org/ 下载最新版本的安装包。 下载完成之后就能获得一个hudson.war文件。
+- 最简单的启动Hudson的方式是在命令行直接运行hudson.war：java -jar hudson.war
+- http://localhost:8080访问Hudson的界面
+- java -jar hudson.war --httpPort=8082
+- 既然安装包是一个war文件，Hudson自然也就可以被部署到各种Web容器中，如Tomcat、Glassfish、Jetty及JBoss等。
+- 以Tomcat 6为例，假设Tomcat的安装目录为D：\bin\apache-tomcat-6.0.20\，那么只需要复制hudson.war至Tomcat的部署目录D：\bin\apache-tomcat-6.0.20\webapps
+- 然后转到D：\bin\apache-tomcat-6.0.20\bin\目录，运行startup.bat。
+- 待Tomcat启动完成之后，打开浏览器访问http://localhost：8080/ hudson就能看到Hudson的界面了。
+
+#准备Subversion仓库
+- 在正式创建Hudson持续集成任务之前，需要准备好版本控制系统。
+- 常见的版本控制工具有CVS、Subversion、Git、Mercurial等。
+- 由于Subversion可能是当前使用范围最广的版本控制工具，因此本书以它为例进行介绍。
+- 首先需要安装Subversion服务器软件（本书仅讨论svnserve）。对于大多数Linux发行版和Mac OS 来说，该工具应该已经被预先安装了。
+- 在Linux/Mac OS X中检查svnserve安装: svnserve --version
+- 对于Windows用户来说，可以安装Slik Subversion（http://www.sliksvn.com/en/download）。 
+- 在选择安装类型的时候，需要选择complete安装，否则默认的安装方式将不会安装svnserve
+- 接着需要创建一个Subversion仓库： 
+mkdir svn-repos
+svnadmin create svn-repos/account
+- svnadmin是用来创建、维护、监测Subversion仓库的工具，在主流Linux和Mac OS X上一般都是预装的。在Windows上，它也被包含在Slik Subversion中。这里首先创建一个名为svn-repos的目录，然后在这个目录中创建一个Subversion仓库。
+- 导入源码至Subversion仓库: svn import -m "initial import" . file:///c:/users/wenda/svn-repos/account/trunk
+- 由于笔者的代码和Subversion仓库在一台机器上，因此直接使用file协议导入（导入之前应先使用mvn clean命令清除项目输出文件， 这些文件是可以自动生成的， 不该放入源码库中，
+- 上述命令将当前目录的全部内容提交到Subversion仓库的/account/trunk路径下，-m选项表示提交的注释。
+- 仓库建立并初始化完毕，就可以启动svnserve服务了：
+svnserve -d -r svn-repos --listen-host 0.0.0.0
+- 选项-d表示将svnserve服务作为守护进程运行，-r表示Subversion仓库的位置，而参数--listen-host是为了强制将svnserve绑定到IP v4地址（在有些系统上，svnserve会默认绑定IP v6地址，当Hudson使用IP v4地址访问Subversion仓库的时候就会失败）。
+- 简单的svn命令检查插件svnserve服务是否可用, 检查Subversion仓库内容
+svn list svn://localhost/account/trunk
+.classpath
+.idea/
+.project
+.settings/
+account-captcha/
+account-email/
+account-parent.iml
+account-persist/
+pom.xml
+-Subversion仓库就建立完成了，之后Hudson就可以基于这个仓库运行集成任务。
+#Hudson的基本系统设置
+- 在创建Hudson持续集成任务之前，用户需要对Hudson系统做一些基本的配置，
+- 包括JDK安装位置和Maven安装等在内的重要信息都必须首先配置正确。
+- Hudson会使用这些配置好的JDK及Maven进行持续集成任务。
+- 如果要使用Ant或者Shell来持续集成项目，Ant或Shell的安装位置也应该预先设置正确。
+- 用户应该单击Hudson登录页面左边的“系统管理”，然后单击页面右侧的“系统设置”以进入系统设置页面
+- 在系统设置页面，首先要配置的是Hudson将使用的JDK
+- 选择手动或者自动安装Maven供Hudson使用
+- 还可以在该页面配置MAVEN_OPTS环境变量
+
+#　创建Hudson任务
+- 要创建一个Hudson任务来持续集成Maven项目，首先单击页面左边的新建任务，然后就需要在页面右边选择任务的名称及类型。
+- 对于一般的Maven项目来说，可选择的类型有Build a free-style software project和Build a maven2 project。
+- 前者不仅支持Maven项目，还支持其他类型的构建工具，如Ant、Shell。
+- 对于Maven用户来说，两者最大的不同在于前者需要用户进行多一点的配置，而后者会使用Hudson自带的Maven，且从项目的POM中获取足够的信息以免去一些配置。
+- 除非你已经十分熟悉Hudson，笔者推荐选择free-style类型（见图11-10）。因为这种方式更可控制，当任务出现问题的时候也更容易检查。
+- 输入任务名称，并选择free-style类型后，单击OK按钮即可进入详细的任务配置页面。
+- 下面依次介绍free-style任务的各种配置。
+- 首先是项目的名称和描述。当Hudson任务比较多的时候，简洁且有意义的名称及描述就十分重要。
+- 接着是一个重要的选项Discard Old Builds。该选项配置如何抛弃旧的构建。Hudson每执行一次构建任务，就可以保存相应的源代码、构建输出、构建报告等文件。
+- 很显然，如果每次构建相关的文件都保存下来，将会渐渐消耗光磁盘空间。为此，Hudson提供两种方式让用户选择保留哪些构建任务的相关文件，它们分别为：
+·Days to keep builds： 如果其值为非空的N，就仅保留N天之内的构建文件。
+·Max#of builds to keep： 如果#非空，就仅保留最多#个最近构建的相关文件。
+- 可供选择的JDK就是用户在系统设置中预先定义好的JDK ??
+
+#Hudson任务的源码仓库配置
+接着需要配置项目的源码控制系统。在项目配置页面的Source Code Management部分，选择Subversion单选按钮，然后在Repository URL文本框中输入项目的Subversion仓
+库地址:
+svn://localhost/account/trunk
+- 一般来说，该部分的其他选项保留默认值即可
+- 需要注意的是，如果访问Subversion仓库需要认证，Hudson会自动探测并提示用户输入认证信息
+- 单击enter credential后，Hudson会弹出一个页面让用户选择认证方式并输入认证信息。输入正确信息之后，Hudson就能读取仓库源代码了。可以采用了用户名和密码
+的方式进行认证。
+
+#　Hudson任务的构建触发配置
+- 再往下的Build Triggers部分配置的是触发构建的方式。可选的三种方式分别为：
+·Build after other projects are built：在其他项目构建完成之后构建本项目。
+·Build periodically：周期性地构建本项目。
+·Poll SCM：周期性地轮询源码仓库，发现有更新的时候构建本项目。
+- 如无特殊高级的需要，一般不会选择第一种方式；
+- 而第二种方式显然会造成一些无谓的构建，如果几次构建所基于的源代码没有任何区别，构建的输出往往也就不会有变化；
+- 第三种方式就没有这个问题，它能避免无谓的构建，节省持续集成服务器的资源。这种周期轮询源代码仓库的方式实际上也是最常用的构建触发方式。
+- 既然是轮询，就需要配置轮询的频率，Hudson使用了著名的UNIX任务调度工具Cron（http://en.wikipedia.org/wiki/Cron ）所使用的配置方式。这种配置方式使用5个字段
+表示不同的时间单位（字段之间用空格或制表符分隔）： 分　时　日　月　星期几
+每个字段表示的意义及值范围分别为：
+·分：一小时中的分钟（0~59）。
+·时：一天中的小时（0~23）。
+·日：一月中的日期（1~31）。
+·月：月份（1~12）。
+·星期几：一周中的星期几（0~7，0和7都表示星期天）。
+其中每个字段除了可以使用其范围内的值以外，还能使用一些特殊的字符：
+·*：星号表示匹配范围内所有值。
+·M-N：连字符表示匹配M~N范围内的所有值，如“1-5”。
+·A，B，…，Z：逗号表示匹配多个值，如“0，15，0”。
+·*/X或M-N/X：范围加上斜杠表示匹配范围内能被X整除的值，如“1-10/3”就等同于“3，6，9”。
+
+- 下面一些例子可以帮助读者理解这种强大的配置方式：
+·****：每分钟。
+·5****：每小时中的第5分钟。
+·*/10****：每隔10分钟。
+·4510**1-5：每周一到周五的上午10：45。
+·0，30*13*5：每月13号的每半小时，或者每周五的每半小时。
+
+- 对于一个健康的项目来说，常见的做法是：每隔10分钟轮询代码仓库
+*/10****
+- 在配置轮询的时候，还可以使用“#”添加注释，此外空白的行会被忽略
+
+#Hudson任务的构建配置
+- 接下来要告诉Hudson使用运行Maven命令构建项目。
+- 单击Build部分中的Add build step下三角按钮，然后选择Invoke top-level Maven targets
+- 再选择一个安装好的Maven版本，输入Maven命令如clean deploy就可以了，
+- 需要注意的是，日常持续集成任务如果成功的话，都会生成快照版的项目构件。
+- 如果维护了一个Maven私服，那么持续集成任务就应当自动将构件部署到私服中，供其他项目使用。这也就是这里的Maven命令应当为clean deploy的原因。
+- 至此，一个Hudson任务基本配置完成,可以单击页面左边的“立即生成”来手动触发第一次集成。
+
+#监视Hudson任务状态
+- Hudson提供了丰富友好的图形化界面，让用户从各方面了解各个任务的当前及历史状态，这包括整体的列表显示、自定义视图、单个任务的具体信息，如构建日志和
+测报报告等。用户应该基于Hudson提供的信息尽可能地将持续集成任务稳定在健康的状态。
+#全局任务状态
+- Hudson的默认主页面显示了当前服务器上所有集成任务的状态。
+这个页面主要由四个部分组成：
+·导航菜单： 位于页面左上方，方便用户执行各类Hudson操作，如新建任务、系统管理等。
+·生成队列： 页面左边中间的部分，表示等待执行构建的任务，如图11-19中有一个maven3的构建任务在等待生成队列中。
+·生成状态： 页面左边下面的部分，表示正在执行构建的任务，如图11-19中有一个account的构建任务正在执行。
+·任务状态： 页面右边的部分，显示了所有任务的状态。
+- 下面重点介绍任务状态。每一列从左到右分别表示任务当前状态、天气，名称、上次成功的时间、上次失败的时间、上次持续的时间以及左右一个立即执行的按钮 （方便用户手动触发执行任务）。
+- 其中需要解释的是当前状态及图中第一列（S）下的球形图标。Hudson使用各种颜色表示任务当前的状态：
+·蓝色： 任务最近一次的构建是成功的。
+·红色： 任务最近一次的构建是失败的。
+·黄色： 任务最近一次的构建表成功了，但不稳定（主要是因为有失败的测试）。
+·灰色： 任务从未被执行过或者被禁用了。
+- 如果图标在闪烁，表示任务正在执行一次构建。
+- 图中的第二列天气（W）也需要稍作解释。Hudson使用一组天气的图标表示任务长期的一个状态，它们分别为：
+万里晴空，任务80%以上的集成都是成功的。
+稍有乌云，任务有60%~80%的集成是成功的。
+乌云密布，任务只有40%~60%的集成是成功的。
+阴雨绵绵，任务的集成成功率只有20%~40%。
+电闪雷鸣，任务的集成成功率不到20%。
+- 关于全局状态需要再次强调的是，当团队看到任务的集成状态不够健康时，应该尽快采取措施修复问题。
+
+#自定义任务视图
+- 在一个稍有规模的公司或者组织下，持续集成服务器上往往会有很多的任务，Hudson默认的视图会列出所有服务器上的任务，太多的任务就会造成寻找的不便。
+- 为此Hudson能让用户自定义视图，选择只列出感兴趣的任务，甚至还能自定义视图中显示的列。
+- 添加了一个名为mvn-book的任务视图，该视图仅包含account一个任务，并且只显示状态、天气、任务名三列。用户可以根据自己的需要，选择要包含的任务和
+要显示的列，甚至还能使用正则表达式来匹配要显示的任务名
+
+#单个任务状态
+- 在任务视图中，单击某个任务名称就能进一步查看该任务的状态。图11-22显示了account项目任务的一个整体状态。
+- 包含了丰富的信息。左下角是构建历史（Build History），该例中显示了最近5次全部成功的构建，包括每次构建的时间。
+- 图11-22下方还有3个永久连接，分别指向了最近一次构建、最近一次失败的构建以及最近一次成功的构建。无论构建历史还是永久连接，我们都能单击某一个构建以了解更具体的信息。
+- 单击构建历史中的#4构建：
+- Hudson>account>#4表示当前的位置是Hudson服务器下account任务的第4次构建。
+- 从图11-23中可以了解到这次构建所发生的时间、相关的代码变更等信息。
+- 在图11-23中左边的命令行输出链接。当构建失败的时候，了解这次构建的命令行输入至关重要。
+- 在图11-22中还有一些链接包含了丰富的信息，例如最近变更集。单击该链接就能看到项目最近的代码变更
+- 除了变更集，还可以单击工作区，以图形化的方式查看该Hudson从源码库取得的源码文件及构建输入文件
+
+#Maven项目测试报告
+- 还显示了项目的测试结果信息，为了获得这样的信息需要做一些额外的配置。
+- maven-surefire-plugin会在项目的target/surefire-reports目录下生成与JUnit兼容的XML格式测试报告，
+- Hudson能够基于这种格式的文件生成图形化的测试报告。
+- 用户可以配置一个Hudson任务，在配置页面的Post-build Actions部分选择Publish JUnit test result report选项，并且将Test report XMLs赋值为**/target/surefire-reports/TEST-*.xml。
+- 该表达式表示匹配任意目录下target/surefire-reports/子目录中以TEST-开头的XML文件，这也就是匹配所有maven-surefire-plugin生成的XML格式报告文件。配置如图11-27
+所示。
+**/target/surefire-reports/TEST-*.xml
+- 有了上述配置之后，就能在任务状态页面中看到最新的测试结果与测试结果趋势
+- 单击Latest Test Result就能看到最近一次构建的测试报告。在测试结果趋势图中， 用户也可以单击各个位置得到对应构建的测试报告
+- 用户还可以单击图中的链接得到更具体的测试输出，以方便定位并修复问题。
+- 如果用户为一个Hudson任务配置了测试报告，就可以同时配置构建命令忽略测试。例如，图11-17中的Maven构建命令可以更改为clean deploy-Dmaven.test.failure.ignore，这样失败的测试就不会导致构建失败。也就是说，构建的状态不会是红色，
+- 同时，由于Hudson能够解析测试报告并发现失败的测试，构建的状态也不会是健康的蓝色。用户最终会看到黄色的任务状态，表示构建不稳定。这种配置方式能够帮助用户区分失败的构建与不稳定的构建。
+
+#　Hudson用户管理
+- 与一般软件的用户管理方式不同的是，使用Hudson时，不需要主动创建用户，Hudson能够在访问源码仓库的时候自动获取相关用户信息并存储起来。这大大简化了用户管理的步骤。
+- 以11.4节建立的Subversion仓库为例，默认该仓库是匿名可读的，认证用户可写，不过我们并没有配置任何用户。现在要关闭匿名可读权限，同时添加一些用户。
+- 可以参考《Subversion与版本控制》（http://svnbook.red-bean.com/ ）一书。
+- 首先，编辑Subversion仓库下conf/svnserve.conf文件中的［general］小节如下：
+[general]
+# anon-access = none
+# auth-access = write
+# password-db = passwd
+
+- 这里的anon-access=none表示匿名用户没有任何权限，auth-access=write表示经认证用户拥有读写权限，而password-db=passwd表示存储用户信息的数据位于同级目录下的passwd文件中。
+- 再编辑conf/passwd文件如下：
+[users]
+# harry = harryssecret
+# sally = sallyssecret
+# admin = admin123
+# juven = juven123
+# jason = jason123
+- 这里为仓库配置了三个用户，等号左边是用户名，右边则是密码。
+- 至此，就完成了一个简单的Subversion仓库用户权限配置。
+- 像日常开发一样，接下来在Subversion客户端分别使用这几个用户名对代码进行更改后提交至Subversion仓库。
+- 例如，对account-parent模块的pom.xml加入developers配置后，再使用如下svn命令提交更改：
+svn commit -m "add developers config" --username juven --password juven123
+
+mkdir ~/svn/account -p
+svn checkout svn://localhost/account/trunk
+
+- 然后使用另外两个用户admin与jason分别对代码进行更改并提交，Hudson会很快轮询到Subversion仓库内的更改，然后取得更改的代码信息，并了解到这些更改是由谁提交的。
+- 待Hudson得到这些更改并触发集成任务之后，相关的Subversion用户信息就已经被Hudson存储起来了。单击Hudson页面左边的用户，然后就能在页面右边看到相关的用户信息，包括用户名、最近活动时间及相关的Hudson任务
+
+#邮件反馈
+- 持续集成中非常重要的一个步骤就是反馈。
+- 集成的状态信息（尤其是不健康的状态信息）必须及时地通知给相关团队成员，而最常见的反馈方式就是使用电子邮件。
+- 如何配置Hudson来及时地发送集成反馈邮件。
+- 首先需要做的是为Hudson配置邮件服务器信息。进入11.5节提到的系统设置页面，找到E-mail Notification部分， 然后输入以下信息：
+·SMTP server： SMTP邮件服务器地址。
+·Default user e-mail suffix： 默认用户邮件后缀。当用户没有配置邮件地址的时候，Hudson会自动为其加上该邮件后缀。 当用户数量很多，并且邮件地址都是一个域名的时候，该功能就显得尤其重要，例如配置后缀为@foo.com，且用户mike没有配置邮件地址，那么当Hudson需要发邮件给mike的时候就会发送到mike@foo.com。
+·System Admin E-mail Address： 系统管理员邮件地址，即Hudson邮件提示所使用的发送地址。
+·Hudson URL： Hudson服务器的地址。该地址往往被包含在电子邮件中以方便用户访问Hudson取得进一步的信息，因此要确保该地址在用户机器上是可访问的。
+·SMTP Authentication： SMTP相关的认证配置。
+- 配置完成后，可以单击图11-32右下角的测试按钮，让Hudson发一封邮件至系统管理员邮件地址以确认配置成功。
+- 接下来要做的是配置Hudson任务使用邮件反馈。进入任务的配置页面，然后找到最后Post-build Actions小节中的E-mail Notification复选框，将其选上。
+- 现在要关心的是两个问题：什么样的构建会触发邮件反馈？邮件会发送给谁？
+关于第一个问题，答案是这样的：
+·失败的构建会触发邮件反馈。
+·成功构建后的一次不稳定构建会触发邮件反馈。不稳定往往是由失败的测试引起的，因此成功后的一次不稳定往往表示有回归性测试失败。
+·失败或不稳定构建后的一次成功构建会触发邮件反馈，以通知用户集成恢复到了健康状态。
+·用户可以配置是否每次不稳定构建都触发邮件反馈。
+- 关于第二个问题，首先可以在Recipients中配置一个邮件列表（用空格分离），列表中的用户会收到所有邮件反馈。
+- 一般来说，项目负责人应该在这个列表中。
+- 其次，Hudson还提供一个选项：Send separate e-mails to individuals who broke the build。
+- 当用户选择该选项后，邮件会发送给所有与这次构建相关的成员，即那些提交了本地构建代码更新的成员。
+- Hudson无法精确地知道到底是谁的代码提交导致了构建失败，因此只能通知所有与代码更新相关的成员。
+- 最后需要解释的是，图11-33中的Send e-mail for every unstable build选项表示是否为所有的不稳定构建触发邮件反馈， 如果不将其选中，只有成功构建后的第一次不稳定构建才会触发邮件反馈。推荐的做法是将其选上。敏捷高效的团队不应该忽略持续集成中的任何不健康因素。
+
+#Hudson工作目录
+- 到目前为止，本章都是从用户界面的角度介绍Hudson的各种功能。
+- 用心的读者可以想象到，Hudson的各种配置、任务、报告肯定是以文件的形式存储在磁盘中的。
+- 这就是Hudson的工作目录，了解该目录不仅能帮助读者理解Hudson用户界面中的各种特性，更重要的是，读者需要明白怎样为Hudson分配合理的磁盘空间，长期运行的持续集成服务往往会消耗大量的磁盘空间，理解哪些任务对应的哪些文件消耗了多少磁盘空间，对持续集成服务的维护来说至关重要。
+- 默认情况下，Jenkins使用用户目录下的.jenkins/目录作为其工作目录。 ~/.jenkins/
+- 由于该目录会渐渐消耗大量的磁盘空间，因此用户往往会希望自定义该工作目录的位置，这时用户可以设置环境变量HUDSON_HOME，例如将其设置为D：\hudson-work。
+- 一个典型的Hudson工作目录包含:
+·*.xml： 这些XML文件是Hudson核心及相关插件的配置，如config.xml配置了全局的JDK、任务视图等信息，hudson.tasks.Maven.xml配置了Maven安装信息，hudson.tasks.Mailer.xml配置了邮件服务器信息，等等。
+·war： 如果用户独立运行hudson.war，那么其内容会被释放到该目录中后再启动。
+·users： Hudson所存储的用户信息。
+·userContent： 用户可以将任意内容放到该目录下后通过Hudson服务页面的子路径访问，如http://192.168.1.101：8080/userContent/ 。
+·updates： 这里存储了各类可更新的插件信息。
+·plugins： 所有Hudson插件都被安装在该目录而不会影响到Hudson的核心。
+·jobs： 该目录包含了所有Hudson任务的配置、存储的构建、归档的构建输出等内容。本节稍后会详细解释该目录。
+- 上述目录中最重要的可能就是jobs子目录了，这里包含了所有Hudson的任务配置、每个任务的工作区、构建历史等信息，jobs目录下有两个子目录account和maven3，它们分别对应了两个Hudson任务。每个任务都会包含如config.xml、nextBuildNumber、scm-polling.log等文件，其中的config.xml包含了该任务的所有配置，如SCM地址、轮询频率等。
+- .jenkins目录下会包含一个workspace子目录，这就是该任务的工作区。这里有最近一次构建所包含的源代码及相关输出。
+
+- 任务目录下还有一个builds子目录，该目录包含了所有Hudson记录的历史构建，每个构建对应了一个目录，这些目录都是以构建所发生的时间命名的，如2010-04-15_14-56-08，每个构建目录包含了一些文件记录其成功失败信息、构建日志、测试报告、变更记录等。如果用户为该任务配置了文件归档，那么每次构建归档的内容都会存储在archive子目录下。
+
+#Chapter 12 使用Maven构建Web应用
+- 到目前为止，本书讨论的只有打包类型为JAR或者POM的Maven项目。但在现今的互联网时代，我们创建的大部分应用程序都是Web应用，在Java的世界中，Web项目的标准打包方式是WAR
+- 还介绍如何借助jetty-maven-plugin来快速开发和测试Web模块，
+- 以及使用Cargo实现Web项目的自动化部署
+
+#Web项目的目录结构
+- 基于Java的Web应用，其标准的打包方式是WAR。
+- WAR与JAR类似，只不过它可以包含更多的内容，如JSP文件、Servlet、Java类、web.xml配置文件、依赖JAR包、静态web资源（如HTML、CSS、JavaScript文件）等。
+- 一个典型的WAR文件会有如下目录结构：
+
+-war/
++ META-INF/
++ WEB-INF/
+| + classess/
+| | + ServletA.class
+| | + config.properties
+| | + ...
+| |
+| + lib/
+| | + dom4j-1.4.1.jar
+| | + mail-1.4.1.jar
+| | + ...
+| |
+| + web.xml
+| 
++ img/
+| 
++ css/
+|
++ js/
+|
++ index.html
++ sample.jsp 
+
+- 一个WAR包下至少包含两个子目录：META-INF和WEB-INF。
+- 前者包含了一些打包元数据信息，我们一般不去关心；
+- 后者是WAR包的核心，WEB-INF下必须包含一个Web资源表述文件web.xml，
+- 子目录classes包含所有该Web项目的类，
+- 子目录lib则包含所有该Web项目的依赖JAR包，classes和lib目录都会在运行的时候被加入到Classpath中。
+- 除了META-INF和WEB-INF外，一般的WAR包都会包含很多Web资源，在WAR包的根目录下看到html或者jsp文件。
+- 此外，还能看到一些文件夹如img、css和js，它们会包含对应的文件供页面使用
+
+- 首先用户必须为Web项目显式指定打包方式为war
+  <groupId>com.juvenxu.mvnbook.account</groupId>
+  <artifactId>sample-web</artifactId>
+  <packaging>war</packaging>
+  <name>Account Web</name>
+  <version>1.0.0-SNAPSHOT</version>
+- 如果不显式地指定packaging，Maven会使用默认的jar打包方式，从而导致无法正确打包Web项目。
+- 同任何其他Maven项目一样，Maven对Web项目的布局结构也有一个通用的约定。
+- Web项目的类及资源文件同一般JAR项目一样，默认位置都是src/main/java/和src/main/resources， 测试类及测试资源文件的默认位置是src/test/java/和src/test/resources/。
+- Web项目比较特殊的地方在于：它还有一个Web资源目录，其默认位置是src/main/webapp/。一个典型的Web项目 的Maven目录结构如下：
++ project
+|
++ pom.xml
+|
++ src/
+  + main/
+  | + java/
+  | | + ServletA.java
+  | | + ...
+  | + resources/
+  | | + config.properties
+  | | + ...
+  | |
+  | + webapp/
+  |    + WEB-INF/
+  |    | + web.xml
+  |    |
+  |    + img/
+  |    |
+  |    + css/
+  |    |
+  |    + js/
+  |    |
+  |    +
+  |    + index.html
+  |    + sample.jsp
+  |
+  + test/
+     + java/
+     + resources/
+
+- 在src/main/webapp/目录下，必须包含一个子目录WEB-INF，该子目录还必须要包含web.xml文件。
+- src/main/webapp目录下的其他文件和目录包括html、jsp、css、JavaScript等，它们与WAR包中的Web资源完全一致。
+- 在使用Maven创建Web项目之前，必须首先理解这种Maven项目结构和WAR包结构的对应关系。
+- WAR包中有一个lib目录包含所有依赖JAR包，但Maven项目结构中没有这样一个目录，这是因为依赖都配置在POM中，Maven在用WAR方式打包的时候会根据POM的配置从本地仓库复制相应的JAR文件。
+
+#account-service
+- 本章将完成背景案例项目，除了之前实现的account-email、account-persist和account-captcha之外，该项目还包括account-service和account-web两个模块。
+-  account-service用来封装底层三个模块的细节，并对外提供简单的接口，
+- 而account-web仅包含一些涉及Web的相关内容，如Servlet和JSP等。
+
+#12.2.1　account-service的POM
+- account-service用来封装account-email、account-persist和account-captcha三个模块的细节，因此它肯定需要依赖这三个模块:
+<modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.juvenxu.mvnbook.account</groupId>
+    <artifactId>account-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>account-service</artifactId>
+  <name>Account Service</name>
+
+  <properties>
+    <greenmail.version>1.3.1b</greenmail.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>account-email</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>account-persist</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>account-captcha</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.icegreen</groupId>
+      <artifactId>greenmail</artifactId>
+      <version>${greenmail.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <testResources>
+      <testResource>
+        <directory>src/test/resources</directory>
+        <filtering>true</filtering>
+      </testResource>
+    </testResources>
+  </build>
+- account-service继承自account-parent，它依赖于account-email、account-persist和account-captcha三个模块。
+- 由于是同一项目中的其他模块，groupId和version都完全一致，因此可以使用Maven属性＄{project.groupId}和＄{project.version}进行替换，这样可以在升级项目版本的时候减少更改的数量。
+- 项目的其他配置如junit和greenmail依赖，以及测试资源目录过滤配置，都是为了单元测试。
+
+#account-web
+-。由于account-service已经封装了所有下层细节，account-web只需要在此基础上提供一些Web页面，并使用简单Servlet与后台实现交互控制。
+
+account-web的POM: 除了使用打包方式war之外，Web项目的POM与一般项目并没多大的区别
+<parent>
+    <groupId>com.juvenxu.mvnbook.account</groupId>
+    <artifactId>account-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>account-web</artifactId>
+  <packaging>war</packaging>
+  <name>Account Web</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>account-service</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>servlet-api</artifactId>
+      <version>2.4</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>javax.servlet.jsp</groupId>
+      <artifactId>jsp-api</artifactId>
+      <version>2.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-web</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>jetty-maven-plugin</artifactId>
+          <version>7.1.0.RC1</version>
+          <configuration>
+            <scanIntervalSeconds>10</scanIntervalSeconds>
+            <webAppConfig>
+              <contextPath>/account</contextPath>
+            </webAppConfig>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+- account-web的packaging元素值为war，表示这是一个Web项目，需要以war方式进行打包。
+- account-web依赖于servlet-api和jsp-api这两个几乎所有Web项目都要依赖的包，它们为servlet和jsp的编写提供支持。
+- 这两个依赖的范围是provided，表示它们最终不会被打包至war文件中，这是因为几乎所有Web容器都会提供这两个类库，如果war包中重复出现，就会导致潜在的依赖冲突问题。
+- account-web还依赖于account-service和spring-web，其中前者为Web应用提供底层支持，后者为Web应用提供Spring的 集成支持。
+- 在一些Web项目中，读者可能会看到finalName元素的配置。
+- 该元素用来标识项目生成的主构件的名称，该元素的默认值已在超级POM中设定，值为＄{project.artifactId}-＄{project.version}，因此代码清单12-8对应的主构件名称为account-web-1.0.0-SNAPSHOT.war。
+- 不过，这样的名称显然不利于部署，不管是测试环境还是最终产品环境，我们都不想在访问页面的时候输入冗长的地址，因此我们会需要名字更为简洁的war包。这时可以如下所示配置finalName元素：
+<finalName>account</finalName>
+- 经此配置后，项目生成的war包名称就会成为account.war，更方便部署。
+
+#使用jetty-maven-plugin进行测试
+- 在进行Web开发的时候，我们总是无法避免打开浏览器对应用进行测试，比如为了验证程序功能、验证页面布局，尤其是一些与页面相关的特性，手动部署到Web容器进行测试似乎是唯一的方法。
+- 近年来出现了很多自动化的Web测试技术如Selenium，它能够录制Web操作，生成各种语言脚本，然后自动重复这些操作以进行测试。应该说，这类技术方法是未来的趋势，但无论如何，手动的、亲眼比对验证的测试是无法被完全替代的。
+- 测试Web页面的做法通常是将项目打包并部署到Web容器中，本节介绍如何使用jetty-maven-plugin，以使这些步骤更为便捷。
+- 在介绍jetty-maven-plugin之前，笔者要强调一点，虽然手动的Web页面测试是必不可少的，但这种方法绝不应该被滥用。
+- 现实中常见的情况是，很多程序员即使修改了一些较底层的代码（如数据库访问、业务逻辑），都会习惯性地打开浏览器测试整个应用，这往往是没有必要的。可以用单元测试覆盖的代码就不应该依赖于Web页面测试，且不说页面测试更加耗时耗力，这种方式还无法自动化，更别提重复性了。
+- 因此Web页面测试应该仅限于页面的层次，例如JSP、CSS、JavaScript的修改，其他代码修改（如数据访问），请编写单元测试。
+
+- 传统的Web测试方法要求我们编译、测试、打包及部署，这往往会消耗数10秒至数分钟的时间，jetty-maven-plugin能够帮助我们节省时间，它能够周期性地检查项目内容，发现变更后自动更新到内置的Jetty Web容器中。
+- 省去了打包和部署的步骤。
+- jetty-maven-plugin默认就很好地支持了Maven的项目目录结构。
+- 只需要直接在IDE中修改源码，IDE能够执行自动编译，jetty-maven-plugin发现编译后的文件变化后，自动将其更新到Jetty容器，这时就可以直接测试Web页面了。
+
+- 使用jetty-maven-plugin十分简单。指定该插件的坐标，并且稍加配置即可:
+      <plugins>
+        <plugin>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>jetty-maven-plugin</artifactId>
+          <version>7.1.0.RC1</version>
+          <configuration>
+            <scanIntervalSeconds>10</scanIntervalSeconds>
+            <webAppConfig>
+              <contextPath>/account</contextPath>
+            </webAppConfig>
+          </configuration>
+        </plugin>
+      </plugins>
+
+- jetty-maven-plugin并不是官方的Maven插件，它的groupId是org.mortbay.jetty，上述代码中使用了Jetty 7的最新版本。
+- 在该插件的配置中，scanIntervalSeconds顾名思义表示该插件扫描项目变更的时间间隔，这里的配置是每隔10秒。
+- 需要注意的是，如果不进行配置，该元素的默认值是0，表示不扫描，用户也就失去了所谓的自动化热部署的功能。
+- 上述代码中webappConfig元素下的contextPath表示项目部署后的context path。
+- 默认情况下，只有org.apache.maven.plugins和org.codehaus.mojo两个groupId下的插件才支持简化的命令行调用，即可以运行mvn help：system，但mvn jetty：run就不行了。 因为maven-help-plugin的groupId是org.apache.maven.plugins， 而jetty-maven-plugin的groupId是org.mortbay.jetty。为了能在命令行直接运行mvn jetty：run， 用户需要配置settings.xml如下：
+
+...
+
+- 现在可以运行如下命令启动jetty-maven-plugin：
+mvn jetty:run
+- jetty-maven-plugin会启动Jetty，并且默认监听本地的8080端口，并将当前项目部署到容器中，同时它还会根据用户配置扫描代码改动。 如果希望使用其他端口，可以添加jetty.port参数。例如：
+mvn jetty:run -Djetty.port=9999
+- 启动Jetty之后，用户可以在IDE中修改各类文件，如JSP、HTML、CSS、JavaScript甚至是Java类。只要不是修改类名、方法名等较大的操作，jetty-maven-plugin都能够扫描到变更并正确地将变化更新至Web容器中，这无疑在很大程度上帮助了用户实现快速开发和测试。
+- 上面的内容仅仅展示了jetty-maven-plugin最核心的配置点，如果有需要，还可以自定义web.xml的位置、项目class文件的位置、web资源目录的位置等信息。
+- 用户还能够以WAR包的方式部署项目，甚至在Maven的生命周期中嵌入jetty-maven-plugin。例如，先启动Jetty容器并部署项目，然后执行一些集成测试，最后停止容器。有兴趣进一步研究的读者可以访问该页面：http://wiki.eclipse.org/Jetty/Feature/Jetty_Maven_Plugin 。
+  <pluginGroups>
+      <pluginGroup>org.mortbay.jetty</pluginGroup>
+  </pluginGroups>
+
+#使用Cargo实现自动化部署
+- Cargo是一组帮助用户操作Web容器的工具，它能够帮助用户实现自动化部署，
+- 而且它几乎支持所有的Web容器，如Tomcat、JBoss、Jetty和Glassfish等。
+- Cargo通过cargo-maven2-plugin提供了Maven集成，Maven用户可以使用该插件将Web项目部署到Web容器中。
+- 虽然cargo-maven2-plugin和jetty-maven-plugin的功能看起来很相似，但它们的目的是不同的，jetty-maven-plugin主要用来帮助日常的快速开发和测试，
+- cargo-maven2-plugin主要服务于自动化部署。例如专门的测试人员只需要一条简单的Maven命令，就可以构建项目并部署到Web容器中，然后进行功能测试。
+
+#部署至本地Web容器
+- Cargo支持两种本地部署的方式，分别为standalone模式和existing模式。
+- 在standalone模式中，Cargo会从Web容器的安装目录复制一份配置到用户指定的目录，然后在此基础上部署应用，每次重新构建的时候，这个目录都会被清空，所有配置被重新生成。
+<plugin>  
+    <groupId>org.codehaus.cargo</groupId>  
+    <artifactId>cargo-maven2-plugin</artifactId>  
+    <version>1.4.9</version>  
+    <configuration>  
+        <container>  
+            <containerId>tomcat7x</containerId>  
+            <home>C:\Program Files\apache-tomcat-7.0.77</home>  
+        </container>  
+        <configuration>  
+            <type>standalone</type>  
+            <home>${project.build.directory}/tomcat7x</home>  
+            <properties>  
+                <!-- 更改监听端口 -->  
+                <cargo.servlet.port>8088</cargo.servlet.port>  
+            </properties>  
+        </configuration>  
+    </configuration>  
+</plugin>  
+- cargo-maven2-plugin的groupId是org.codehaus.cargo，这不属于官方的两个Maven插件groupId，因此用户需要将其添加到settings.xml的pluginGroup元素中以方便命令行调用。
+<pluginGroup>org.codehaus.cargo</pluginGroup>
+-上述cargo-maven2-plugin的具体配置包括了container和configuration两个元素，configuration的子元素type表示部署的模式（这里是standalone）。与之对应的，configuration的home子元素表示复制容器配置到什么位置，这里的值为＄{project.build.directory}/tomcat7x，表示构建输出目录，即target/下的tomcat7x子目录。
+- container元素下的containerId表示容器的类型，home元素表示容器的安装目录。
+- 基于该配置，Cargo会从C:\Program Files\apache-tomcat-7.0.77目录下复制配置到当前项目的target/tomcat7x/目录下。
+- 让Cargo启动Tomcat并部署应用: mvn cargo:start
+- http://localhost:8088/account-web-1.0.0-SNAPSHOT/signup.jsp
+<Test Failed> start log ok, failed to connect to http port 8080
+- 而在existing模式中，用户需要指定现有的Web容器配置目录，然后Cargo会直接使用这些配置并将应用部署到其对应的位置。
+<plugin>  
+    <groupId>org.codehaus.cargo</groupId>  
+    <artifactId>cargo-maven2-plugin</artifactId>  
+    <version>1.4.9</version>  
+    <configuration>  
+        <container>  
+            <containerId>tomcat7x</containerId>  
+            <home>C:\Program Files\apache-tomcat-7.0.77</home>  
+        </container>  
+        <configuration>  
+            <type>exisitng</type>  
+            <home>${project.build.directory}/tomcat7x</home>  
+            <properties>  
+                <!-- 更改监听端口 -->  
+                <cargo.servlet.port>8088</cargo.servlet.port>  
+            </properties>  
+        </configuration>  
+    </configuration>  
+</plugin>  
+- 上述代码中configuration元素的type子元素的值为existing，而对应的home子元素表示现有的Web容器目录，基于该配置运行mvn cargo：start之后，便能够在Tomcat的
+webapps子目录看到被部署的Maven项目。
+- 部署至远程Web容器除了让Cargo直接管理本地Web容器然后部署应用之外，也可以让Cargo部署应用至远程的正在运行的Web容器中。当然，前提是拥有该容器的相应管理员权限。
+  <plugin>  
+    <groupId>org.codehaus.cargo</groupId>  
+    <artifactId>cargo-maven2-plugin</artifactId>  
+    <version>1.4.9</version>  
+    <configuration>  
+        <container>  
+            <containerId>tomcat7x</containerId>  
+            <type>remote</type>  
+        </container>  
+        <configuration>  
+            <type>runtime</type>  
+            <properties>  
+                <cargo.tomcat.manager.url>http://localhost:8080/manager/text</cargo.tomcat.manager.url>  
+                <cargo.remote.username>admin</cargo.remote.username>  
+                <cargo.remote.password>password</cargo.remote.password>  
+            </properties>  
+        </configuration>        
+</plugin>  
+- 对于远程部署的方式来说，container元素的type子元素的值必须为remote。
+- 如果不显式指定，Cargo会使用默认值installed，并寻找对应的容器安装目录或者安装包，对于远程部署方式来说，安装目录或者安装包是不需要的。
+- 上述代码中configuration的type子元素值为runtime，表示既不使用独立的容器配置，也不使用本地现有的容器配置，而是依赖于一个已运行的容器。
+- properties元素用来声明一些容器热部署相关的配置。Tomcat 7就需要提供用户名、密码以及管理地址。 
+- 这部分部分配置元素对于所有容器来说不是一致的，读者需要查阅对应的Cargo文档。
+- mvn cargo:redploy
+- 如果容器中已经部署了当前应用，Cargo会先将其卸载，然后再重新部署。
+- 由于自动化部署本身就不是简单的事情，再加上Cargo要兼容各种不同类型的Web容器，因此cargo-maven2-plugin的相关配置会显得相对复杂，这个时候完善的文档就显
+得尤为重要。如果想进一步了解Cargo，可访问http://cargo.codehaus.org/Maven2+plugin 。
+
+- 本章介绍的是用Maven管理Web项目，
+- 因此首先讨论了Web项目的基本结构，
+- 开发Web项目的时候，大家往往会使用热部署来实现快速的开发和测试，jetty-maven-plugin可以帮助实现这一目标。
+- 本章最后讨论的是自动化部署，这一技术的主角是Cargo，有了它，可以让Maven自动部署应用至本地和远程Web容器中。
+
+#Chapter 13 版本管理
+- 一个健康的项目通常有一个长期、合理的版本演变过程。
+- 例如JUnit有3.7、3.8、3.8.1、3.8.2、4.0、4.1等版本。
+- Maven本身的版本也比较多，如最早的Maven 1；Maven 2有2.0.9、2.0.10、2.1.0、2.2.0、2.2.1等各种版本；Maven 3则拥有3.0-alpha-1、3.0-alpha-2、3.0-alpha-7、3.0-beta-1等版本。 
+- 除了这些对外发布的版本之外，6.5节还介绍了Maven特有的快照版本的概念。这些版本中的每个数字代表了什么？alpha、beta是什么意思？快照版和发布版的区别是什么？我们应该如何科学地管理自己的项目版本？本章将会详细解答这些问题。
+
+- 分清版本管理（Version Management）和版本控制（Version Control）的区别。
+- 版本管理是指项目整体版本的演变过程管理，如从1.0-SNAPSHOT到1.0，再到1.1-SNAPSHOT。
+- 版本控制是指借助版本控制工具（如Subversion）追踪代码的每一个变更。
+- 本章重点讲述的是版本管理，但是读者将会看到，版本管理通常也会涉及一些版本控制系统的操作及概念。请在阅读的时候特别留意这两者的关系和区别。
+
+#何为版本管理
+- 为了方便团队的合作，在项目开发的过程中，大家都应该使用快照版本，Maven能够很智能地处理这种特殊的版本，解析项目各个模块最新的“快照”。
+- 快照版本机制促进团队内部的交流，但是当项目需要对外发布时，我们显然需要提供非常稳定的版本，使用该版本应当永远只能够定位到唯一的构件，而不是像快照版本那
+样，定位的构件随时可能发生变化。对应地，我们称这类稳定的版本为发布版。
+- 项目发布了一个版本之后，就进入下一个开发阶段，项目也就自然转换到新的快照版本中。
+- 版本管理关心的问题之一就是这种快照版和发布版之间的转换。项目经过了一段时间的1.0-SNAPSHOT的开发之后，在某个时刻发布了1.0正式版，然后项目又进入了
+1.1-SNAPSHOT的开发，这个版本可能添加了一些有趣的特性，然后在某个时刻发布1.1正式版。项目接着进入1.2-SNAPSHOT的开发。
+- 由于快照对应了项目的开发过程，因此往往对应了很长的时间，而正式版本对应了项目的发布，因此仅仅代表某个时刻项目的状态:
+- 理想的发布版本应当对应了项目某个时刻比较稳定的状态，这包括源代码的状态以及构建的状态，因此这个时候项目的构建应当满足以下的条件：
+·所有自动化测试应当全部通过。 毫无疑问，失败的测试代表了需要修复的问题，因此发布版本之前应该确保所有测试都能得以正确执行。
+·项目没有配置任何快照版本的依赖。 快照版本的依赖意味着不同时间的构建可能会引入不同内容的依赖，这显然不能保证多次构建能够生成同样的结果。
+·项目没有配置任何快照版本的插件。 快照版本的插件配置可能会在不同时间引入不容内容的Maven插件，从而影响Maven的行为，破坏构建的稳定性。
+·项目所包含的代码已经全部提交到版本控制系统中。 项目已经发布了，可源代码却不在版本控制系统中，甚至丢失了。这意味着项目丢失了某个时刻的状态，因此
+这种情况必须避免，版本发布的时候必须确保所有的源代码都已经提交了。
+
+- 只有上述条件都满足之后，才可以将快照版本更新为发布版本，例如将1.0-SNAPSHOT更新为1.0，然后生成版本为1.0的项目构件。
+- 不过这里还缺少一步关键的版本控制操作。如果你了解任何一种版本控制工具，如Subversion，那就应该能想到项目发布与标签（Tag）的关系。
+- 版本控制系统记录代码的每一个变化，通常这些变化都被维护在主干（Trunk）中，但是当项目发布的时候，开发人员就应该使用标签记录这一特殊时刻项目的状态。以Subversion为例，日常的变更维护在主干中，包含各种源码版本r1、r2、…、r284、…。要找到某个时刻的项目状态会比较麻烦，而使用标签就可以明确地将某个源码版本（也就是项目状态）
+从主干中标记出来，放到单独的位置，这样在之后的任何时刻，我们都能够快速地得到发布版本的源代码，从而能够比较各个版本的差异，甚至重新构建一个同样版本的
+构件。
+- 因此，将项目的快照版本更新至发布版本之后，应当再执行一次Maven构建，以确保项目状态是健康的。
+- 然后将这一变更提交到版本控制系统的主干中。接着再为当前主干的状态打上标签。 
+- 以Subversion为例，这几个步骤对应的命令如下：
+$mvn clean install
+$svn commit pom.xml -m "prepare to release 1.0"
+$svn copy -m "tag release 1.0" \ https://svn.juvenxu.com/project.trunk \ https://svn.juvenxu.com/project/tags/1.0
+- 至此，一个版本发布的过程完成了。接下来要做的就是更新发布版本至新的快照版本，如从1.0到1.1-SNAPSHOT。
+- 项目到一个阶段后，就需要发布一个正式的版本（release版本）。一次正式的发布需要这样一些工作：
+在trunk中，更新pom版本从1.0-SNAPSHOT到1.0
+对1.0打一个svn tag
+针对tag进行mvn deploy，发布正式版本
+更新trunk从1.0到1.1-SNAPSHOT
+
+#Maven的版本号定义约定
+- 到目前为止，读者应该已经清楚了解了快照版和发布版的区别。
+- 现在再深入看一下1.0、1.1、1.2.1、3.0-beta这样的版本号后面又遵循了怎样的约定。了解了这样的约定之后，就可以正确地为自己的产品或者项目定义版本号，而你的用户也能了解到隐藏在版本号中的信息。
+- 看一个实际的例子，这里有一个版本：
+1.3.4-beta-2
+- 这往往表示了该项目或产品的第一个重大版本的,第三个次要版本的,第四次增量版本的,beta-2里程碑。
+“1”表示了该版本是第一个重大版本；
+“3”表示这是基于重大版本的第三个次要版本；
+“4”表示该次要版本的第四个增量；
+最后的“beta-2”表示该增量的某一个里程碑。
+- 也就是说，Maven的版本号定义约定是这样的：<主版本>.<次版本>.<增量版本>-<里程碑版本>
+- 主版本和次版本之间，以及次版本和增量版本之间用点号分隔，里程碑版本之前用连字号分隔：
+·主版本： 表示了项目的重大架构变更。例如，Maven 2和Maven 1相去甚远；Struts 1和Struts 2采用了不同的架构；JUnit 4较JUnit 3增加了标注支持。
+·次版本： 表示较大范围的功能增加和变化，及Bug修复。例如Nexus 1.5较1.4添加了LDAP的支持，并修复了很多Bug， 但从总体架构来说，没有什么变化。
+·增量版本： 一般表示重大Bug的修复，例如项目发布了1.4.0版本之后，发现了一个影响功能的重大Bug，则应该快速发布一个修复了Bug的1.4.1版本。
+·里程碑版本： 指某一个版本的里程碑。例如，Maven 3已经发布了很多里程碑版本，如3.0-alpha-1、3.0-alpha-2、3.0-beta-1等 。 这样的版本与正式的3.0相比，往往表示不是非常稳定，还需要很多测试。
+- 需要注意的是，不是每个版本号都必须拥有这四个部分。一般来说，主版本和次版本都会声明，但增量版本和里程碑就不一定了。例如，像3.8这样的版本没有增量和里程碑，2.0-beta-1没有增量。但我们不会看到有人省略次版本，简单地给出主版本显然是不够的。
+- **当用户在声明依赖或插件未声明版本时，Maven就会根据上述的版本号约定自动解析最新版本。
+- 这个时候就需要对版本号进行排序。对于主版本、次版本和增量版本来说，比较是基于数字的，因此1.5>1.4>1.3.11>1.3.9。而对于里程碑版本，Maven则只进行简单的字符串比较，因此会得到1.2-beta-3>1.2-beta-11的结果。这一点需要留意。
+
+#主干、标签与分支
+- 使用版本控制工具时我们都会遇到主干（trunk）、标签（tag）和branch（分支）的概念。
+- 这里再详细将这几个概念阐述一下，因为理解它们是理解Maven版本管理的基础。
+·主干： 项目开发代码的主体，是从项目开始直到当前都处于活动的状态。 从这里可以获得项目最新的源代码以及几乎所有的变更历史。
+·分支： 从主干的某个点分离出来的代码拷贝，通常可以在不影响主干的前提下在这里进行重大Bug的修复，或者做一些实验性质的开发。如果分支达到了预期的目的，通常发生在这里的变更会被合并（merge）到主干中。
+·标签： 用来标识主干或者分支的某个点的状态，以代表项目的某个稳定状态，这通常就是版本发布时的状态。
+- 本书采用Subversion作为版本控制系统，如果对上述概念不清晰，请参考开放的《Subversion与版本控制》（http://svnbook.red-bean.com/ ）一书。
+- 使用Maven管理项目版本的时候，也涉及了很多的版本控制系统操作。下面就以一个实际的例子来介绍这些操作是如何执行的。
+- 图13-2下方最长的箭头表示项目的主干，项目最初的版本是1.0.0-SNAPSHOT，经过一段时间的开发后，1.0.0版本发布，这个时候就需要打一个标签，图中用一个长条表示。
+- 然后项目进入1.1.0-SNAPSHOT状态，大量的开发工作都完成在主干中，添加了一些新特性并修复了很多Bug之后，项目1.1.0发布，同样，这时候需要打另一个标签。
+- 发布过后，项目进入1.2.0-SNAPSHOT阶段，可这个时候用户报告1.1.0版本有一个重大的Bug，需要尽快修复，我们不能在主干中修Bug，因为主干有太多的变化，无法在短时间内测试完毕并发布，我们也不能停止1.2.0-SNAPSHOT的开发，因此这时候可以基于1.1.0创建一个1.1.1-SNAPSHOT的分支，在这里进行Bug修复，然后为用户发布一个1.1.1增量版本，同时打上标签。
+- 当然，还不能忘了把Bug修复涉及的变更合并到1.2.0-SNAPSHOT的主干中。主干在开发一段时间之后，发布1.2.0版本，然后进入
+到新版本1.3.0-SNAPSHOT的开发过程中。
+
+#13.4　自动化版本发布
+- 本章前几节已经详细介绍了版本发布时所需要完成的工作，读者如果愿意，则完全可以手动地执行这些操作，检查是否有未提交代码、是否有快照依赖、更新快照版至发布版、执行Maven构建以及为源代码打标签等。
+- 事实上，如果对这一过程不是很熟悉，那么还是应该一步一步地操作一遍，以得到最直观的感受。
+- 当熟悉了版本发布流程之后，就会希望借助工具将这一流程自动化。Maven Release Plugin就提供了这样的功能， 只要提供一些必要的信息，它就能帮我们完成上述所有版本发布所涉及的操作。下面介绍如何使用Maven Release Plugin发布项目版本。
+
+#Maven Release Plugin
+- 主要有三个目标，它们分别为：
+·release：prepare 准备版本发布，依次执行下列操作：
+- 检查项目是否有未提交的代码。
+- 检查项目是否有快照版本依赖。
+- 根据用户的输入将快照版本升级为发布版。
+- 将POM中的SCM信息更新为标签地址。
+- 基于修改后的POM执行Maven构建。
+- 提交POM变更。
+- 基于用户输入为代码打标签。
+- 将代码从发布版升级为新的快照版。
+- 提交POM变更。
+·release：rollback 
+- 回退release：prepare所执行的操作。
+- 将POM回退至release：prepare之前的状态，并提交。需要注意的是，该步骤不会删除release：prepare生成的标签，
+因此用户需要手动删除。
+·release：perform 执行版本发布。签出release：prepare生成的标签中的源代码，并在此基础上执行mvn deploy命令打包并部署构件至仓库。
+- 要为项目发布版本，首先需要为其添加正确的版本控制系统信息，这是因为Maven Release Plugin需要知道版本控制系统的主干、标签等地址信息后才能执行相关的操作。一般配置项目的SCM信息:
+<scm>  
+  <connection>scm:svn:http://192.168.1.103/app/trunk/</connection>  
+  <developerConnection>scm:svn:https://192.168.1.103/app/trunk/</developerConnection>
+  <url>http://192.168.1.103/account/trunk</url>
+</scm>
+- connection元素表示一个只读的scm地址，而developerConnection元素表示可写的scm地址，url则表示可以在浏览器中访问的scm地址。
+- 为了能让Maven识别，connection和developerConnection必须以scm开头，冒号之后的部分表示版本控制工具类型（这里是svn），Maven还支持cvs、git等。接下来才是实际的scm地址，该例中的connection使用了http协议，而developerConnection则由于涉及写操作，使用https协议进行了保护。
+- 该配置只告诉Maven当前代码的位置（主干），而版本发布还要涉及标签操作。因此，还需要配置Maven Release Plugin告诉其标签的基础目录:
+<plugin>  
+  <groupId>org.apache.maven.plugins</groupId>  
+  <artifactId>maven-release-plugin</artifactId>  
+  <version>2.0</version>  
+  <configuration>  
+    <tagBase>https://192.168.1.103/app/tags/</tagBase>  
+  </configuration>  
+</plugin>
+- 在执行release：prepare之前还有两个注意点：第一，系统必须要提供svn命令行工具，Maven需要svn命令行工具执行相关操作，而无法使用图形化的工具，如TortoiseSVN；第二，POM必须配置了可用的部署仓库，因为release：perform会执行deploy操作将构件发布到仓库中。
+mvn release:prepare
+- Maven Release Plugin开始准备发布版本，如果它检测到项目有未提交的代码，或者项目有快照版的依赖，则会提示出错。如果一切都没问题，则会提示用户输入想要发布的版本号、标签的名称以及新的快照版本号:
+- 如果项目的artifactId为app，发布前的版本为1.0.0-SNAPSHOT，则Maven Release Plugin会提示使用发布版本号1.0.0， - 使用标签名称app-1.0.0，新的开发版本为1.0.1-SNAPSHOT。如果这些模式值正是你想要的，直接按Enter键即可，否则就输入想要的值再按Enter键，如上例中为新的开发版本输入了值1.1.0-SNAPSHOT。
+- 基于这些信息，Maven Release Plugin会将版本从1.0.0-SNAPSHOT更新为1.0.0，并更新SCM地址http://192.168.1.103/app/trunk 至http://192.168.1.103/app/tags/app-1.0.0 。
+- 在此基础上运行一次Maven构建以防止意外的错误出现，然后将这两个变化提交，并为该版本打上标签，标签地址是http://192.168.1.103/app/tags/app-1.0.0 。即tagBase路径加上标签名称。之后，Maven Release Plugin 会将POM中的版本信息从1.0.0 升级到1.1.0-SNAPSHOT并提交。
+
+- 至此，release：prepare的工作完成。如果这时你发现了一些问题，例如将标签名称配置错了，则可以使用release：rollback命令回退发布，Maven Release Plugin会将POM的配置回退到release：prepare之前的状态。 但需要注意的是， 版本控制系统中的标签并不会被删除， 也就是说， 用户需要手动执行版本控制系统命令删除该标签。
+- 在多模块项目中执行release：prepare的时候，默认maven-release-plugin会提示用户设定每个模块发布版本号及新的开发版本号。例如，如果在account-parent模块中配置正确的scm信息之后进行项目发布，就会看到如下的输出：
+- 在很多情况下，我们会希望所有模块的发布版本以及新的SNAPSHOT开发版本都保持一致。为了避免重复确认，maven-release-plugin提供了autoVersionSubmodules参
+数。例如运行下面的命令后，maven-release-plugin就会自动为所有子模块使用与父模块一致的发布版本和新的SNAPSHOT版本：
+$mvn release:prepare -DautoVersionSubmodules=true
+- 如果检查下来release：prepare的结果没有问题，标签和新的开发版本都是正确的，可以执行如下发布执行命令
+mvn release:perform
+- 该命令将标签中的代码签出，执行mvn deploy命令构建刚才准备的1.0.0版本，并部署到仓库中。至此，版本1.0.0正式发布完成。由于它已经被部署到了Maven仓库中，
+其他人可以方便地配置对它的依赖。
+- 如果你所发布项目的打包类型为jar，在执行release：perform之后，不仅项目的主构件会被生成并发布到仓库中，基于该主构件的-sources.jar
+和-javadoc.jar也会生成并发布。对于你的用户来说，这无疑是非常方便的，他们不仅能够下载你的主构件，还能够得到项目的源码和Javadoc。那么，release：perform是怎
+样生成-sources.jar和-javadoc.jar的呢？
+- 8.5节介绍过，所有Maven项目的POM都继承自超级POM，而如果打开超级POM:
+- 超级POM中sources和javadoc的配置:
+<profiles>
+    <!-- NOTE: The release profile will be removed from future versions of the super POM -->
+    <profile>
+      <id>release-profile</id>
+
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>true</value>
+        </property>
+      </activation>
+
+      <build>
+        <plugins>
+          <plugin>
+            <inherited>true</inherited>
+            <artifactId>maven-source-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <inherited>true</inherited>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <inherited>true</inherited>
+            <artifactId>maven-deploy-plugin</artifactId>
+            <configuration>
+              <updateReleaseInfo>true</updateReleaseInfo>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+- 超级POM中定义了一个名为release-profile的Maven Profile，Profile是指一段在特定情况下被激活并更改Maven行为的配置，
+- 这里看到activate元素下有一个名为performRelease、值为true的属性配置，这表示当Maven运行时，如果运行环境中有performRelease属性且值为true的时候，该Profile就被激活。也就是说，该Profile下的配置会得到应用。那么，什么情况下Maven运行环境中会有名为performRelease、值为true的属性呢？
+- 可以在命令行指定: mvn clean install -DperformRelease=true
+- 在执行release：perform的时候，Maven Release Plugin会自动生成值为true的performRelease属性。 这时，超级POM中的release-profile就会被激活。
+- 这个Profile配置了3个Maven插件，maven-sources-plugin的jar目标会为项目生成-source.jar文件，maven-javadoc-plugin的jar目标会为项目生成-javadoc.jar文件，而maven-deploy-plugin的update-release-info配置则会在部署的时候更新仓库中的元数据，告诉仓库该版本是最新的发布版。每个插件配置中值为true的inherited元素则表示该插件配置可以被子POM继承。
+- 在日常的快照开发过程中，往往没有必要每次都生成-source.jar和-javadoc.jar，但是当项目发布的时候，这些文件就显得十分重要。
+- 超级POM中的release-profile就是为了这种情形而设计的。
+- 这种隐式的配置对于不熟悉Maven的用户来说可能会显得十分令人费解，因此将来的Maven版本中可能会从超级POM中移除这段配置，所以如果用户希望在发布版本时自动生成-sources.jar和-javadoc.jar，最好还是在自己的POM中显式地配置这些插件。
+
+#13.5　自动化创建分支
+- 13.4节介绍了如何使用Maven Release Plugin自动化版本发布，如果回顾一下图13-2，就会发现分支创建的操作还没有具体涉及。
+- 本节就继续基于实际的样例讲解如何自动化创建分支。
+- 在正式发布版本1.1.0的同时，还可以创建一个分支用来修复将来这个版本可能遇到的重大Bug。
+- 这个过程可以手工完成，例如使用svn copy操作将主干代码复制到一个名为1.1.x的分支中，然后修改分支中的POM文件， 升级其版本为1.1.1-SNAPSHOT， 这会涉及很多Subversion操作。
+- 使用Maven Release Plugin的branch目标，它能够帮我们自动化这些操作：
+·检查本地有无未提交的代码。
+·为分支更改POM的版本，例如从1.1.0-SNAPSHOT改变成1.1.1-SNAPSHOT。
+·将POM中的SCM信息更新为分支地址。
+·提交以上更改。
+·将主干的代码复制到分支中。
+·修改本地代码使其回退到分之前的版本（用户可以指定新的版本）。
+·提交本地更改。
+当然，为了让Maven Release Plugin为我们工作，和版本发布一样，必须在POM中提供正确的SCM信息。此外，由于分支操作会涉及版本控制系统里的分支地址，因此
+还要为Maven Release Plugin配置分支基础目录，
+<plugin>  
+  <groupId>org.apache.maven.plugins</groupId>  
+  <artifactId>maven-release-plugin</artifactId>  
+  <version>2.0</version>  
+  <configuration>  
+    <tagBase>https://192.168.1.103/app/tags/</tagBase>
+    <branchBase>https://192.168.1.103/app/branches/</branchBase>  
+  </configuration>  
+</plugin>
+- 然而tagBase和branchBase并非是一定要配置的。如果为版本控制仓库使用了标准的Subversion布局，即在平行的trunk/tags/branches目录下分别放置项目主干代码、标签代
+码和分支代码，那么Maven Release Plugin就能够自动根据主干代码位置计算出标签及分支代码位置，因此你就可以省略这两项配置。
+- 理解了创建分支所将执行的实际行为后，就可以在项目目录下运行如下命令以创建分支：
+$mvn release:branch --DbranchName=1.1.x \ -DupdateBranchVersions=true -DupdateWorkingCopyVersions=false
+- 上述命令中使用了Maven Release Plugin的branch目标，-DbranchName=1.1.x用来配置所要创建的分支的名称，-DupdateBranchVersions=true表示为分支使用新的版本，-DupdateWorkingCopyVersions=false表示不更新本地代码（即主干）的版本。运行上述命令之后，Maven会提示输入分支项目的版本:
+- 用户根据自己的需要为分支输入新的版本后按Enter键，Maven就会处理其余的操作。最后，用户就能在源码库中找到Maven创建的分支，如https://192.168.1.103/app/branches/1.1.x/ 。在这里，POM中的版本已经升级到了1.1.1-SNAPSHOT。
+
+#13.6　GPG签名
+-从中央仓库下载第三方构件的时候，你可能会想要验证这些文件的合法性，例如它们是由开源项目官方发布的，并且没有被篡改过。
+- 当发布自己项目给客户使用的时候，你的客户也会想要验证这些文件是否是由你的项目组发布的，且没有被恶意篡改过。 
+- PGP（Pretty Good Privacy）就是这样一个用来帮助提高安全性的技术。PGP最常用来给电子邮件进行加密、解密以及提供签名，以提高电子邮件交流的安全性。本节介绍如何使用PGP技术为发布的Maven构件签名，为项目增强安全性。
+
+#13.6.1　GPG及其基本使用
+GnuPG（简称GPG，来自http://www.gnupg.org/）是PGP标准的一个免费实现，无论是类UNIX平台还是Windows平台， 都可以使用它。 
+- GPG能够帮助我们为文件生成签名、管理密钥以及验证签名等。
+- 首先，访问http://www.gnupg.org/download/ 下载对应自己平台的GPG分发包，按照官方的文档将GPG安装完毕，
+- 运行如下命令检查安装：gpg --version
+- 在使用GPG之前，先得为自己准备一个密钥对，即一个私钥和一个公钥。之后才可以使用私钥对文件进行签名，并且将公钥分发到公钥服务器供其他用户下载，用户可以使用公钥对签名进行验证。
+使用如下命令生成密钥对：gpg --gen-key
+- GPG会问你密钥的类型、大小和有效时间，通常使用默认的值即可。GPG还会要求你输入自己的名称、电子邮件地址和对密钥的注释，这些内容会被包含在公钥中并被你的用户看到，因此务必正确填写。最后，还可以提供一个密码来保护密钥，这不是强制性的，但通常最好提供以防止别人得到你的密钥后恶意使用。你将来需要使用私钥和密码为文件提供签名，因此一定要认证保护它们。
+- 现在已经有了密钥对，就可以在命令行中查看它们（其他导入到本地机器的密钥也会被显示），如下面的命令可用来列出所有公钥：
+gpg-list-keys
+- 这里的/home/juven/.gnupg/pubring.gpg表示公钥存储的位置。以pub开头的一行显示公钥的长度（1024D）、ID（C6EED57A）以及创建日期（2010-01-13）。下一行显示了公钥的UID，也就是一个由名称、注释和邮件地址组成的字符串。最后一行显示的子钥不用关心。
+- 类似地，下面的命令用来列出本机私钥： gpg --list -secret-keys
+- 对GPG的公私钥有了基本的了解之后，就可以使用如下命令为任意文件创建一个ASCII格式的签名：
+gpg --ab temp.java
+- 这里的-a选项告诉GPG创建ASCII格式的输出，而-b选项则告诉GPG创建一个独立的签名文件。如果你的私钥拥有密码，这个时候就需要输入密码。如果私钥没有密码，那么只要他人获得了你的私钥，就能够以你的名义对任何内容进行签名，这是非常危险的。
+- 在该例中，GPG会创建一个名为temp.java.asc的签名文件，这时就可以将这个后缀名为.asc的签名文件连同原始文件一起分发给你的用户。如果你的用户已经导入了你的公钥，就可以运行如下命令验证原始文件：
+gpg --verify temp.java.asc
+- 为了能让你的用户获取公钥并验证你分发的文件，需要将公钥分发到公钥服务器中。hkp：//pgp.mit.edu是美国 麻省理工学院提供的公钥服务器，运行如下命令可将公钥分发到该服务器中：: gpg --keyserver hkp://pgp.mit.edu --send-keys C6EED57A
+- 这里的--keyserver选项用来指定分发服务器的地址，--send-keys用来指定想要分发公钥的ID。
+- 你可以罗列本地公钥来查看它们的ID。需要注意的是，公钥会在各个公钥服务器中被同步，因此你不需要重复地往各个服务器分发同一公钥。
+- 现在，你的用户可以将服务器上的公钥导入到本地机器：
+gpg --keyserver hkp://pgp.mit.edu --recv-keys C6EED57A
+- 上述就是一个基本的签名、分发并验证的流程，在使用Maven发布项目的时候，可以使用GPG为发布文件提供签名。
+- 现在读者应该已经知道如何手工完成这一步骤了，下面介绍如何使用Maven GPG Plugin自动化签名这一步骤。
+#13.6.2　Maven GPG Plugin
+- 手动地对Maven构件进行签名并将这些签名部署到Maven仓库中是一件耗时的体力活。而使用Maven GPG Plugin只需要提供几行简单的配置，它就能够帮我们自动完成签名这一工作。
+- 在使用Maven GPG Plugin之前，首先需要确认命令行下的gpg是可用的，然后如代码清单13-5所示配置POM。
+<plugin>  
+    <groupId>org.apache.maven.plugins</groupId>  
+    <artifactId>maven-gpg-plugin</artifactId>  
+    <version>1.0</version>  
+    <executions>  
+         <execution>  
+        <id>sign-artifacts</id>  
+        <phase>verify</phase>  
+        <goals>  
+              <goal>sign</goal>  
+        </goals>  
+         </execution>  
+    </executions>  
+</plugin>  
+- 使用一般的mvn命令签名并发布项目构件：
+$mvn clean deploy -Dgpg.passphrase=yourpassphrase
+- 如果不提供-Dgpg.passphrase参数，运行时就会要求输入密码。
+- 如果有一些已经发布了但没有被签名的文件，你仍然想对其签名并发布到Maven仓库中，上述方式显然是行不通的，因为POM已经不允许被修改。好在Maven GPGPlugin为此提供了另外一个目标:
+
+...
+- 在这里可以指定要签名的POM及相关文件、Maven仓库的地址和ID，Maven GPG Plugin就会帮你签名文件并部署到仓库中。
+- 读者可以想到，GPG签名这一步骤只有在项目发布时才显得必要，对日常的SNAPSHOT构件进行签名不仅没有多大的意义，反而会比较耗时。因此，只需要配置Maven PGP Plugin在项目发布的时候运行，那么如何判断项目发布呢？回顾代码清单13-3，在超级POM中有一个release-profile，该Profile只有在Maven属性performRelease为true的时候才被激活，而release：perform执行的时候，就会将该属性置为true，这正是项目进行版本发布的时刻。
+- 因此，类似地，可以在settings.xml或者POM中创建如代码清单13-6所示Profile。
+<profiles>
+    <profile>
+      <id>release-profile</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugin</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.0</version>
+            <executions>  
+              <execution>  
+                <id>sign-artifacts</id>  
+                <phase>verify</phase>  
+                <goals>  
+                  <goal>sign</goal>  
+                </goals>  
+              </execution>  
+            </executions>  
+          </plugin>         
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+- 最后需要一提的是，由于一个已知的Maven Release lugin的Bug，release：perform执行过程中签名可能会导致进程永久挂起。 为了避免该情况， 用户需要为Maven ReleasePlugin提供mavenExecutorId配置:
+...
+- 至此，一个较为规范的自动化签名配置就完成了。当执行release：perform发布项目版本的时候，maven-gpg-plugin会被自动调用对构件进行签名。当然，这个时候你需要根据命令行提示输入私钥密码。
+
+Chapter14 灵活的构建
+- 一个优秀的构建系统必须足够灵活，它应该能够让项目在不同的环境下都能成功地构建。
+- 例如，典型的项目都会有开发环境、测试环境和产品环境，这些环境的数据库配置不尽相同，那么项目构建的时候就需要能够识别所在的环境并使用正确的配置。
+- 还有一种常见的情况是，项目开发了大量的集成测试，这些测试运行起来非常耗时，不适合在每次构建项目的时候都运行，因此需要一种手段能让我们在特定的时候才激活这些集成测试。
+- Maven为了支持构建的灵活性，内置了三大特性，即属性、Profile和资源过滤。本章介绍如何合理使用这些特性来帮助项目自如地应对各种环境。
+- Maven属性
+前面的章节已经简单介绍过Maven属性的使用，使用Maven属性归类依赖: 
+<properties>
+    <springframework.version>2.5.6</springframework.version>
+</properties>
+<dependencies>
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-core</artifactId>
+        <version>${springframework.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-beans</artifactId>
+        <version>${springframework.version}</version>
+    </dependency>   
+    ...
+</dependencies>
+- 这可能是最常见的使用Maven属性的方式，通过<properties>元素用户可以自定义一个或多个Maven属性，然后在POM的其他地方使用＄{属性名称}的方式引用该属
+性，这种做法的最大意义在于消除重复。
+- 这不是Maven属性的全部，事实上这只是6类Maven属性中的一类而已。这6类属性分别为：
+1) 内置属性： ${basedir}表示项目根目录，即包含pom.xml文件的目录；${version}表示项目版本。
+2) POM属性： 用户可以使用该类属性引用POM文件中对应元素的值。例如＄{project.artifactId}就对应了<project><artifactId>元素的值，常用的POM属性包括：
+- ${project.build.sourceDirectory}：项目的主源码目录，默认为src/main/java/。
+- ${project.build.testSourceDirectory}：项目的测试源码目录，默认为src/test/java/。
+- ${project.build.directory}：项目构建输出目录，默认为target/。
+- ${project.outputDirectory}：项目主代码编译输出目录，默认为target/classes/。
+- ${project.testOutputDirectory}：项目测试代码编译输出目录，默认为target/test-classes/。
+- ${project.groupId}：项目的groupId。
+- ${project.artifactId}：项目的artifactId。
+- ${project.version}：项目的version，与${version}等价。
+- ${project.build.finalName}：项目打包输出文件的名称，默认为${project.artifactId}-${project.version}。
+- 这些属性都对应了一个POM元素，它们中一些属性的默认值都是在超级POM中定义的.
+3) 自定义属性： 用户可以在POM的<properties>元素下自定义Maven属性。
+<properties>
+  <my.prop>hello</my.prop>
+</properties>
+- 然后在POM中其他地方使用${my.prop}的时候会被替换成hello。
+4) Settings属性： 
+- 与POM属性同理，用户使用以settings.开头的属性引用settings.xml文件中XML元素的值，如常用的＄{settings.localRepository}指向用户本地仓库的地址。
+5)Java系统属性： 
+- 所有Java系统属性都可以使用Maven属性引用，例如＄{user.home}指向了用户目录。用户可以使用mvn help：system查看所有的Java系统属性。
+6)环境变量属性： 
+- 所有环境变量都可以使用以env.开头的Maven属性引用。例如＄{env.JAVA_HOME}指代了JAVA_HOME环境变量的值。用户可以使用mvn help：system
+查看所有的环境变量。正确使用这些Maven属性可以帮助我们简化POM的配置和维护工作，下面列举几个常见的Maven属性使用样例。
+- 在一个多模块项目中，模块之间的依赖比较常见，这些模块通常会使用同样的groupId和version。因此这个时候就可以使用POM属性:
+  <dependencies>
+    <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>spring-core</artifactId>
+        <version>${project.artifactId}</version>
+    </dependency>
+    <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>spring-beans</artifactId>
+        <version>${project.artifactId}</version>
+    </dependency> 
+- 当前的模块依赖于account-email和account-persist，这三个模块使用同样的groupId和version，因此可以在依赖配置中使用POM属性${project.groupId}和＄{project.version}，表示这两个依赖的groupId和version与当前模块一致。这样，当项目版本升级的时候，就不再需要更改依赖的版本了。
+- 大量的Maven插件用到了Maven属性，这意味着在配置插件的时候同样可以使用Maven属性来方便地自定义插件行为。
+- 例如从10.6节我们知道，maven-surefire-plugin运行后默认的测试报告目录为target/surefire-reports，这实际上就是＄{project.build.directory}/surefire-reports， 如果查阅该插件的文档，会发现该插件提供了reportsDirectory参数来配置测试报告目录。因此如果想要改变测试报告目录，例如改成target/test-reports:
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <version>2.5</version>
+    <configuration>
+        <reportsDirectory>${project.build.directory}/test-reports</reportsDirectory>
+    </configuration>
+</plugin>
+- 从上面的内容中可以看到，Maven属性能让我们在POM中方便地引用项目环境和构建环境的各种十分有用的值，这是创建灵活构建的基础。
+- 下面将会结合profile和资源过滤，展示Maven能够为构建提供的更多的可能性。
+
+#构建环境的差异
+- 在不同的环境中，项目的源码应该使用不同的方式进行构建，最常见的就是数据库配置了。 例如在开发的过程中，有些项目会在src/main/resources/目录下放置带有如下内容的数据库配置文件：
+database.jdbc.driverClass=com.sql.jdbc.Driver
+database.jdbc.connectionURL=jdbc:mysql://localhost:3306/test
+database.jdbc.username=dev  
+database.jdbc.password=dev-pwd
+
+可当测试人员想要构建项目产品并进行测试的时候，他们往往需要使用不同的数据库。这时的数据库配置文件可能是这样的：  
+database.jdbc.driverClass=com.sql.jdbc.Driver
+database.jdbc.connectionURL=jdbc:mysql://192.168.1.100:3306/test
+database.jdbc.username=test  
+database.jdbc.password=test-pwd
+- 连接数据库的URL、用户名和密码都发生了变化，类似地，当项目被发布到产品环境的时候，所使用的数据库配置又是另外一套了。
+- 比较原始的做法是，使用与开发环境一样的构建，然后在测试或者发布产品之前再手动更改这些配置。这是可行的，也是比较常见的，但肯定不是最好的方法。
+- 本书已经不止一次强调，手动往往就意味着低效和错误，因此需要找到一种方法，使它能够自动地应对构建环境的差异。
+- Maven的答案是针对不同的环境生成不同的构件。也就是说，在构建项目的过程中，Maven就已经将这种差异处理好了。
+
+#资源过滤 <Test> <Test Done>
+- 为了应对环境的变化，首先需要使用Maven属性将这些将会发生变化的部分提取出来。在上一节的数据库配置中，连接数据库使用的驱动类、URL、用户名和密码都
+可能发生变化，因此用Maven属性取代它们：
+database.jdbc.driverClass=${db.driver}
+database.jdbc.connectionURL=${db.url}
+database.jdbc.username=${db.username}  
+database.jdbc.password=${db.password}
+- 这里定义了4个Maven属性：db.driver、db.url、db.username和db.password，它们的命名是任意的，读者可以根据自己的实际情况定义最合适的属性名称。
+- 既然使用了Maven属性，就应该在某个地方定义它们。自定义Maven属性后，这里要做的是使用一个额外的profile将其包裹:
+- 针对开发环境的数据库配置：
+<profiles>
+    <profile>
+      <id>dev</id>
+      <properties>
+          <db.driver>com.sql.jdbc.Driver</db.driver>
+          <db.url>jdbc:mysql://localhost:3306/test</db.url>
+          <db.username>dev</db.username>  
+          <db.password>dev-pwd</db.password>
+      </properties>
+    </profile>
+  </profiles>
+- Maven属性定义与直接在POM的properties元素下定义并无二致，这里只是使用了一个id为dev的profile，其目的是将开发环境下的配置与其他环境区别
+开来。
+- 有了属性定义，配置文件中也使用了这些属性，一切OK了吗？还不行。
+- Maven属性默认只有在POM中才会被解析。也就是说，＄{db.username}放到POM中会变成test，但是如果放到src/main/resources/目录下的文件中，构建的时候它将仍然还是＄{db.username}。
+- 因此，需要让Maven解析资源文件中的Maven属性。
+- 资源文件的处理其实是maven-resources-plugin做的事情，它默认的行为只是将项目主资源文件复制到主代码编译输出目录中， 将测试资源文件复制到测试代码编译输出目录中。
+- 不过只要通过一些简单的POM配置，该插件就能够解析资源文件中的Maven属性，即开启资源过滤。
+- Maven默认的主资源目录和测试资源目录的定义是在超级POM中)。要为资源目录开启过滤，只要在此基础上添加一行filtering配置即可，
+    <resources>
+      <resource>
+        <directory>${project.basedir}/src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+- 为测试资源目录开启了过滤。
+    <testResources>
+      <testResource>
+        <directory>${project.basedir}/src/test/resources</directory>
+        <filtering>true</filtering>
+      </testResource>
+    </testResources>
+- 读者可能还会从上述代码中意识到，主资源目录和测试资源目录都可以超过一个，虽然会破坏Maven的约定，但Maven允许用户声明多个资源目录，并且为每个资源目
+录提供不同的过滤配置
+- 配置多个资源目录:
+    <resources>
+      <resource>
+        <directory>${project.basedir}/src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+      <resource>
+        <directory>${project.basedir}/src/main/sql</directory>
+        <filtering>false</filtering>
+      </resource>
+    </resources>
+- 配置了两个资源目录，其中src/main/resources开启了过滤，而src/main/sql没有启用过滤。
+- 到目前为止一切基本就绪了，我们将数据库配置的变化部分提取成了Maven属性，在POM的profile中定义了这些属性的值，并且为资源目录开启了属性过滤。最后，只
+需要在命令行激活profile，Maven就能够在构建项目的时候使用profile中属性值替换数据库配置文件中的属性引用。运行命令如下：mvn clean install -Pdev
+- mvn的-P参数表示在命令行激活一个profile。这里激活了id为dev的profile。构建完成后，输出目录中的数据库配置就是开发环境的配置了：
+database.jdbc.driverClass=com.sql.jdbc.Driver
+database.jdbc.connectionURL=jdbc:mysql://localhost:3306/test
+database.jdbc.username=dev  
+database.jdbc.password=dev-pwd
+
+#Maven Profile <Test> <Test Done>
+- 从前面内容我们看到，不同环境的构建很可能是不同的，典型的情况就是数据库的配置。
+- 除此之外，有些环境可能需要配置插件使用本地文件，或者使用特殊版本的依赖，或者需要一个特殊的构件名称。
+- 要想使得一个构建不做任何修改就能在任何环境下运行，往往是不可能的。
+- 为了能让构建在各个环境下方便地移植，Maven引入了profile的概念。
+- profile能够在构建的时候修改POM的一个子集，或者添加额外的配置元素。
+- 用户可以使用很多方式激活profile，以实现构建在不同环境下的移植。
+
+#针对不同环境的profile
+继续数据库差异为例，引入了一个针对开发环境的profile，类似地，可以加入测试环境和产品环境的profile:
+<profiles>
+    <profile>
+      <id>dev</id>
+      <properties>
+        <db.driver>com.sql.jdbc.Driver</db.driver>
+        <db.url>jdbc:mysql://localhost:3306/test</db.url>
+        <db.username>dev</db.username>
+        <db.password>dev-pwd</db.password>
+      </properties>
+    </profile>
+    <profile>
+      <id>test</id>
+      <properties>
+        <db.driver>com.sql.jdbc.Driver</db.driver>
+        <db.url>jdbc:mysql://192.168.1.100:3306/test</db.url>
+        <db.username>test</db.username>
+        <db.password>test-pwd</db.password>
+      </properties>
+    </profile>
+  </profiles>
+- 同样的属性在两个profile中的值是不一样的，dev profile提供了开发环境数据库的配置，而test profile提供的是测试环境数据库的配置。 类似地，还可以添加一个基于产品环境数据库配置的profile.
+- 开发人员可以在使用mvn命令的时候在后面加上-Pdev激活dev profile，而测试人员可以使用-Ptest激活test profile。
+mvn clean install -Pdev
+mvn clean install -Ptest
+
+#激活profile
+- 为了尽可能方便用户，Maven支持很多种激活Profile的方式。
+1.命令行激活: 用户可以使用mvn命令行参数-P加上profile的id来激活profile，多个id之间以逗号分隔。例如，下面的命令激活了dev-x和dev-y两个profile：
+mvn clean install -Pdev-x,dev-y
+2. settings文件显式激活
+如果用户希望某个profile默认一直处于激活状态，就可以配置settings.xml文件的activeProfiles元素，表示其配置的profile对于所有项目都处于激活状态:
+  <activeProfiles>
+    <activeProfile>nexus</activeProfile>
+  </activeProfiles>
+- 用到这种方式默认激活了一个关于仓库配置的profile。
+3.系统属性激活
+- 用户可以配置当某系统属性存在的时候，自动激活profile:
+    <profile>
+      <activation>
+        <property>
+          <name>test</name>
+        </property>
+      </activation>
+    </profile>
+- 某系统属性存在且值确定时激活profile
+    <profile>
+      <activation>
+        <property>
+          <name>test</name>
+          <value>x</value>
+        </property>
+      </activation>
+    </profile>
+- 用户可以在命令行声明系统属性:
+mvn clean package -Dtest=x
+- 因此，这其实也是一种从命令行激活profile的方法，而且多个profile完全可以使用同一个系统属性来激活。
+4.操作系统环境激活
+- Profile还可以自动根据操作系统环境激活，如果构建在不同的操作系统有差异，用户完全可以将这些差异写进profile，然后配置它们自动基于操作系统环境激活，
+    <profile>
+      <activation>
+        <os>
+          <name>Windows XP</name>
+          <family>windows</family>
+          <arch>x86</arch>
+          <version>5.1.2600</version>
+        </os>
+      </activation>
+    </profile>
+- 这里family的值包括Windows、UNIX和Mac等，而其他几项name、arch、version，用户可以通过查看环境中的系统属性os.name、os.arch、os.version获得。
+- 5.文件存在与否激活
+Maven能够根据项目中某个文件存在与否来决定是否激活profile:
+<profile>
+      <activation>
+        <file>
+          <missing>x.properties</missing>
+          <exists>y.properties</exists>          
+        </file>
+      </activation>
+    </profile>
+6.默认激活
+用户可以在定义profile的时候指定其默认激活:
+<profile>
+      <id>dev</id>
+      <activation>
+        <activeByDefault>true</activeDefault>
+      </activation>
+    </profile>
+- 使用activeByDefault元素用户可以指定profile自动激活。不过需要注意的是，如果POM中有任何一个profile通过以上其他任意一种方式被激活了，所有的默认激活配置都会失效。
+- 如果项目中有很多的profile，它们的激活方式各异，用户怎么知道哪些profile被激活了呢？maven-help-plugin提供了一个目标帮助用户了解当前激活的profile：
+mvn help:active-profiles
+- maven-help-plugin还有另外一个目标用来列出当前所有的profile：
+mvn help:all-profiles
+
+#14.4.3　profile的种类
+- 根据具体的需要，可以在以下位置声明profile：
+·pom.xml： 很显然，pom.xml中声明的profile只对当前项目有效。
+·用户settings.xml： 用户目录下.m2/settings.xml中的profile对本机上该用户所有的Maven项目有效。
+·全局settings.xml： Maven安装目录下conf/settings.xml中的profile对本机上所有的Maven项目有效。
+- 为了不影响其他用户且方便升级Maven，用户应该选择配置用户范围的settings.xml，避免修改全局范围的settings.xml文件。也正是因为这个原因，一
+般不会在全局的settings.xml文件中添加profile。
+- 可供pom中profile使用的元素非常多，在pom profile中用户可以修改或添加仓库、插件仓库以及部署仓库地址；- 可以修改或者添加项目依赖；可以修改聚合项目的聚合配置；可以自由添加或修改Maven属性；添加或修改项目报告配置；pom profile还可以添加或修改插件配置、 项目资源目录和测试资源目录配置以及项目构件的默认名称。
+<project>  
+    <profiles>  
+        <profile>  
+            <build>  
+                <defaultGoal>...</defaultGoal>  
+                <finalName>...</finalName>  
+                <resources>...</resources>  
+                <testResources>...</testResources>  
+                <plugins>...</plugins>  
+            </build>  
+            <reporting>...</reporting>  
+            <modules>...</modules>  
+            <dependencies>...</dependencies>  
+            <dependencyManagement>...</dependencyManagement>  
+            <distributionManagement>...</distributionManagement>  
+            <repositories>...</repositories>  
+            <pluginRepositories>...</pluginRepositories>  
+            <properties>...</properties>  
+        </profile>  
+    </profiles>  
+</project>  
+- 与pom.xml中的profile对应的，是其他三种外部的profile，由于无法保证它们能够随着特定的pom.xml一起被分发， 因此Maven不允许它们添加或者修改绝大部分的pom元素。举个简单的例子。
+- 假设用户Jack在自己的settings.xml文件中配置了一个profile，为了让项目A构建成功，Jack在这个profile中声明几个依赖和几个插件，然后通过激活该
+profile将项目构建成功了。但是，当其他人获得项目A的源码后，它们并没有Jack settings.xml中的profile，因此它们无法构建项目， 这就导致了构建的移植性问题。为了避免这种问题的出现，Maven不允许用户在settings.xml的profile中声明依赖或者插件。事实上，在pom.xml外部的profile只能够声明几个元素。
+<project>
+  <repositories></repositories>
+  <pluginRepositories></pluginRepositories>
+  <property></property>
+</project>
+
+#14.5　Web资源过滤
+- 14.3节介绍了如何开启资源过滤，在Web项目中，资源文件同样位于src/main/resources/目录下，它们经处理后会位于WAR包的WEB-INF/classes目录下，这也是Java代码编译打包后的目录。
+- 这类资源文件在打包过后位于应用程序的classpath中。
+- Web项目中还有另外一类资源文件，默认它们的源码位于src/main/webapp/目录，经打包后位于WAR包的根目录。
+- 例如，一个Web项目的css源码文件在src/main/webapp/css/目录，项目打包后可以在WAR包的css/目录下找到对应的css文件。这一类资源文件称
+做web资源文件，它们在打包过后不位于应用程序的classpath中。
+- 与一般的资源文件一样，web资源文件默认不会被过滤。开启一般资源文件的过滤也不会影响到web资源文件。
+- 不过有的时候，我们可能希望在构建项目的时候，为不同的客户使用不一样的资源文件（例如客户的logo图片不同，或者css主题不同）。
+- 这时可以在web资源文件中使用Maven属性，例如用${client.logo}表示客户的logo图片，用${client.theme}表示客户的css主题。然后使用profile分别定义这些Maven属性的值:
+<profiles>
+    <profile>
+      <id>client-a</id>
+      <properties>
+        <client.logo>a.jpg</client.logo>
+        <client.theme>red</client.theme>
+      </properties>
+    </profile>
+    <profile>
+      <id>client-b</id>
+      <properties>
+        <client.logo>b.jpg</client.logo>
+        <client.theme>blue</client.theme>
+      </properties>
+    </profile>
+  </profiles>
+- 最后需要配置maven-war-plugin对src/main/webapp/这一web资源目录开启过滤
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-war-plugin</artifactId>
+  <version>2.1-beta-1</version>
+  <configuration>
+    <webResources>
+      <resource>
+        <filtering>true</filtering>
+        <dictionary>src/main/webapp</dictionary>
+        <includes>
+          <include>**/*.css</include>
+          <include>**/*.js</include>
+        </includes>
+      </resource>
+    </webResources>
+  </configuration>
+</plugin>
+- 代码中声明web资源目录src/main/webapp（这也是默认的web资源目录），然后配置filtering开启过滤，并且使用includes指定要过滤的文件，这里是所有css和
+js文件。
+- 读者可以模仿上述配置添加额外的web资源目录，选择是否开启过滤，以及包含或者排除一些该目录下的文件。
+- 配置完成后，可以选择激活某个profile进行构建:
+mvn clean install -Pclinet-a，告诉web资源文件使用logo图片a.jpg，使用css主题red。
+
+#14.6　在profile中激活集成测试
+- 很多项目都有大量的单元测试和集成测试，单元测试的粒度较细，运行较快，
+- 集成测试粒度较粗，运行比较耗时。
+- 在构建项目或者做持续集成的时候，我们都应当尽量运行所有的测试用例，但是当集成测试比较多的时候，高频率地运行它们就会变得不现实。
+- 因此有一种更为合理的做法。例如，每次构建时只运行所有的单元测试，因为这不会消耗太多的时间（可能小于5分钟），然后以一个相对低一点的频率执行所有集成测试（例如每天2次）。
+- TestNG中组的概念能够很好地支持单元测试和集成测试的分类标记。例如，可以使用如下的标注表示一个测试方法属于单元测试：
+@Test(groups={"unit"})
+- 然后使用类似的标注表示某个测试方法为集成测试：
+@Test(groups={"integration"})
+- 在profile中配置执行TestNG测试组:
+
+使用上述方法可以很方便清晰地声明每个测试方法所属的类别。下面的工作就是告诉Maven默认只执行所有的单元测试，只在特定的时候才执行集成测试，见代码清
+单14-20所示。
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.5</version>
+          <configuration>
+            <groups>unit</groups>
+          </configuration>
+        </plugin>
+      </plugins>
+    </build>
+    <profiles>
+      <profile>
+        <id>full</id>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.5</version>
+          <configuration>
+            <groups>unit,integration</groups>
+          </configuration>
+        </plugin>
+      </profile>
+    </profiles>
+- 配置了maven-surefire-plugin执行unit测试组，也就是说默认Maven只会执行单元测试。
+- 如果想要执行集成测试，就需要激活full profile，在这个profile中配置了maven-surefire-plugin执行unit和integration两个测试组。
+- 有了上述配置，用户就可以根据实际情况配置持续集成服务器。例如，每隔15分钟检查源码更新，如有更新则进行一次默认构建，即只包含单元测试。
+- 此外，还可以配置一个定时的任务。例如，每天执行两次，执行一个激活full profile的构建，以包含所有的集成测试。
+- 从该例中可以看到，profile不仅可以用来应对不同的构建环境以保持构建的可移植性，还可以用来分离构建的一些较耗时或者耗资源的行为，并给予更合适的构建频
+率。
+- 项目构建过程中一个常常需要面对的问题就是不同的平台环境差异，这可能是操作系统的差异、开发平台和测试平台的差异、不同客户之间的差异。
+- 为了应对这些差异，Maven提供了属性、资源过滤以及profile三大特性。
+- Maven用户可以在POM和资源文件中使用Maven属性表示那些可能变化的量，通过不同profile中的属性值和资源过滤特性为不同环境执行不同的构建。
+- 需要区分Web项目中一般资源文件和web资源文件，前者是通过maven-resources-plugin处理的，而后者通过maven-war-plugin处理。
+- 介绍了profile，包括各种类别profile的特点，以及激活profile的多种方式。
+
+第15章　生成项目站点
+- Maven不仅仅是一个自动化构建工具和一个依赖管理工具，它还能够帮助聚合项目信息，促进团队间的交流。
+- POM可以包含各种项目信息，如项目描述、版本控制系统地址、缺陷跟踪系统地址、许可证信息、开发者信息等。
+- 用户可以让Maven自动生成一个Web站点，以Web的形式发布这些信息。
+- 此外，Maven社区提供了大量插件，能让用户生成各种各样的项目审查报告，包括测试覆盖率、静态代码分析、代码变更等。
+
+#15.1　最简单的站点
+Maven 3用户必须使用3.x版本的maven-site-plugin:
+  <pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>3.0-beta-1</version>        
+      </plugin>
+    </plugins>
+  </pluginManagement>
+
+- 待Maven运行完毕后，可以在项目的target/site/目录下找到Maven生成的站点文件，包括dependencies.html、dependency-convergence.html、 index.html等文件和css、images文件夹。
+- 从这些文件及文件夹的名字中猜到其中的内容：css和images文件夹是用来存放站点相关的图片和css文件的，其他html文件基本对应了一项项目信息，如
+dependencies.html包含了项目依赖信息，license.html包含了项目许可证信息。index.html则是站点的主页面
+- 左边导航栏的下方包含了各类项目信息的链接，包括持续集成、依赖、问题追踪、邮件列表、团队、源码库等。
+- 如果这是一个聚合项目，导航栏的上方还会包含子模块的链接，但是如果单击这些链接，将无法转到子模块的项目页面。这是由于多模块Maven项目本身的目录结构
+导致的。
+- 如果将站点发布到服务器上，该问题会自然消失。如果想在本地查看结构正确的站点，则可以maven-site-plugin的stage目标，将站点预发布至某个本地临时目录
+下。例如：
+mvn site:stage -DstagingDirectory=~\tmp
+- site生命周期有四个阶段，它们分别为pre-site、site、post-site和site-deploy。
+- 其中，pre-site和post-site默认没有绑定任何插件目标，可以说它们是预留给用户做一些站点生成之前及之后的处理的；site阶段绑定到了maven-site-plugin的site目标，该目标负责生成项目站点，
+- 因此之前使用简单的mvn site命令就能直接生成项目站点；site-deploy目标绑定了maven-site-plugin的deploy目标，该目标负责将站点部署至远程服务器。
+
+#15.2　丰富项目信息
+- 在15.1节中可以看到，在默认情况下Maven生成的站点包含了很多项目信息链接，这其实是由一个名为maven-project-info-reports-plugin的插件生成的。
+- 在Maven 3中，该插件的配置内置在maven-site-plugin中，
+- 该插件会基于POM配置生成下列项目信息报告：
+·关于 （about）：项目描述。
+·持续集成 （Continuous Integration）：项目持续集成服务器信息。
+·依赖 （Dependencies）：项目依赖信息，包括传递性依赖、依赖图、依赖许可证以及依赖文件的大小、所包含的类数目等。
+·依赖收敛 （Dependency Convergence）：只针对多模块项目生成，提供一些依赖健康状况分析，如各模块使用的依赖版本是否一致、项目中是否有SNAPSHOT依赖。
+·依赖管理 （Dependency Management）：基于项目的依赖管理配置生成的报告。
+·问题追踪 （Issue Tracking）：项目的问题追踪系统信息。
+·邮件列表 （Mailing Lists）：项目的邮件列表信息。
+·插件管理 （Plugin Management）：项目所使用插件的列表。
+·项目许可证 （Project License）：项目许可证信息。
+·项目概述 （Project Summary）：项目概述包括坐标、名称、描述等。
+·项目团队 （Project Team）：项目团队信息。
+·源码仓库 （Source Repository）：项目的源码仓库信息。
+- 上述有些项是根据项目已有的依赖和插件配置生成的。例如，依赖这一项就很有意思，除了依赖坐标、传递性依赖以及依赖图，可以使用maven-dependency-plugin生成
+的信息之外，报告还有依赖文件细节的信息，这里详细罗列了每个依赖文件的名称、大小、所包含文件数目、类数目、包数目和JDK版本等信息，
+- 依赖相关的项是基于POM的dependencies和dependencyManagement元素生成的，类似地，其他项也都有其对应的POM元素。Maven不会凭空生成信息，只有用户在POM
+中提供了相关配置后，站点才有可能包含这些信息的报告。
+- 为了让站点包含完整的项目信息，需配置POM:
+....
+- 类似的项目信息报告读者可以在很多的开源项目中看到，使用Maven站点来一致化开源项目的信息展现方式无疑为用户获取信息提供了便利。
+有些时候，用户可能不需要生成某些项目信息项，例如你可能没有邮件列表或者不想在站点中公开源码仓库信息，这时可以配置maven-project-info-reports-plugin选择性地生成信息项:
+...
+
+#15.3　项目报告插件
+- 除了默认的项目信息报告，Maven社区还提供了大量报告插件，只要稍加配置，用户就能让Maven自动生成各种内容丰富的报告。
+- 下面介绍一些比较常用的报告插件。值得注意的是，报告插件在POM中配置的位置与一般的插件配置不同。一般的插件在<project><build><plugins>下配置，而报告插件在<project><reporting><plugins>下配置。
+#15.3.1　JavaDocs
+- 这可能是最简单、也最容易理解的报告插件了。maven-javadoc-plugin使用JDK的javadoc工具，基于项目的源代码生成JavaDocs文档:
+...
+- 左侧的导航栏有两个类别，Project Information包含了15.2节讲述的各类基本信息，Project Reports则包含其他插件生成的报告。 这里能看到maven-javadoc-plugin生成JavaDocs和Test JavaDocs文档，单击相应链接就能查看具体文档
+- 在生成项目站点文档的时候，一个常见的问题是：用户往往只希望在聚合项目一次性生成融合了所有模块信息的文档，而不是为每个模块单独生成，原因就是为了方
+便。用户总是希望在一个地方看到尽可能全面的信息，而非不停地单击链接。幸运的是，maven-javadoc-plugin考虑到了这一点，使用该插件的最新版本，用户无须任何额
+外的配置，就能在聚合项目的站点中得到包含所有模块的JavaDocs
+
+#15.3.2 Source Xref
+如果能够随时随地地打开浏览器访问项目的最新源代码，那无疑会方便团队之间的交流。maven-jxr-plugin能够帮助我们完成这一目标，在生成站点的时候配置该插
+件，Maven就会以Web页面的形式将Java源代码展现出来。该插件的配置:
+...
+
+若想在聚合模块整合所有的源码，则需添加额外的aggregate配置:
+
+#15.3.3　CheckStyle
+CheckStyle是一个用来帮助Java开发人员遵循编码规范的工具，能根据一套规则自动检查Java代码，使得团队能够方便地定义自己的编码规范。关于该工具的详细信息
+可以访问http://checkstyle.sourceforge.net/ 进行了解。要让Maven在站点中生成CheckStyle报告，只需要配置maven-checkstyle-plugin
+- 运行mvn site命令后，就能得到图15-7所示的CheckStyle报告。
+- 默认情况下，maven-checkstyle-plugin会使用Sun定义的编码规范，读者能够选择其他预置的规则。也可以自定义规则，maven-checkstyle-plugin内置了四种规则：
+·config/sun_checks.xml： Sun定义的编码规范（默认值）。
+·config/maven_checks.xml： Maven社区定义的编码规范。
+·config/turbine_checks.xml： Turbine定义的编码规范。
+·config/avalon_checks.xml： Avalon定义的编码规范。
+- 用户可以配置maven-checkstyle-plugin使用上述编码规范:
+...
+#15.3.4　PMD
+- PMD是一款强大的Java源代码分析工具，它能够寻找代码中的问题，包括潜在的bug、无用代码、可优化代码、重复代码以及过于复杂的表达式。关于该工具的详细信
+息可以访问http://pmd.sourceforge.net/ 进行了解.
+- 要让Maven在站点中生成PMD报告，只需要配置maven-pmd-plugin如下：
+...
+- 除了PMD报告之外，maven-pmd-plugin还会生成一个名为CPD的报告，该报告中包含了代码拷贝粘贴的分析结果。
+- PMD包含了大量的分析规则，读者可以访问http://pmd.sourceforge.net/rules/index.html 查看这些规则。PMD默认使用的规则为rulesets/basic.xml、rulesets/unusedcode.xml和rulesets/importss.xml。要使用其他的规则，可以配置maven-pmd-plugin插件:
+
+#15.3.5　ChangeLog
+- maven-changelog-plugin能够基于版本控制系统中就近的变更记录生成三份变更报告，它们分别为：
+·Change Log： 基于提交的变更报告，包括每次提交的日期、文件、作者、注释等信息。
+·Developer Activity： 基于作者的变更报告，包括作者列表以及每个作者相关的提交次数和涉及文件数目。
+·File Activity： 基于文件的变更报告，包括变更的文件列表及每个文件的变更次数。
+想要生成项目的变更报告，首先需要配置正确的SCM信息 [1] ，如下：
+...
+有了SCM配置，就可以配置maven-changelog-plugin生成变更报告
+..
+
+#15.3.6　Cobertura
+- 10.6.2节已经介绍过用Cobertura生成测试覆盖率报告，现在介绍如何将该报告集成到项目站点中。
+- 要在Maven站点中包含Cobertura测试覆盖率报告，只需要配置cobertura-maven-plugin。
+
+#15.4　自定义站点外观
+- Maven生成的站点非常灵活，除了本章前面提到的标准项目信息报告和其他插件生成的报告，用户还能够自定义站点的布局和外观。这些特性能让用户创建出更适合
+自己的，更有个性的Maven站点。
+#15.4.1　站点描述符
+- 要自定义站点外观，用户必须创建一个名为site.xml的站点描述符文件，且默认该文件应该位于项目的src/site目录下。该站点描述符文件是由XML Schema约束定义的，
+相关的xsd文件位于http://maven.apache.org/xsd/decoration-1.0.0.xsd 。
+
+#15.6　国际化
+- 对于广大欧美以外的用户来说，站点上难免需要添加一些本土的文字，如果没有特殊的配置，站点可能无法对其使用正确的字符集编码。本节以简体中文为例，介绍
+如何生成本地化的Maven站点。
+- 要生成正确的简体中文站点，用户首先需要确保项目所有的源码，包括pom.xml、site.xml以及apt文档等，都以UTF-8编码保存，各种编辑器和IDE都支持用户指定保存
+文档的编码。图15-18就展示了Windows上用记事本保存文档时候如何指定UTF-8编码。
+- 接下来要做的是告诉maven-site-plugin使用UTF-8编码读取所有源码及文档，并且同样使用UTF-8编码呈现站点html文档。这两点可以通过配置两个Maven属性实现，如
+下：
+<properties>
+  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+</properties>
+- project.build.sourceEncoding属性用来指定Maven用什么编码来读取源码及文档，而project.reporting.outputEncoding用来指定Maven用什么编码来呈现站点的html文档。
+- 最后一步要做的是配置maven-site-plugin指定当地的语言，配置当地语言为简体中文zh_CN:
+  <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>2.1.1</version>  
+        <configuration>
+            <locales>zh_CN</locales>
+        </configuration>      
+      </plugin>
+    </plugins>
+- 完成这些配置后，就能生成图15-19所示的中文站点。
+
+15.7　部署站点
+- 为了方便团队和用户得到必要的项目信息，我们需要将Maven站点部署到服务器上。Maven支持多种协议部署站点，包括FTP、SCP和DAV。
+...
+
+第18章　Archetype
+- 可以将Archetype理解成Maven项目的模板，例如maven-archetype-quickstart就是最简单的Maven项目模板，只需要提供基本的元素（如groupId、artifactId及version等），它就能生成项目的基本结构及POM文件。
+- 很多著名的开源项目（如AppFuse和Apache Wicket）都提供了Archetype方便用户快速创建项目。
+- 如果你所在组织的项目都遵循一些通用的配置及结构，则也可以为其创建一个自己的Archetype并进行维护。使用Archetype不仅能让用户快速简单地创建项目；还可以鼓励大家遵循一些项目结构及配置约定。
+
+#Maven Archetype Plugin
+Archetype并不是Maven的核心特性，它也是通过插件来实现的，这一插件就是maven-archetype-plugin（http://maven.apache.org/archetype/maven-archetype-plugin/ ）。尽管它只是一个插件，但由于其使用范围非常广泛，主要的IDE（如Eclipse、NetBeans和IDEA）在集成Maven的时候都着重集成了archetype特性，以方便用户快速地创建Maven项目。
+
+#使用Archetype的一般步骤
+在Maven 3中，如果插件的版本未声明，Maven只会自动解析最新的发布版，因此用户不用担心引入快照版本带来的问题。
+mvn archetype：generate
+- 输入上述命令后，Archetype插件会输出一个Archetype列表供用户选择. 
+- 这个列表来自于名为archetype-catalog.xml的文件，18.3节将对其进行深入解释。现在，用户需要选择自己想要使用的Archetype，然后输入其对应的编号。
+- 由于Archetype只是一个模板，为了保持模板的通用性，它的很多重要内容都是可配置的。
+- 因此，在用户选择了一个Archetype之后，下一步就需要提供一些基本的参数。主要有：
+·groupId： 想要创建项目的groupId。
+·artifactId： 想要创建项目的artifactId。
+·version： 想要创建项目的version。
+·package： 想要创建项目的默认Java包名。
+上述参数是Archetype插件内置的，也是最常用和最基本的。用户在自己编写Archetype的时候，还可以声明额外的配置参数。根据Maven提示填写完配置参数之后，Archetype插件就能够生成项目的骨架了。
+
+#批处理方式使用Archetype
+- 有时候用户可能不希望以交互的方式使用Archetype，例如当创建Maven项目的命令在一段自动化的Shell脚本中的时候，交互的方式会破坏自动化。这时用户可以使用
+mvn命令的-B选项，要求maven-archetype-plugin以批处理的方式运行。
+- 用户还必须显式地声明要使用的Archetype坐标信息，以及要创建项目的groupId、artifactId、version、package等信息
+- 该例中的Archetype的坐标为org.apache.maven.archetypes：maven-archetype-quckstart：1.0，而真正要创建的项目坐标则为com.juvenxu.mvnbook：archetype-test：1.0-SNAPSHOT。
+
+#常用Archetype介绍
+- 在编写本书的时候，Maven中央仓库中已经包含了249个Archetype（详见http://repo1.maven.org/maven2/archetype-catalog.xml ）。此外，还有大量没有发布到中央仓库的Archetype分布在其他Maven仓库中。任何人都不可能全部了解它们，因此这里只介绍几个比较常用的Archetype。
+
+1.maven-archetype-quickstart
+maven-archetype-quickstart可能是最常用的Archetype，当maven-archetype-plugin提示用户选择Archetype的时候，它就是默认值。使用maven-archetype-quickstart生成的项目十分简单，基本内容如下：
+·一个包含JUnit依赖声明的pom.xml。
+·src/main/java主代码目录及该目录下一个名为App的输出“Hello World！”的类。
+·src/test/java测试代码目录及该目录下一个名为AppTest的JUnit测试用例。
+当需要创建一个全新的Maven项目时，就可以使用该Archetype生成项目后进行修改，省去了手工创建POM及目录结构的麻烦。
+
+2.maven-archetype-webapp
+这是一个最简单的Maven war项目模板，当需要快速创建一个Web应用的时候就可以使用它。使用maven-archetype-webapp生成的项目内容如下：
+·一个packaging为war且带有JUnit依赖声明的pom.xml。
+·src/main/webapp/目录。
+·src/main/webapp/index.jsp文件，一个简单的Hello World页面。
+·src/main/webapp/WEB-INF/web.xml文件，一个基本为空的Web应用配置文件。
+
+3.AppFuse Archetype
+- AppFuse是一个集成了很多开源工具的项目，它由Matt Raible开发，旨在帮助Java编程人员快速高效地创建项目。AppFuse本身使用Maven构建，它的核心其实就是一个
+项目的骨架，是包含了持久层、业务层及展现层的一个基本结构。
+- 在AppFuse 2.x中，已经集成了大量流行的开源工具，如Spring、Struts 2、JPA、JSF、Tapestry等。
+AppFuse为用户提供了大量Archetype，以方便用户快速创建各种类型的项目，它们都使用同样的groupId org.appfuse。针对各种展现层框架分别为：
+·appfuse-*-jsf： 基于JSF展现层框架的Archetype。
+·appfuse-*-spring： 基于Spring MVC展现层框架的Archetype。
+·appfuse-*-struts： 基于Struts 2展现层框架的Archetype。
+·appfuse-*-tapestry： 基于Tapestry展现层框架的Archetype。
+每一种展现层框架都有3个Archetype，分别为light、basic和modular。其中，light类型的Archetype只包含最简单的骨架；basic类型的Archetype则包含了一些用户管理及安全方面的特性；modular类型的Archetype会生成多模块的项目，其中的core模块包含了持久层及业务层的代码，而Web模块则是展现层的代码。
+更多关于AppFuse Archetype的信息，读者可以访问其官方的快速入门手册：http://appfuse.org/display/apf/appfuse+quickstart 。

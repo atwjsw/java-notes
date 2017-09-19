@@ -666,6 +666,9 @@ org.springframework.test.web.servlet.MockMvc,
 org.springframework.test.web.servlet.request.MockMvcRequestBuilders, 
 org.springframework.test.web.servlet.result.MockMvcResultMatchers
 2.4) Test class:
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations = "classpath:org.atwjsw.web/dispatcher-servlet.xml")
+@WebAppConfiguration
 public class HRControllerTest {
     @Autowired
     private WebApplicationContext wac;
@@ -691,6 +694,19 @@ public class HRControllerTest {
 2.4.2) the WebApplicationContext is autowired using the @WebAppConfiguration annotation. 
 2.4.3) The MockMvc object is used to perform a GET request to /employees/1 and then it verifies that the response status is 200 (isOk()) as well as the JSON response. 
 2.4.4) The jsonPath("$.name").value("John Doe") statement checks whether the output JSON contains a name field and its value is John Doe.
+2.4.5) perform(post("url"))
+String responseString = mockMvc.perform(post("/user/login.do")
+        .accept(MediaType.parseMediaType("application/json;charset=UTF-8"))
+        .param("username", "geely")     //request parameters
+        .param("password", "geely"))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType("application/json;charset=UTF-8"))
+        .andExpect(jsonPath("$.status").value(0))
+        .andDo(print())
+        .andReturn().getResponse().getContentAsString();
+System.out.println("Return json = " + responseString);
+2.4.6) Using @RunWith(SpringJUnit4ClassRunner.class), @ContextConfiguration(locations ="classpath:beans.xml"), @WebAppConfiguration is actually initializing a servlet context and spring context, running an end-to-end test.
+2.4.7) Using MockMvc mockMvc = standaloneSetup(controller).build(); will only initialize the servlet context and minimal spring context to run the controller, therefore the mocked service object is required.
 3) Handling transactions in Spring tests
 3.1) define applicationContext.xml and dataSource, transactionManager, and JdbcTemplate beans:
 <jdbc:embedded-database id="dataSource" type="H2">

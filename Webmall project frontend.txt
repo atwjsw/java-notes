@@ -1,0 +1,364 @@
+Webmall project frontend.txt
+
+- modularization solution: amd(react.js), cmd, CommonJS, ES6
+- frontend-backend seperation + static html
+- business logic layer(Main module + sub module1 + sub module2...) + Service layer + utils layer
+- only service layer is allowed to communicate with server
+- frontend framework: jQuery, Angular, Avalon, Vue, React, provides SPA routing, data binding functionality
+- Angular,Vue, React: poor ie 8 compatibility 
+- style framework: CSS/Less/Sass
+- SPA: poor SEO
+- frontend build tool: Grunt/Gulp/Webpack, Grunt is too heavy, Webpack has natural commonJS support
+- svn/git: git is better
+- domain name design: broswer has limits on # of requests issued to same domain in a unit of time. 
+-  html put into www.mmall.com/admin.mmall.com; js+css put into s. mmall.com, image put into img.mmall.com
+node 4.4.7
+.gitconfig
+sublime Settings->user
+keybindings->user
+
+Chrome
+Network - request type, XHR, js, css...
+
+Charles/Fiddler
+- CORS for development time
+
+exisitng local git repository map to remote
+- git remote add origin <git address>
+- git pull origin master
+- git push 
+- git push --set-upstream origin master
+- git checkout -b mmall_v1.0
+- git branch
+
+.gitignore
+.DS_Store (sublime temp file)
+/node_modules/
+/dist/
+
+project structure
+- src
+- - view (html)
+- - page (js for business logic)
+- - service (rest access)
+- - util 
+- - image
+
+project initialization - npm
+- npm init
+- package.json
+- npm install xxx@v.v.v
+- npm uninstall xxx@v.v.v
+- -g global installation for package with command
+--registry=https://registry.npm.taobao.org
+
+Webpack 
+- require anything (js, css, image)
+- loader plugin
+- commonjs
+
+Webpack 
+global installtion: npm install webpack -g
+project installation: npm install webpack@1.15.0 --save-dev
+webpack -v
+
+#webpack.config.js
+
+#webpack-dev-server
+- npm install webpack-dev-server --save-dev
+- frontend dev server
+- file change trigger browser refresh
+webpack-dev-server/client?...
+webpack-dev-server --port 8088 --inline 
+
+webpack ./src/page/index/index.js ./dist/app.js
+
+
+node4.4.7对应的npm version is 2.15
+npm install npm@v2.15 -g
+
+<%= %>这种是ejs语法，是html-webpack-plugin自带的。所以在gulp上是没法用的。如果想在gulp用这种方式引入文件，使用一个带模板引入的工具是一样的。
+
+
+1) src structure
++ src
+	- index.js
+	- layout.css
+	+ view 
+		+ layout
+			- head-common.html
+			- header.html
+			- footer.html
+			- nav-side.html
+			...
+		- index.html
+		- user-login.html
+		- result.html
+	+ page
+		+ common
+			+ footer
+				- index.css
+			+ header
+				- index.css
+				- index.js
+			+ nav
+				- index.css
+				- index.js
+			+ nav-side
+				- index.css
+				- index.js
+				- index.string
+			...	
+		+ user-login
+			- index.js
+			- index.css
+		+ result
+			- index.js
+			- index.css
+	+ service
+		- user-service.js
+		- cart-service.js
+	+ util
+		- mm.js 
+	+ image
+		- loading.jpg
+- .package.json	
+- webpack.config.js
+
+2) dist structure
++ dist
+	+ css
+		- common.css
+		- result.css
+		- user-login.css
+	+ js
+		- base.js
+		- user-login.js
+		- result.js
+	+ resource
+		- loading.jpg
+		- fontawesome-webfont.eot
+		- fontawesome-webfont.svg
+		- fontawesome-webfont.ttf
+		- fontawesome-webfont.woff
+		- fontawesome-webfont.woff2
+	+ view
+		- user-login.html
+		- result.html
+
+
+3) architecture
+
+1) src structure with comments
++ src
+	- index.js
+	- layout.css
+	+ view 
+		+ layout
+			- head-common.html
+			- header.html
+			- footer.html
+			- nav-side.html
+			...
+		- index.html
+		- user-login.html
+		- result.html
+	+ page
+		+ common
+			+ footer
+				- index.css
+			+ header
+				- index.css
+				- index.js
+			+ nav
+				- index.css
+				- index.js
+			+ nav-side
+				- index.css
+				- index.js
+				- index.string
+			...	
+		+ user-login
+			- index.js
+			- index.css
+		+ result
+			- index.js
+			- index.css
+	+ service
+		- user-service.js
+		- cart-service.js
+	+ util
+		- mm.js 
+	+ image
+		- loading.jpg
+- .package.json	(npm configuration, dev dependency, dependency, npm run dev_win/dist_win)
+- webpack.config.js (webpack configuration ~= Maven/Gradle)
+
+
+2) dist structure with comments
++ dist
+	+ css
+		- common.css (common/layout.css + fontawesome css, uglified)
+		- result.css
+		- user-login.css
+	+ js
+		- base.js
+		- user-login.js
+		- result.js
+	+ resource
+		- loading.jpg
+		- fontawesome-webfont.eot
+		- fontawesome-webfont.svg
+		- fontawesome-webfont.ttf
+		- fontawesome-webfont.woff
+		- fontawesome-webfont.woff2
+	+ view
+		- user-login.html
+		- result.html
+
+
+#build process:
+1) result/index.js is a entry point
+2) it requires:
+require('./index.css');
+require('page/common/nav-simple/index.js');
+var _mm = require('util/mm.js');
+2.1) all of the above js plus itself will be package into dist/js/result.js
+2.2) result/index.css and /nav-simple/index.css will be packaged into dist/css/result.css, because they are required by result/index.js and result/nav-simple.js
+3) common/index.js is also a entry point:
+require('./layout.css'); // common layout css
+require('node_modules/font-awesome/css/font-awesome.min.css'); //font icon css
+require('./footer/index.css');	//footer css
+3.1) all of above css is packagaged into dist/css/common.css
+3.2) shared js is packaged into dist/js/base.js, what exactly are packgaged?
+4) result.html is configured to used "common" and "result" chunk of codes by injecting:
+chunks    : ['common', name]
+4.1) therefore, dist/js/result.js and dist/js/base.js are injected into result.html 
+4.2) dist/css/result.css and dist/css/common.css are injected into result.html 
+5) result.html also includes following html segment:
+<%= require('html-loader!./layout/head-common.html') %>
+<%= require('html-loader!./layout/nav-simple.html') %>
+<%= require('html-loader!./layout/footer.html') %>
+5.1) webpack htmlLoader will include those html segments into result.html
+
+#runtime:
+1) in dist/view/user-login.html, user enter username, password and click on login
+2) login in index.js capture the event
+3) use jquery to get the value from username and password element
+4) use util js to validate username and password, if not valid, use jquery to show error message on error-msg element
+5) if valid, call login method of user-service.js, user-service.js call mm.js, then call jquery ajax
+6) ajax return result, if status 0 then call back user-service success, status 10 transfer to login, status 1 or ajax error call back user-service error.
+7) if login succes, route to target page: window.location.href='./index.html'; else use jquery to show error message on error-msg element.
+8) if data and html template is complex, we can use Hogan template engine to rendered the data
+8.1) need to create a html template and require the template in js
+8.2) pass the var of html template and data object to template engine, template engine will be able to populate the template, then put the pupolated template into html container using jquery.
+8.3) Hogan can also do loop and condition based on data passed in.
+
+
+#Production env adapation:
+1) favicon
+1.1) in webpack.config.js: favicon : './favicon.ico',
+1.2) copy favicon.ico to project root
+
+2) 线上域名的分离
+- html: access from www.happymmall.com
+- js+css: access from s.happymmall.com
+- image: access from img.happymmall.com
+nginx config
+
+3） dns-prefetch
+in head-common.html
+<link rel="dns-prefect" href="//cdn.bootcss.com">
+<link rel="dns-prefect" href="//s.happymmall.com">
+<link rel="dns-prefect" href="//img.happymmall.com">
+
+4) create proxy for www.happymmall.com
+4.1) use charles to map local to test local build: ./dist
+4.2) map www.happymmall.com/*.html to local dist/view/
+4.3) map s.happymmall.com//webmall-fe/dist/* to dist
+4.4) html里面script， link 引入的资源不受跨域限制，而字体文件是通过css引入的， 受跨域限制， 因此在生产环境需要在服务器对s.happymmall.com设置allow-origin-... header.
+
+5) HTML路径的简化
+6) 对线上打包结果做回归测试
+
+
+#Deployment preparation:
+1) install git
+2) install node 4.4.7
+2.1) wget download
+2.2) tar -xzvf ...
+2.3) mv . /usr/local/ (software directory)
+2.4) env
+2.4.1) vim /etc/profile
+export NODE_HOME=/usr/local/node4.4.7...
+export PATH=$PATH:$NODE_HOME/bin
+source
+node -v (4.4.7)
+npm -v (2.15.8)
+3) install webpack:
+npm install webpack -g
+v3.6.0
+4) install ruby
+sudo yum install ruby
+ruby -v (1.8.7)
+5) install sass
+sudo su -c "gem install sass" failed
+使用RVM安装ruby-2.3.3，然后再安装sass就可以了（rvm安装方法自行搜一下）。
+rvm 安装： https://ruby-china.org/wiki/rvm-guide
+rvm使用命令如下：
+rvm install ruby-2.3.3
+rvm use 2.3.3
+5.1) sudo yum install rubygems （failed）
+gem -v (3.3.7)
+5.2) gem install sass
+sass -v (3.5.1)
+
+
+# Deployment process
+1) ls -al: check authorization
+2) sudo usermod -g root atwjsw： add atwjsw to group root
+3) ls -al | grep developer：check authorization of developer
+drwxr-xr-x    2 root    root     4096 Sep 17 15:58 developer
+755 同组用户不支持写
+4） sudo chmod -R 775 developer: add write to the group
+drwxrwxr-x    2 root    root     4096 Sep 17 15:58 developer
+now is 775
+5) chown atwjsw /developer
+6) git pull
+7) npm install
+8) npm run dist
+9) mkdir /product/mmall-fe -p; mkdir /product/admin-fe -p
+9.1) chmod 755 /product; chown atwjsw /product
+10) cp -R /developer/git-repository/webmall-fe/dist /product/frontend/mmall-fe/
+11) create fe-deploy.sh
+12) create command alias
+12.1) cd
+12.2) vim .bash_profile
+alias dpmmall='/developer/fe-deploy.sh webmall-fe' <test failed>
+alias dpadmin='/developer/fe-deploy.sh admin-fe' <test failed>
+13.3)source .bash_profile
+14) nginx
+12.1) nginx conf
+14.2) sudo ./nginx 
+15) use Charles to do DNS spoofing, same effect as modifying hosts file.
+16) test access
+16.1) tail -f access.log
+16.2) www.happymmall.com
+17) start backend server (domain name will be the same, therefore no CORS issue)
+17.1) deploy.sh
+18) cloud monitoring
+18.1) use cloud monitoring
+18.2）set alarm rules
+19) homework 
+19.1) linux command
+19.2(/linux shell
+
+
+
+
+
+
+
+
+
+
