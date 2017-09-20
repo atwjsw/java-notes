@@ -110,7 +110,17 @@ webpack -p – for building once for production (minification)
 webpack --watch – for continuous incremental build
 webpack -d – to include source maps
 webpack --colors – for making things pretty
-5) what is source maps for? 帮助调试，可以看到源码
+4.1) what is source maps for? 帮助调试，可以看到源码
+6) To produce a production ready application, you could write scripts field in your package.json file as following.
+// package.json
+{
+  // ...
+  "scripts": {
+    "dev": "webpack-dev-server --devtool eval --progress --colors",
+    "deploy": "NODE_ENV=production webpack -p"
+  },
+  // ...
+}
 
 # Demo01: Entry file (source)
 1） Entry file is a file which Webpack will read to build bundle.js.
@@ -121,3 +131,689 @@ module.exports = {
     filename: 'bundle.js'
   }
 };
+
+# Demo02: Multiple entry files (source)
+1) Multiple entry files are allowed. It is useful for a multi-page app.
+// main1.js
+document.write('<h1>Hello World</h1>');
+// main2.js
+document.write('<h2>Hello Webpack</h2>');
+2) index.html
+<html>
+  <body>
+    <script src="bundle1.js"></script>
+    <script src="bundle2.js"></script>
+  </body>
+</html>
+webpack.config.js
+3) module.exports = {
+  entry: {
+    bundle1: './main1.js',
+    bundle2: './main2.js'
+  },
+  output: {
+    filename: '[name].js'
+  }
+};
+4) webpack
+bundle1.js
+bundle2.js
+4.1) [name] is the entry name.
+
+# Demo03: Babel-loader (source)
+1) Loaders are preprocessors which transform a resource file of your app (more info). 
+2) For example, Babel-loader can transform JSX/ES6 file into JS file. 
+3) main.jsx is a JSX file:
+const React = require('react');
+const ReactDOM = require('react-dom');
+ReactDOM.render(
+  <h1>Hello, world!</h1>,
+  document.querySelector('#wrapper')
+);
+4) index.html
+<html>
+  <body>
+    <div id="wrapper"></div>
+    <script src="bundle.js"></script>
+  </body>
+</html>
+5) webpack.config.js
+module.exports = {
+  ...
+  module: {
+    loaders:[
+      {
+        test: /\.js[x]?$/,
+        exclude: /node_modules/,
+        loader: 'babel-loader?presets[]=es2015&presets[]=react'
+      },
+    ]
+  }
+};
+5.1) module.loaders field is used to assign loaders. 
+5.2) above snippet uses babel-loader which also needs plugins babel-preset-es2015 and babel-preset-react to transpile ES6 and React. 
+    "babel-core": "6.x",
+    "babel-loader": "6.x",
+    "babel-preset-es2015": "6.x",
+    "babel-preset-react": "6.x",
+5.3) any file ends with .jsx, excluding directory /node_modules/, will be transpiled to js
+5.4) another way to set the babel query option:
+module: {
+  loaders: [
+    {
+      test: /\.jsx?$/,
+      exclude: /node_modules/,
+      loader: 'babel-loader',
+      query: {
+        presets: ['es2015', 'react']
+      }
+    }
+  ]
+}
+
+# Demo04: CSS-loader
+1) Webpack allows you to require CSS in JS file, then preprocessed CSS file with CSS-loader.
+2) main.js
+require('./app.css');
+3) app.css
+body {
+  background-color: blue;
+}
+4) index.html
+<html>
+  <head>
+    <script type="text/javascript" src="bundle.js"></script>
+  </head>
+  <body>
+    <h1>Hello World</h1>
+  </body>
+</html>
+5) webpack.config.js
+module.exports = {
+  ...
+  module: {
+    loaders:[
+      { test: /\.css$/, loader: 'style-loader!css-loader' },
+    ]
+  }
+};
+5) you have to use two loaders to transform CSS file. Different loaders are linked by !.
+5.1) CSS-loader to read CSS file
+"css-loader": "0.x"
+5.2) Style-loader to insert Style tag into HTML page. 
+"style-loader": "0.x"
+6) After launching the server, index.html will have internal style sheet.
+<head>
+  <script type="text/javascript" src="bundle.js"></script>
+  <style type="text/css">
+    body {
+      background-color: blue;
+    }
+  </style>
+</head>
+
+# Demo05: Image loader
+1) Webpack could also require images in JS files.
+2) main.js
+var img1 = document.createElement("img");
+img1.src = require("./small.png");
+document.body.appendChild(img1);
+
+var img2 = document.createElement("img");
+img2.src = require("./big.png");
+document.body.appendChild(img2);
+3) webpack.config.js
+module.exports = {
+  ...
+  module: {
+    loaders:[
+      { test: /\.(png|jpg)$/, loader: 'url-loader?limit=8192' }
+    ]
+  }
+};
+4) url-loader transforms image files. 
+"url-loader": "~0.5.6"
+4.1) If the image size is smaller than 8192 bytes, it will be transformed into Data URL; 
+4.2) otherwise, it will be transformed into normal URL. 
+4.3) question mark(?) is used to pass parameters into loaders.
+5) After launching the server, small.png and big.png will have the following URLs:
+<img src="data:image/png;base64,iVBOR...uQmCC">
+<img src="4853ca667a2b8b8844eb2693ac1b2578.png">
+
+# Demo06: CSS Module
+1) css-loader?modules (the query parameter modules) enables the CSS Modules spec.
+2) It means your module's CSS is local scoped CSS by default. You can switch it off with :global(...) for selectors and/or rules. (more info)
+3) index.html
+<html>
+<body>
+  <h1 class="h1">Hello World</h1>
+  <h2 class="h2">Hello Webpack</h2>
+  <div id="example"></div>
+  <script src="./bundle.js"></script>
+</body>
+</html>
+4) app.css
+.h1 {
+  color:red;
+}
+:global(.h2) {
+  color: blue;
+}
+5) main.jsx
+var React = require('react');
+var ReactDOM = require('react-dom');
+var style = require('./app.css');
+ReactDOM.render(
+  <div>
+    <h1 className={style.h1}>Hello World</h1>
+    <h2 className="h2">Hello Webpack</h2>
+  </div>,
+  document.getElementById('example')
+);
+6) webpack.config.js
+module.exports = {
+  ...
+  module: {
+    loaders:[
+      {
+        test: /\.js[x]?$/,
+        exclude: /node_modules/,
+        loader: 'babel-loader',
+        query: {
+          presets: ['es2015', 'react']
+        }
+      },
+      {
+        test: /\.css$/,
+        loader: 'style-loader!css-loader?modules'
+      }
+    ]
+  }
+};
+7) http://127.0.0.1:8080 
+7.1) you'll find that only second h1 is red, because its CSS is local scoped, and both h2 is blue, because its CSS is global scoped.
+
+# Demo07: UglifyJs Plugin
+1) Webpack has a plugin system to expand its functions. 
+2) e.g. UglifyJs Plugin will minify output(bundle.js) JS codes.
+3) main.js
+var longVariableName = 'Hello';
+longVariableName += ' World';
+document.write('<h1>' + longVariableName + '</h1>');
+4) webpack.config.js
+var webpack = require('webpack');
+var uglifyJsPlugin = webpack.optimize.UglifyJsPlugin;
+module.exports = {
+  ...
+  plugins: [
+    new uglifyJsPlugin({
+      compress: {
+        warnings: false
+      }
+    })
+  ]
+};
+4.1) "webpack": "1.x"
+5) After launching the server, main.js will be minified into following.
+var o="Hello";o+=" World",document.write("<h1>"+o+"</h1>")
+
+# Demo08: HTML Webpack Plugin and Open Browser Webpack Plugin
+1) This demo shows you how to load 3rd-party plugins.
+2) html-webpack-plugin could create index.html for you
+3) open-browser-webpack-plugin could open a new browser tab when Webpack loads.
+4) main.js
+document.write('<h1>Hello World</h1>');
+5) webpack.config.js
+var HtmlwebpackPlugin = require('html-webpack-plugin');
+var OpenBrowserPlugin = require('open-browser-webpack-plugin');
+module.exports = {
+  ...
+  plugins: [
+    new HtmlwebpackPlugin({
+      title: 'Webpack-demos',·
+      filename: 'index.html'
+    }),
+    new OpenBrowserPlugin({
+      url: 'http://localhost:8080'
+    })
+  ]
+};
+6) webpack-dev-server.
+6.1) no need to write index.html by hand and don't have to open browser by yourself. Webpack did all these things for you.
+
+# Demo09: Environment flags
+1) You can enable some codes only in development environment with environment flags.
+2) main.js
+document.write('<h1>Hello World</h1>');
+if (__DEV__) {
+  document.write(new Date());
+}
+2) webpack.config.js
+var webpack = require('webpack');
+var devFlagPlugin = new webpack.DefinePlugin({
+  __DEV__: JSON.stringify(JSON.parse(process.env.DEBUG || 'false'))
+});
+
+module.exports = {
+  ...
+  plugins: [devFlagPlugin]
+};
+3) windows:
+$ set DEBUG=true
+$ webpack-dev-server
+<test failed>
+4) Linux
+env DEBUG=true webpack-dev-server
+<test done> in git bash
+
+# Demo10: Code splitting
+1) For big web apps it’s not efficient to put all code into a single file, Webpack allows you to split them into several chunks. 
+2) if some blocks of code are only required under some circumstances, these chunks could be loaded on demand.
+3) you use require.ensure to define a split point:
+// main.js
+require.ensure(['./a'], function(require) {
+  var content = require('./a');
+  document.open();
+  document.write('<h1>' + content + '</h1>');
+  document.close();
+});
+4) require.ensure tells Webpack that ./a.js should be separated from bundle.js and built into a single chunk file.
+5) a.js
+module.exports = 'Hello World';
+6) Now Webpack takes care of the dependencies, output files and runtime stuff. You don't have to put any redundancy into your index.html and webpack.config.js.
+
+# Demo11: Code splitting with bundle-loader
+1) Another way of code splitting is using bundle-loader.
+2) main.js
+// Now a.js is requested, it will be bundled into another file
+var load = require('bundle-loader!./a.js');
+
+// To wait until a.js is available (and get the exports)
+//  you need to async wait for it.
+load(function(file) {
+  document.open();
+  document.write('<h1>' + file + '</h1>');
+  document.close();
+});
+3) require('bundle-loader!./a.js') tells Webpack to load a.js from another chunk.
+4) Webpack will build main.js into bundle.js, and a.js into 1.bundle.js.
+
+# Demo12: Common chunk
+1) When multi scripts have common chunks, you can extract the common part into a separate file with CommonsChunkPlugin.
+2) main1.jsx
+var React = require('react');
+
+var ReactDOM = require('react-dom');
+ReactDOM.render(
+  <h1>Hello World</h1>,
+  document.getElementById('a')
+);
+
+3) main2.jsx
+var React = require('react');
+var ReactDOM = require('react-dom');
+
+ReactDOM.render(
+  <h2>Hello Webpack</h2>,
+  document.getElementById('b')
+);
+4) index.html
+<html>
+  <body>
+    <div id="a"></div>
+    <div id="b"></div>
+    <script src="init.js"></script>
+    <script src="bundle1.js"></script>
+    <script src="bundle2.js"></script>
+  </body>
+</html>
+5) webpack.config.js
+var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
+module.exports = {
+  entry: {
+    bundle1: './main1.jsx',
+    bundle2: './main2.jsx'
+  },
+  output: {
+    filename: '[name].js'
+  },
+  module: {
+    loaders:[
+      {
+        test: /\.js[x]?$/,
+        exclude: /node_modules/,
+        loader: 'babel-loader',
+        query: {
+          presets: ['es2015', 'react']
+        }
+      },
+    ]
+  },
+  plugins: [
+    new CommonsChunkPlugin('init.js')
+  ]
+}
+6) only if main1, main2 both require same module, the module will be packaged into init.js.
+
+# Demo13: Vendor chunk (source)
+
+You can also extract the vendor libraries from a script into a separate file with CommonsChunkPlugin.
+
+main.js
+
+var $ = require('jquery');
+$('h1').text('Hello World');
+
+# Demo13: Vendor chunk (source)
+
+1) extract the vendor libraries from a script into a separate file with CommonsChunkPlugin.
+2)main.js
+var $ = require('jquery');
+$('h1').text('Hello World');
+3) index.html
+<html>
+  <body>
+    <h1></h1>
+    <script src="vendor.js"></script>
+    <script src="bundle.js"></script>
+  </body>
+</html>
+4) webpack.config.js
+var webpack = require('webpack');
+module.exports = {
+  entry: {
+    app: './main.js',
+    vendor: ['jquery'],
+  },
+  output: {
+    filename: 'bundle.js'
+  },
+  plugins: [
+    new webpack.optimize.CommonsChunkPlugin(/* chunkName= */'vendor', /* filename= */'vendor.js')
+  ]
+};
+5) package jquery module into chunk 'vendor', package 'vendor' chunk into vendor.js file.
+6) If you want a module available as variable in every module, such as making $ and jQuery available in every module without writing require("jquery"). You should use ProvidePlugin
+6.1) webpack.config.js
+var webpack = require('webpack');
+
+module.exports = {
+    ...
+  plugins: [
+    new webpack.ProvidePlugin({
+      $: "jquery",
+      jQuery: "jquery",
+      "window.jQuery": "jquery"
+    })
+  ]
+};
+
+# Demo14: Exposing global variables
+1) If you want to use some global variables, and don't want to include them in the Webpack bundle, you can enable "externals" field in webpack.config.js
+2) For example, we have a data.js.
+var data = 'Hello World';
+3) expose data as a global variable.
+// webpack.config.js
+module.exports = {
+  ...
+  externals: {
+    // require('data') is external and available on the global var data
+    'data': 'data'
+  }
+};
+4) Now, you require data as a module variable in your script. but it actually is a global variable.
+// main.jsx
+var data = require('data');
+var React = require('react');
+var ReactDOM = require('react-dom');
+
+ReactDOM.render(
+  <h1>{data}</h1>,
+  document.body
+);
+
+# Demo15: Hot Module Replacement
+1) Hot Module Replacement (HMR) exchanges, adds, or removes modules while an application is running without a page reload.
+2) two ways to enable Hot Module Replacement with the webpack-dev-server.
+2.1) Specify --hot and --inline on the command line
+$ webpack-dev-server --hot --inline
+2.1.1) Meaning of the options:
+--hot: adds the HotModuleReplacementPlugin and switch the server to hot mode.
+--inline: embed the webpack-dev-server runtime into the bundle.
+--hot --inline: also adds the webpack/hot/dev-server entry.
+2.2) Modify webpack.config.js.
+2.2.1) add new webpack.HotModuleReplacementPlugin() to the plugins field
+2.2.2) add webpack/hot/dev-server and webpack-dev-server/client?http://localhost:8080 to the entry field
+2.2.3) webpack.config.js
+var webpack = require('webpack');
+var path = require('path');
+
+module.exports = {
+  entry: [
+    'webpack/hot/dev-server',
+    'webpack-dev-server/client?http://localhost:8080', './index.js'
+  ],
+  output: {
+    filename: 'bundle.js',
+    publicPath: '/static/'
+  },
+  plugins: [
+    new webpack.HotModuleReplacementPlugin()
+  ],
+  module: {
+    loaders: [{
+      test: /\.jsx?$/,
+      exclude: /node_modules/,
+      loader: 'babel-loader',
+      query: {
+        presets: ['es2015', 'react']
+      },
+      include: path.join(__dirname, '.')
+    }]
+  }
+};
+
+# Demo16: React router
+1) This demo uses webpack to build React-router's official example.
+2) webpack-dev-server --history-api-fallback
+
+# Modulization
+1) 一般情况下，前端的采用require加载的都是遵循commonjs规范，例如angular、react、vue中的require某个模块和插件。采用回调函数加载的都是使用AMD规范，例如angularjs创建module时angular.module([], function() {})；很多外部模块的引入也是采用的AMD规范，因为要走网络请求。 综上：这三个框架采用的规范和是不是node环境没有关系，加载内部模块方法采用require时，遵循commonjs规范；加载时采用回调函数方式加载时采用AMD规范。
+
+2) 基于commonJS规范的nodeJS出来以后，服务端的模块概念已经形成，很自然地，大家就想要客户端模块。而且最好两者能够兼容，一个模块不用修改，在服务器和浏览器都可以运行。但是，由于一个重大的局限，使得CommonJS规范不适用于浏览器环境。
+
+3) require 是同步的。 这对服务器端不是一个问题，因为所有的模块都存放在本地硬盘，可以同步加载完成，等待时间就是硬盘的读取时间。但是，对于浏览器，这却是一个大问题，因为模块都放在服务器端，等待时间取决于网速的快慢，可能要等很长时间，浏览器处于"假死"状态。
+
+4) 因此，浏览器端的模块，不能采用"同步加载"（synchronous），只能采用"异步加载"（asynchronous）。这就是AMD规范诞生的背景。
+
+5) AMD是"Asynchronous Module Definition"的缩写，意思就是"异步模块定义"。它采用异步方式加载模块，模块的加载不影响它后面语句的运行。所有依赖这个模块的语句，都定义在一个回调函数中，等到加载完成之后，这个回调函数才会运行。
+
+6) AMD也采用require()语句加载模块，但是不同于CommonJS，它要求两个参数：
+　　require([module], callback);
+
+7) math.add()与math模块加载不是同步的，浏览器不会发生假死。所以很显然，AMD比较适合浏览器环境。目前，主要有两个Javascript库实现了AMD规范：require.js和curl.js。
+require(['math'], function (math) {
+　　　　math.add(2, 3);
+　　});
+
+8) 一、为什么要用require.js？
+8.1) 最早的时候，所有Javascript代码都写在一个文件里面，只要加载这一个文件就够了。后来，代码越来越多，一个文件不够了，必须分成多个文件，依次加载。
+    <script src="1.js"></script>
+　　<script src="2.js"></script>
+　　<script src="3.js"></script>
+　　<script src="4.js"></script>
+8.2) 这样的写法有很大的缺点。
+8.2.1)首先，加载的时候，浏览器会停止网页渲染，加载文件越多，网页失去响应的时间就会越长；
+8.2.2)其次，由于js文件之间存在依赖关系，因此必须严格保证加载顺序（比如上例的1.js要在2.js的前面），依赖性最大的模块一定要放到最后加载，当依赖关系很复杂的时候，代码的编写和维护都会变得困难。
+8.3) require.js的诞生，就是为了解决这两个问题：
+8.3.1) （实现js文件的异步加载，避免网页失去响应；
+8.3.2）管理模块之间的依赖性，便于代码的编写和维护。
+
+# MMall webpack
+1) npm i webpack@1.15.0 for better compatibility with IE8
+2) webpack -v //check version
+3) webpack.config.js
+3.1) entry: js的入口文件
+3.2) externals： 外部依赖的声明， 外部js变成commonjs模块
+3.3) output: 目标文件
+3.4）resolve: 配置目录alias
+3.5) module: 各种文件， 各种loader
+3.6）plugins: 插件
+
+# loader
+1) html: html-webpack-plugin / html-loader
+2) js: babel-loader + babel-preset-es2015
+3) css: style loader + css-loader
+4) image and font: url loader
+
+# webpack-dev-server
+1) installation: npm i webpack-dev-server --save-dev
+2) configuration: webpack-dev-server/client?http://localhost:8088
+2.1) package client of webpack-dev-server into application
+3) startup: webpack-dev-server --port 8088 --inline
+3.1) --inline //package client of webpack-dev-server into web page
+
+# js loader customization
+1) js loader: 
+1.1) internal default loader
+1.2) babel loader
+2) multiple entry files:
+entry: {
+    'common' : ['./src/page/common/index.js'],
+    'index' : ['./src/page/index/index.js'],
+    'user-login' : ['./src/page/user-login/index.js'],
+    'result' : ['./src/page/result/index.js']
+  }, 
+3) output to multiple directories
+output: {
+    path        : __dirname + '/dist/',
+    filename    : 'js/[name].js
+}
+4) require juery:
+4.1) require juqery as a commonJS module
+var $ = require('jquery');
+$('body').html('HELLO WORLD');
+4.1.1) 有些jquery插件需要使用全局的jQuery变量， 无法使用commonJS模块
+4.2) import jquery as link in html, jquery is global and configure global juqey as a commonJs module:
+4.2.1)<script type="text/javascript" src="https://cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+    externals: {
+    'jquery' : 'window.jQuery'
+  },
+5) common chunk: 
+plugins: [
+    // 独立通用模块的js/base.js
+    new webpack.optimize.CommonsChunkPlugin({
+        name : 'common',
+        filename : 'js/base.js'
+    })...
+]
+entry: {
+    'common' : ['./src/page/common/index.js']
+    ...
+}
+5.1) common module required by ./src/page/common/index.js as well as common module required by all entries will be packaged into js/base.js
+
+# css loader customization
+1) loader: css-loader, style-loader 
+1.1）webpack.config.js
+module: {
+    loaders: [
+      { test: /\.css$/, loader:ExtractTextPlugin.extract("style-loader","css-loader")},
+      ...
+  }
+1.2) !表示两个loader的串联
+1.3) 正则匹配到.css结尾的模块，就使用css-loader and style-loader 
+2) css as standalone file:
+2.1) by default webpack packages css as js module, but we don't want css loading after js loading completes, we can package css into standalone file， load using link statement. 会在加载过程中有一个css样式空白时间，页面是乱的。
+2.2) use extract-text-webpack-plugin:
+var ExtractTextPlugin   = require("extract-text-webpack-plugin");
+2.2.1) plugin
+plugins: [
+    // 把css单独打包到文件里
+    new ExtractTextPlugin("css/[name].css"),
+    ...
+]
+2.2.2) loader:
+loaders: [
+      { test: /\.css$/, loader:ExtractTextPlugin.extract("style-loader","css-loader")},
+
+
+# html template loader
+1) use html-webpack-plugin:
+var HtmlWebpackPlugin   = require('html-webpack-plugin');
+1.1) plugins: [
+    ...
+    // html模板处理
+    new HtmlWebpackPlugin(getHtmlConfig('index', '首页')),
+    new HtmlWebpackPlugin(getHtmlConfig('user-login', '用户登录')), 
+    new HtmlWebpackPlugin(getHtmlConfig('result', '操作结果')),   
+  ]
+1.2) configuration options: title/filename/template/inject/favicon/minify/hash/chunks
+// 获取html-webpack-plugin参数的方法
+var getHtmlConfig =  function(name, title) {
+  return {
+      template  : './src/view/' + name + '.html',
+      filename  : 'view/' + name + '.html',
+      favicon   : './favicon.ico',
+      title     : title,
+      inject    : true,
+      hash      : true,
+      chunks    : ['common', name]
+  }
+}
+2) common section in html template .e.g <script type="text/javascript" src="https://cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+2.1) npm i html-loader
+2.2) in html: <%= require('html-loader!./layout/head-common.html') %>
+
+# image and font loader
+1) use url loader:
+npm i url-loader --save-dev
+2) module: {
+    loaders: [
+      ...
+      { test: /\.(gif|png|jpg|woff|svg|eot|ttf)\??.*$/, loader: 'url-loader?limit=100&name=resource/[name].[ext]' }
+  }
+2.1) resource ending with gif|png|jpg|woff|svg|eot|ttf... will be packaged into resource/name.ext
+2.2) file size less than 100k will be packaged into base64 format string.
+
+# webpack-dev-server
+1) // 环境变量配置， dev / online
+var WEBPACK_ENV         = process.env.WEBPACK_ENV || 'online';
+
+2)
+if('dev' === WEBPACK_ENV){
+    config.entry.common.push('webpack-dev-server/client?http://localhost:8088/');
+}
+
+3) npm run dev; npm run dist
+"scripts": {
+    "dev": "WEBPACK_ENV=dev webpack-dev-server --inline --port 8088",
+    "dev_win": "set WEBPACK_ENV=dev && webpack-dev-server --inline --port 8088",
+    "dist": "WEBPACK_ENV=online webpack -p",
+    "dist_win": "set WEBPACK_ENV=online && webpack -p"
+  },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+module: {
+    loaders: [
+      { test: /\.css$/, loader:ExtractTextPlugin.extract("style-loader","css-loader")},
+      { test: /\.(gif|png|jpg|woff|svg|eot|ttf)\??.*$/, loader: 'url-loader?limit=100&name=resource/[name].[ext]' },
+      { test: /\.string$/, loader: 'html-loader'}]
+  }

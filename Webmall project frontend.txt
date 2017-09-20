@@ -53,9 +53,9 @@ project initialization - npm
 --registry=https://registry.npm.taobao.org
 
 Webpack 
-- require anything (js, css, image)
-- loader plugin
-- commonjs
+- 设计思想：require anything (js, css, image)
+- 通过loader插件加载各种资源：loader plugin
+- commonjs模块编译成function类型模块
 
 Webpack 
 global installtion: npm install webpack -g
@@ -351,7 +351,9 @@ alias dpadmin='/developer/fe-deploy.sh admin-fe' <test failed>
 18.2）set alarm rules
 19) homework 
 19.1) linux command
-19.2(/linux shell
+19.2） linux shell
+
+这个项目中后端的接口都是已经开发好的，可以直接使用。如果在实际项目中后端的接口还没有完成开发的情况下，前端怎么测试自己的逻辑。一般写一堆接口的json的文件，代理的时候把map remote换成map local，代理到本地文件就可以了
 
 
 
