@@ -1,0 +1,1575 @@
+Chapter 1 Bootstarting Spring
+
+1) A typical Spring Hello World web application requires:
+1.1) A project structure, complete with a Maven or Gradle build file including required dependencies. At the very least, you’ll need Spring MVC and the Servlet API expressed as dependencies.
+1.2) A web.xml file (or a WebApplicationInitializer implementation) that declares Spring’s DispatcherServlet.
+1.3) A Spring configuration that enables Spring MVC.
+1.4) A controller class that will respond to HTTP requests with “Hello World”.
+1.5) A web application server, such as Tomcat, to deploy the application to.
+
+2) A complete Groovy-based Spring application
+@RestController
+class HelloController {
+	@RequestMapping("/")
+	def hello() {	
+		return "Hello World"
+	}
+}
+
+3) Assuming that you have Spring Boot’s command-line interface (CLI) installed:
+$ spring run HelloController.groovy
+
+4) Spring Boot essentials:
+4.1) Auto-configuration—Spring Boot can automatically provide configuration for application functionality common to many Spring applications.
+4.1.1) Any application that needs an embedded database and a JdbcTemplate will need those methods. It’s boilerplate configuration.
+4.1.2) Spring Boot can automatically configure these common configuration scenarios.
+4.1.3) If Spring Boot detects that you have the H2 database library in your application’s classpath, it will automatically configure an embedded H2 database.
+4.1.4) If JdbcTemplate is in the classpath, then it will also configure a JdbcTemplate bean for you.
+4.1.5) auto-configuration for the Java Persistence API (JPA), Thymeleaf templates, security, and Spring MVC. 
+
+4.2) Starter dependencies—You tell Spring Boot what kind of functionality you need, and it will ensure that the libraries needed are added to the build.
+4.2.1) Starter dependencies are really just special Maven (and Gradle) dependencies that take advantage of transitive dependency resolution to aggregate commonly used libraries under a handful of feature-defined dependencies.
+4.2.2) For example, suppose that you’re going to build a REST API with Spring MVC that works with JSON resource representations. Additionally, you want to apply declarative validation per the JSR-303 specification and serve the application using an embedded Tomcat server.
+4.2.2.1)org.springframework:spring-core
+4.2.2.2)org.springframework:spring-web
+4.2.2.3)org.springframework:spring-webmvc
+4.2.2.4)com.fasterxml.jackson.core:jackson-databind
+4.2.2.5)org.hibernate:hibernate-validator
+4.2.2.6)org.apache.tomcat.embed:tomcat-embed-core
+4.2.2.7)org.apache.tomcat.embed:tomcat-embed-el
+4.2.2.8)org.apache.tomcat.embed:tomcat-embed-logging-juli
+4.2.3) On the other hand, if you were to take advantage of Spring Boot starter dependencies, you could simply add the Spring Boot “web” starter (org.springframework .boot:spring-boot-starter-web) as a build dependency.
+4.2.4) you no longer need to think about what libraries you’ll need to
+support certain functionality; you simply ask for that functionality by way of the pertinent
+starter dependency.
+
+4.3) The command-line interface—This optional feature of Spring Boot lets you write complete applications with just application code, but no need for a traditional project build.
+4.3.1) CLI detected that those types are being used, and it knows which starter dependencies to add to the classpath to make it work. 
+4.3.2) Once those dependencies are in the classpath, a series of auto-configuration kicks in and ensures that DispatcherServlet and Spring MVC are enabled so that the controller can respond to HTTP requests.
+
+4.4) The Actuator—Gives you insight into what’s going on inside of a running Spring Boot application.
+5) Spring Boot leverages conditional configuration features from Spring 4, along with transitive dependency resolution offered by Maven and Gradle, to automatically configure beans in the Spring application context.
+6) In short, at its heart, Spring Boot is just Spring.
+
+# Getting started with Spring Boot
+1) a Spring Boot project is just a regular Spring project that happens to leverage
+Spring Boot starters and auto-configuration.
+2) Installing the Spring Boot CLI
+2.1) MANUALLY INSTALLING THE SPRING BOOT CLI
+http://repo.spring.io/release/org/springframework/boot/spring-boot-cli/1.3.0.RELEASE/spring-boot-cli-1.3.0.RELEASE-bin.zip
+2.2) unzip/SPRING_HOME/Path
+2.3) spring.bat --version
+2.4) ENABLING COMMAND-LINE COMPLETION
+$ spring shell
+
+#Initializing a Spring Boot project with Spring Initializr
+1) The Spring Initializr is ultimately a web application that can generate a Spring Boot project structure for you.
+2) Spring Initializr can be used in several ways:
+2.1) Through a web-based interface
+2.2) Via Spring Tool Suite
+2.3) Via IntelliJ IDEA
+2.4) Using the Spring Boot CLI
+3) USING SPRING INITIALIZR’S WEB INTERFACE
+3.1) http://start.spring.io
+4) Using IDEA
+5) CLI: spring init 
+
+Chapter 2 Developing your first Spring Boot application
+
+1) ReadingListApplication.java—The application’s bootstrap class and primary Spring configuration class
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+@SpringBootApplication		//Enable component-scanning and auto-configuration
+public class ReadingListApplication {
+	public static void main(String[] args) {
+		SpringApplication.run(ReadingListApplication.class, args);		//Bootstrap the application
+	}
+}
+1.1) @SpringBootApplication = @Configuration + @ComponentScan + @EnableAutoConfiguration
+1.2) @EnableAutoConfiguration—the one line of configuration that enables the magic of Spring Boot auto-configuration. 
+1.3) ReadingListApplication is also a bootstrap class, the main() method here will enable you to run your application as an executable JAR file from the command line
+1.4) $ gradle bootRun
+1.5) java -jar build/libs/sbia-ch02-readinglist-0.0.1-SNAPSHOT.jar
+1.6) You’ll almost never need to change ReadingListApplication
+1.7) If your application requires any additional Spring configuration beyond what Spring Boot auto-configuration provides, it’s usually best to write it into separate @Configurationconfigured
+classes.
+
+2) ReadingListApplicationTests is more than just a placeholder for tests—it also serves as an example of how to write tests for Spring Boot applications.
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class ReadingListApplicationTests {
+
+	@Test
+	public void contextLoads() { //Test that the context loads
+	}
+
+}
+2.1) @RunWith (SpringRunner.class) = @RunWith(SpringJUnit4ClassRunner.class), SpringRunner is an alias for the SpringJUnit4ClassRunner.
+2.2) @SpringBootTest
+TBD
+3) application.properties
+3.1) The main thing to notice is that at no point do you explicitly ask Spring Boot to
+load application.properties for you. 
+3.2) By virtue of the fact that application.properties exists, it will be loaded and its properties made available for configuring both Spring
+and application code.
+4) build spec
+4.1) Spring Boot provides build plugins for both Gradle and Maven
+buildscript {
+	ext {
+		springBootVersion = '1.5.7.RELEASE'
+	}
+	repositories {
+		mavenCentral()
+	}
+	dependencies { 
+		// Depend on Spring Boot plugin
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'	//Apply Spring Boot plugin
+...
+}
+4.2) Spring Boot’s build plugins
+4.2.1) First, you’ve already seen how you can use the bootRun task to run the application with Gradle. Similarly, the Spring Boot Maven plugin provides a spring-boot:run goal that achieves the same thing
+4.2.2) The main feature of the build plugins is that they’re able to package the project as
+an executable uber-JAR. packing all of the application’s dependencies within the JAR and adding a manifest to the JAR with entries that make it possible to run the application with java -jar.
+4.2.3) Maven build has “spring-boot-starter-parent” as a parent. take advantage of Maven dependency management to inherit dependency versions for several commonly used libraries
+4.2.4) Gradle doesn’t provide the same kind of dependency management as Maven. Spring Boot Gradle plugin simulates dependency management for several common Spring and Spring-related dependencies.
+
+#Using starter dependencies
+1) the way wthout starter dependencies:
+1.1) research and copy, paste, trial and error
+compile("org.springframework:spring-web:4.1.6.RELEASE")
+compile("org.thymeleaf:thymeleaf-spring4:2.1.4.RELEASE")
+compile("org.springframework.data:spring-data-jpa:1.8.0.RELEASE")
+compile("org.hibernate:hibernate-entitymanager:jar:4.3.8.Final")
+compile("com.h2database:h2:1.4.187")
+1.2) how about the version compatibility?
+
+2) with starter dependency
+2.1) look at the functionalities/tehcnology stack
+2.1.1) It’s a web application
+2.1.2) It uses Thymeleaf
+2.1.3) It persists data to a relational database via Spring Data JPA
+2.2) use facet-based dependencies
+2.2.1) A starter dependency is essentially a Maven POM that defines transitive dependencies on other libraries that together provide support for some functionality.
+2.2.2) starter dependencies are named to indicate the facet or kind of functionality they provide.
+2.2.3) Via transitive dependencies, adding these four dependencies is the equivalent of adding several dozen individual libraries to the build.
+2.2.4) starter dependencies is only as specific as they needed to be.
+2.2.5) The versions of the starter dependencies themselves are determined by the version of Spring Boot you’re using.
+
+3) exame the real dependecy
+$ gradle dependencies
+$ mvn dependency:tree
+
+#Overriding starter transitive dependencies
+1) exclude transitive dependencies:
+compile("org.springframework.boot:spring-boot-starter-web") {
+	exclude group: 'com.fasterxml.jackson.core'
+}
+
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-web</artifactId>
+		<exclusions>
+			<exclusion>
+				<groupId>com.fasterxml.jackson.core</groupId>
+			</exclusion>
+		</exclusions>
+</dependency>
+
+2) replace dependency with a another version
+2.1) Maven always favors the closest dependency, meaning that because you’ve expressed this dependency in your project’s build, it will be favored over the one that’s transitively referred to by another dependency.
+<dependency>
+	<groupId>com.fasterxml.jackson.core</groupId>
+	<artifactId>jackson-databind</artifactId>
+	<version>2.4.3</version>
+</dependency>
+2.2) Unlike Maven, Gradle favors the newest version of a dependency. need to exclude and delcare:
+compile("org.springframework.boot:spring-boot-starter-web") {
+	exclude group: 'com.fasterxml.jackson.core'
+}
+compile("com.fasterxml.jackson.core:jackson-databind:2.3.1")
+
+#Using automatic configuration
+1) Spring Boot auto-configuration is a runtime (more accurately, application startup-time) process that considers several factors to decide what Spring configuration should and should not be applied.
+
+2) There are nearly 200 decisions that Spring Boot makes with regard to autoconfiguration every time an application starts up, covering such areas as security, integration, persistence, and web development.
+2.1) Is Spring’s JdbcTemplate available on the classpath? If so and if there is a Data-Source bean, then auto-configure a JdbcTemplate bean.
+2.2) Is Thymeleaf on the classpath? If so, then configure a Thymeleaf template resolver, view resolver, and template engine.
+2.3) Is Spring Security on the classpath? If so, then configure a very basic web security setup.
+
+3) since configuration is automatically done, you can start writing application codes:
+3.1) domain class
+@Entity
+public class Book {...}
+3.2) Repository
+public interface ReadingListRepository extends JpaRepository<Book, Long> {...}
+3.3) Web Controller
+@Controller
+@RequestMapping("/")
+public class ReadingListController {...}
+3.4) view
+3.4.1) create Thymeleaf template readingList.html in src/main/resources/templates
+3.5) style
+3.5.1) creat stylesheet style.css in src/main/resources/static
+
+4) Running the application
+4.1) $ gradle bootRun (--info --debug --stacktrace)
+4.2) $ gradle build; java -jar build/libs/xxx.jar
+4.3) build a WAR file that can be deployed in a traditional manner to a Java web application server such as Tomcat.
+4.4) run from IDE
+
+5) What just happened?
+5.1) When you add Spring Boot to your application, there’s a JAR file named springboot-autoconfigure that contains several configuration classes.
+5.2) these configuration contribute to the configuration of your application. There’s configuration for Thymeleaf, configuration for Spring Data JPA, configuration for Spring MVC, and configuration for dozens of other things.
+5.3) this configuration leverages Spring’s conditional configuration, which was introduced in Spring 4.0. 
+5.4) Conditional configuration allows for configuration to be available in an application, but to
+be ignored unless certain conditions are met.
+5.5) to define a custom condition: implement the Condition interface and override its matches() method
+5.5.1) only pass if JdbcTemplate is available on the classpath:
+public class JdbcTemplateCondition implements Condition {
+		@Override
+		public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+		try {
+			context.getClassLoader().loadClass("org.springframework.jdbc.core.JdbcTemplate");
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
+	}
+}
+5.5.2) to use a custom condition:
+@Conditional(JdbcTemplateCondition.class)
+public MyService myService() {
+	...
+}
+5.5.3) MyService bean will only be created if the JdbcTemplateCondition passes.
+5.6) Conditional annotations used in auto-configuration:
+Conditional 								annotation Configuration applied if…?
+@ConditionalOnBean 							…the specified bean has been configured
+@ConditionalOnMissingBean 					…the specified bean has not already been configured
+@ConditionalOnClass 						…the specified class is available on the classpath
+@ConditionalOnMissingClass 					…the specified class is not available on the classpath
+@ConditionalOnExpression 					…the given Spring Expression Language (SpEL) expression
+											evaluates to true
+@ConditionalOnJava 							…the version of Java matches a specific value or range
+											of versions
+@ConditionalOnJndi 							…there is a JNDI InitialContext available and 															optionally given JNDI locations exist
+@ConditionalOnProperty 						…the specified configuration property has a specific value
+@ConditionalOnResource 						…the specified resource is available on the classpath
+@ConditionalOnWebApplication 				…the application is a web application
+@ConditionalOnNotWebApplication 			…the application is not a web application
+5.7) e.g. DataSourceAutoConfiguration provided as part of Spring Boot’s auto-configuration library
+@Configuration
+@ConditionalOnClass({ DataSource.class, EmbeddedDatabaseType.class })
+@EnableConfigurationProperties(DataSourceProperties.class)
+@Import({ Registrar.class, DataSourcePoolMetadataProvidersConfiguration.class})
+public class DataSourceAutoConfiguration {
+	...
+}
+5.7.1) DataSourceAutoConfiguration is a @Configuration-annotated class that imports some additional configuration from other configuration classes and defines a few beans of its own.
+5.7.2) most important to notice here is that DataSourceAutoConfiguration is annotated with @ConditionalOnClass to require that both DataSource and EmbeddedDatabaseType be available on the classpath. If they aren’t available, then the condition fails and any configuration provided by DataSourceAutoConfiguration will be ignored.
+5.8) Within DataSourceAutoConfiguration there’s a nested JdbcTemplateConfiguration class that provides auto-configuration of a JdbcTemplate bean:
+@Configuration
+@Conditional(DataSourceAutoConfiguration.DataSourceAvailableCondition.class)
+protected static class JdbcTemplateConfiguration {
+	@Autowired(required = false)
+	private DataSource dataSource;
+	@Bean
+	@ConditionalOnMissingBean(JdbcOperations.class)
+	public JdbcTemplate jdbcTemplate() {
+		return new JdbcTemplate(this.dataSource);
+	}
+	...
+}
+5.8.1) JdbcTemplateConfiguration is an annotation with the low-level @Conditional to require that the DataSourceAvailableCondition pass—essentially requiring that a DataSource bean be available or that one will be created by auto-configuration.
+5.9) As it directly pertains to our example, the following configuration decisions are made by the conditionals in auto-configuration:
+5.9.1)Because H2 is on the classpath, an embedded H2 database bean will be created. This bean is of type javax.sql.DataSource, which the JPA implementation (Hibernate) will need to access the database.
+5.9.2) Because Hibernate Entity Manager is on the classpath (transitively via Spring Data JPA), auto-configuration will configure beans needed to support working with Hibernate, including Spring’s LocalContainerEntityManagerFactory-Bean and JpaVendorAdapter.
+5.9.3) Because Spring Data JPA is on the classpath, Spring Data JPA will be configured to automatically create repository implementations from repository interfaces.
+5.9.4) Because Thymeleaf is on the classpath, Thymeleaf will be configured as a view option for Spring MVC, including a Thymeleaf template resolver, template engine, and view resolver. The template resolver is configured to resolve templates from /templates relative to the root of the classpath.
+5.9.5) Because Spring MVC is on the classpath (thanks to the web starter dependency), Spring’s DispatcherServlet will be configured and Spring MVC will be enabled.
+5.9.6) Because this is a Spring MVC web application, a resource handler will be registered to serve static content from /static relative to the root of the classpath. (The resource handler will also serve static content from /public, /resources, and /META-INF/resources).
+5.9.7) Because Tomcat is on the classpath (transitively referred to by the web starter dependency), an embedded Tomcat container will be started to listen on port 8080.
+6)Spring Boot auto-configuration takes on the burden of configuring Spring so that you can focus on writing your application.
+
+Chapter 3 - Customizing configuration
+#Overriding Spring Boot auto-configuration
+1) Securing the application
+2) With Spring Security on the classpath, auto-configuration kicks in and a very basic Spring Security setup is created.
+2.1) Overriding auto-configuration is a simple matter of explicitly writing the configuration as if auto-configuration didn’t exist
+2.2) writing a configuration class that extends WebSecurityConfigurerAdapter. SecurityConfig
+2.3) write a custom UserDetailsService
+
+# @ConditionalOnMissingBean
+1) For the most part, the @ConditionalOnMissingBean annotation is what makes it possible to override auto-configuration.
+2) Spring Boot is designed to load application-level configuration before considering its auto-configuration classes.
+3) the one that’s most significant in allowing us to override Spring Boot’s autoconfigured security configuration is SpringBootWebSecurityConfiguration
+@Configuration
+@EnableConfigurationProperties
+@ConditionalOnClass({ EnableWebSecurity.class })
+@ConditionalOnMissingBean(WebSecurityConfiguration.class)
+@ConditionalOnWebApplication
+public class SpringBootWebSecurityConfiguration {
+	...
+}
+3.1) Per the @ConditionalOnClass annotation, the @EnableWebSecurity annotation must be available on the classpath. 
+3.2) per @ConditionalOnWebApplication, the application must be a web application. 
+3.3) But it’s the @ConditionalOnMissingBean annotation that makes it possible for our security configuration class to be used instead of SpringBootWebSecurityConfiguration.
+4) by annotating our SecurityConfig class with @EnableWebSecurity, we’re indirectly creating a bean of type WebSecurityConfiguration.
+5) the @ConditionalOnMissingBean condition will fail, and any configuration offered by SpringBootWebSecurityConfiguration will be skipped over.
+
+#Externalizing configuration with properties
+1) Spring Boot’s auto-configuration and @ConditionalOnMissingBean make it possible for you to explicitly override any of the beans that would otherwise be autoconfigured,
+2) it’s not always necessary to go to that extreme. Let’s see how you can set a few simple configuration properties to tweak the auto-configured components.
+2.1) server port number 
+2.2) logging level
+2.3) database URL
+3) the beans automatically configured by Spring Boot offer over 300 properties for fine-tuning.
+4) When you need to adjust the settings, you can specify these properties via environment variables, Java system properties, JNDI, commandline
+arguments, or property files.
+4.1) e.g. disable the Spring Boot banner
+4.1.1) java -jar readinglist-0.0.1-SNAPSHOT.jar --spring.main.banner_mode=off
+4.1.2) spring.main.banner_mode=off in application.properties
+4.1.3) YAML file named application.yml
+spring:
+	main:
+		banner_mode='off'
+4.1.4) export spring_main_banner_mode=off //environment variable
+4.1.4.1) Note the use of underscores instead of periods and dashes, as required for environment variable names.
+
+5) ways to set properties for a Spring Boot application, the list is in order of precedence
+5.1) Command-line arguments
+5.2) JNDI attributes from java:comp/env
+5.3) JVM system properties
+5.4) Operating system environment variables
+5.5) Randomly generated values for properties prefixed with random.* (referenced when setting other properties, such as `${random.long})
+5.6) An application.properties or application.yml file outside of the application
+5.7) An application.properties or application.yml file packaged inside of the application
+5.8) Property sources specified by @PropertySource
+5.9) Default properties
+
+6) application.properties and application.yml files, they can reside in any of four locations; this list is in order of precedence:
+6.1) Externally, in a /config subdirectory of the directory from which the application is run
+6.2) Externally, in the directory from which the application is run
+6.3) Internally, in a package named “config”
+6.4) Internally, at the root of the classpath
+6.5) at the same level of precedence, properties in application.yml will override those in application.properties.
+
+#Fine-tuning auto-configuration
+
+1) DISABLING TEMPLATE CACHING
+1.1) Thymeleaf templates are cached by default. This improves application performance because you only compile the templates once, but it’s difficult to make changes on the fly during development.
+1.2) disable Thymeleaf template caching (how does it help development)
+1.2.1) java -jar readinglist-0.0.1-SNAPSHOT.jar --spring.thymeleaf.cache=false
+1.2.2) application.yml
+spring:
+thymeleaf:
+cache: false
+1.2.3)$ export spring_thymeleaf_cache=false
+2) Spring Boot’s other supported template options by setting these properties:
+2.1) spring.freemarker.cache (Freemarker)
+2.2) spring.groovy.template.cache (Groovy templates)
+2.3) spring.velocity.cache (Velocity)
+
+2) CONFIGURING THE EMBEDDED SERVER
+2.1) embedded server (Tomcat, by default) listening on port 8080. there’ll be port collisions starting with the second application.
+2.2) change server port
+2.2.1) java -jar build/libs/demo-0.0.1-SNAPSHOT.jar  --server.port=8000
+2.2.2) application.yaml
+server:
+	port: 8000
+2.2) enable the server to serve securely over HTTPS.
+2.2.1) create a keystore using the JDK’s keytool utility:
+$ keytool -keystore mykeys.jks -genkey -alias tomcat -keyalg RSA
+2.2.2) 
+server:
+  port: 8443
+  ssl:
+    key-store: 'classpath:mykeys.jks'
+    key-store-password: '123456'
+    key-password: '123456'
+
+3) CONFIGURING LOGGING
+3.1) Most applications provide some form of logging. the libraries that your application uses will also log their activity.
+3.2) By default, Spring Boot configures logging via Logback (http://logback.qos.ch) to log to the console at INFO level.
+3.3) For full control over the logging configuration, you can create a logback.xml file at the root of the classpath (in src/main/resources).
+<configuration>
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+		<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+	<logger name="root" level="INFO"/>
+	<root level="INFO">
+		<appender-ref ref="STDOUT" />
+	</root>
+</configuration>
+3.4) the most common changes you’ll make to a logging configuration are to change the logging levels and perhaps to specify a file where the logs should be written.
+3.5) With Spring Boot configuration properties, you can make those changes without having to create a logback.xml file.
+3.5.1) To set the logging levels, you create properties that are prefixed with logging.level, followed by the name of the logger for which you want to set the logging level.
+logging:
+	level:
+		root: WARN
+		org:
+			springframework:
+				security: DEBUG
+3.5.1.1) root logging level to WARN, but log Spring Security logs at DEBUG level.
+3.5.1.2) collapse the Spring Security package name to a single line:
+logging:
+	level:
+		root: WARN
+		org.springframework.security: DEBUG
+3.5.2) logging.path and logging.file properties
+logging:
+	path: /var/logs/
+	file: BookWorm.log
+	level:
+		root: WARN
+		org:
+			springframework:
+				security: DEBUG
+3.6) in application.properties like this:
+logging.path=/var/logs/
+logging.file=BookWorm.log
+logging.level.root=WARN
+logging.level.root.org.springframework.security=DEBUG
+
+#CONFIGURING A DATA SOURCE
+1) configure the URL and credentials for your database via properties. if you’re using a MySQL database:
+spring:
+	datasource:
+		url: jdbc:mysql://localhost/readinglist
+		username: dbuser
+		password: dbpass
+2) You usually won’t need to specify the JDBC driver; Spring Boot can figure it out from the
+database URL.
+3) Spring Boot will use this connection data when auto-configuring the DataSource
+bean. The DataSource bean will be pooled, using Tomcat’s pooling DataSource if it’s available on the classpath.
+4) If not, it will look for and use one of these other connection pool implementations on the classpath:
+4.1) HikariCP
+4.2) Commons DBCP
+4.3) Commons DBCP 2
+5) explicitly configure a DataSource bean to use whatever connection pool implementation you’d like.
+6) look up the DataSource from JNDI:
+spring:
+	datasource:
+		jndi-name: java:/comp/env/jdbc/readingListDS
+6.1) If you set the spring.datasource.jndi-name property, the other datasource connection properties (if set) will be ignored.
+
+# Externally configuring application beans
+
+1) externalized configuration is not limited to the beans configured by Spring Boot. Let’s look at how you can use the very same property configuration mechanism to fine-tune your own application components.
+2) “habuma-20” is my Amazon Associate ID
+<a th:href="'http://www.amazon.com/gp/product/'
+	+ ${book.isbn}
+	+ '/tag=habuma-20'"
+	th:text="${book.title}">Title</a>
+3) Rather than hard-code the Amazon Associate ID , we can refer to it as ${amazonID}:
+<a th:href="'http://www.amazon.com/gp/product/'
+	+ ${book.isbn}
+	+ '/tag=' + ${amazonID}"
+	th:text="${book.title}">Title</a>
+4) In controller, populates the model from an injected Amazon Associate ID.
+@Controller
+@RequestMapping("/")
+@ConfigurationProperties(prefix="amazon")		//Inject with properties
+public class ReadingListController {
+	private String associateId;
+	...
+	public void setAssociateId(String associateId) { // Setter method for associateId
+		this.associateId = associateId;
+	}
+	@RequestMapping(method=RequestMethod.GET)
+	public String readersBooks(Reader reader, Model model) {
+		...
+		readingListRepository.findByReader(reader);
+		if (readingList != null) {
+			...
+			model.addAttribute("amazonID", associateId);  //Put associateId into model
+		}
+		return "readingList";
+}
+4.1) @ConfigurationProperties specifies that this bean should have its properties injected (via setter methods) with values from configuration properties.
+4.2) the prefix attribute specifies that the ReadingListController bean will be injected with properties with an “amazon” prefix.
+4.3) application.properties: amazon.associateId=habuma-20
+4.4) in application.yml:
+amazon:
+	associateId: habuma-20
+4.5) treat camel-cased properties as interchangeable with similarly named properties with hyphens or underscores
+property named amazon.associateId == amazon.associate_id == amazon.associate-id.
+
+#COLLECTING PROPERTIES IN ONE CLASS
+1) it may be better to annotate a separate bean with @ConfigurationProperties and let that bean collect all of the configuration properties.
+@Component
+@ConfigurationProperties("amazon")	//Inject with “amazon”-prefixed properties
+public class AmazonProperties {
+	private String associateId;
+	public void setAssociateId(String associateId) {	//associateId setter method
+		this.associateId = associateId;
+	}
+	public String getAssociateId() {
+		return associateId;
+	}
+}
+2) Inject AmazonProperties bean into controller
+public class ReadingListController {
+	private AmazonProperties amazonProperties;
+	@Autowired
+	public ReadingListController(ReadingListRepository readingListRepository, AmazonProperties amazonProperties) {
+		...
+		this.amazonProperties = amazonProperties;
+	}
+	@RequestMapping(method=RequestMethod.GET)
+	public String readersBooks(Reader reader, Model model) {
+		...
+		if (readingList != null) {
+			...
+			model.addAttribute("amazonID", amazonProperties.getAssociateId());
+		}
+		return "readingList";
+	}
+	...
+}
+
+# Configuring with profiles
+1) what if we need to configure different properties for different deployment environments?
+2) Profiles are a type of conditional configuration where different beans or configuration classes are used or ignored based on what profiles are active at runtime.
+3) e.g. security configuration we created is for production purposes
+@Profile("production")
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+	...
+}
+3.1) If the “production” profile isn’t active, this configuration will be ignored and, for lack of another overriding security configuration, the auto-configured security configuration will be applied.
+java -jar build/libsreadinglist-0.0.1-SNAPSHOT.jar --spring.profiles.active=production
+3.4) Spring Boot supports profiles for properties set in application.properties and application.yml.
+3.5) e.g. creating additional properties files named with the pattern “application-{profile}.properties”.
+3.5.1) application-development.properties
+logging.level.root=DEBUG
+3.5.2) application-production.properties
+logging.path=/var/logs/
+logging.file=BookWorm.log
+logging.level.root=WARN
+3.5.3) any properties that aren’t specific to any profile or that serve as defaults can continue to be expressed in application.properties:
+amazon.associateId=habuma-20
+logging.level.root=INFO
+3.6) CONFIGURING WITH MULTI-PROFILE YAML FILES
+3.6.1) create YAML files whose names follow a pattern of “application-{profile}.yml” and continue to put non-profiled properties
+in application.yml.
+3.6.2) with YAML, you also have the option of expressing configuration properties for all profiles in a single application.yml:
+logging: <Test failed>
+	level:
+		root: INFO
+---
+spring:
+	profiles: development
+		logging:
+			level:
+			root: DEBUG
+---
+spring:
+	profiles: production
+		logging:
+			path: /tmp/
+			file: BookWorm.log
+			level:
+			root: WARN
+3.6.3) this application.yml file is divided into three sections by a set of triple hyphens (---).
+
+# Customizing application error pages
+1) In recent years, creative error pages have become an art form. If you’ve ever seen the Star Wars–inspired error page at GitHub.com or DropBox.com’s Escher-like error page, you have an idea of what I’m talking about.
+2) Spring Boot offers this “whitelabel” error page by default as part of auto-configuration.
+3) create a custom error page for your applications.
+3.1) The default error handler that’s auto-configured by Spring Boot looks for a view whose name is “error”. If it can’t find one, it uses its default whitelabel error view
+3.2) the easiest way to customize the error page is to create a custom view that will resolve for a view named “error”.
+3.2.1) Any bean that implements Spring’s View interface and has a bean ID of “error” (resolved by Spring’s BeanNameViewResolver)
+3.2.2) A Thymeleaf template named “error.html” if Thymeleaf is configured
+3.2.3) A FreeMarker template named “error.ftl” if FreeMarker is configured
+3.2.4) A Velocity template named “error.vm” if Velocity is configured
+3.2.5) A JSP template named “error.jsp” if using JSP views
+3.3) Custom error page for Thymeleaf
+<html>
+	<head>
+		<title>Oops!</title>
+		<link rel="stylesheet" th:href="@{/style.css}"></link>
+	</head>
+	<body>
+		<div class="errorPage">
+			<span class="oops">Oops!</span><br/>
+			<img th:src="@{/MissingPage.png}"></img>
+			<p>There seems to be a problem with the page you requested (<span th:text="${path}"></span>).</p>
+			<p th:text="${'Details: ' + message}"></p>
+		</div>
+	</body>
+</html>
+3.3.1) two specific pieces of information that it also renders: the request path of the error and the exception message
+3.3.2) Spring Boot makes the following error attributes available to the error view:
+3.3.2.1) timestamp—The time that the error occurred
+3.3.2.2) status—The HTTP status code
+3.3.2.3) error—The error reason
+3.3.2.4) exception—The class name of the exception
+3.3.2.5) message—The exception message (if the error was caused by an exception)
+3.3.2.6) errors—Any errors from a BindingResult exception (if the error was caused by an exception)
+3.3.2.7) trace—The exception stack trace (if the error was caused by an exception)
+3.3.2.8) path—The URL path requested when the error occurred
+
+# Testing with Spring Boot (Integration test support)
+1) unit test
+1.1) When it comes to writing unit tests, Spring is generally out of the picture.
+1.2) Loose coupling and interface-driven design, which Spring encourages, makes it really easy to write unit tests. But Spring isn’t necessarily involved in those unit tests.
+
+2) integration test
+1.1) If Spring is responsible for configuring and wiring up the components in your production application, then Spring should also be responsible for configuring and wiring up those components in your tests.
+1.2) Spring’s SpringJUnit4ClassRunner helps load a Spring application context in JUnit-based application tests. 
+1.3) Spring Boot builds on Spring’s integration testing support by enabling auto-configuration and web server startup when testing Spring Boot
+applications. 
+1.4) It also offers a handful of useful testing utilities.
+
+3) Integration testing auto-configuration
+3.1) At the core of everything that the Spring Framework does, its most essential task is to wire together all of the components that make up an application.
+3.2) When integration testing a Spring application, it’s important to let Spring wire up the beans that are the target of the test the same way it wires up those beans when the application is running in production.
+3.4) In typical spring test:
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes=AddressBookConfiguration.class)
+public class AddressServiceTests {
+	@Autowired
+	private AddressService addressService;
+	@Test
+	public void testService() {
+		Address address = addressService.findByLastName("Sheman");
+		assertEquals("P", address.getFirstName());
+		....
+}
+3.4.1) Although @ContextConfiguration does a great job of loading the Spring application context, it doesn’t load it with the full Spring Boot treatment.
+3.4.1.1) Spring Boot applications are ultimately loaded by SpringApplication, either explicitly (as in listing 2.1) or using SpringBootServletInitializer
+3.4.1.2) SpringApplication not only loads the application context, but also enables logging, the loading of external properties (application.properties or application.yml), and other features of Spring Boot. 
+3.4.1.3) If you’re using @ContextConfiguration, you won’t get those features.
+3.5) In spring boot test:
+3.5.1) To get those features back in your integration tests, you can swap out @ContextConfiguration for Spring Boot’s @SpringApplicationConfiguration
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes=AddressBookConfiguration.class)
+public class AddressServiceTests {
+	...
+}
+3.5.2) in spring boot 1.5.7
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class ReadingListApplicationTests {
+	...
+}
+
+# Testing web applications
+1) unit testing controller:
+1.1) e.g., consider the addToReadingList() method from ReadingListController:
+@RequestMapping(method=RequestMethod.POST)
+public String addToReadingList(Book book) {
+	book.setReader(reader);
+	readingListRepository.save(book);
+	return "redirect:/readingList";
+}
+1.1.1) unit test by providing a mock implementation of ReadingListRepository
+1.1.2) but it only tests the method itself. 
+1.1.3) fails to test that the method handles a POST request to /readingList. 
+1.1.4) fails to test that form fields are properly bound to the Book parameter. 
+1.1.5) impossible to test definitively that the request is actually redirected to /readingList after the method is finished.
+
+2) two options available to Spring Boot application:
+2.1) Spring Mock MVC—Enables controllers to be tested in a mocked approximation of a servlet container without actually starting an application server
+2.2) Web integration tests—Actually starts the application in an embedded servlet container (such as Tomcat or Jetty), enabling tests that exercise the application in a real application server
+2.3) starting a server is slower test than mocking a servlet container. But server-based tests are closer to the real-world environment.
+
+3) Mocking Spring MVC
+3.1) Spring’s Mock MVC framework mocks enough of Spring MVC to make it almost as though the application is running within a servlet container … but it’s not.
+3.2) use MockMvcBuilders to set up a Mock MVC in your test. This class offers two static methods:
+3.2.1) standaloneSetup()—Builds a Mock MVC to serve one or more manually created and configured controllers
+3.2.2) webAppContextSetup()—Builds a Mock MVC using a Spring application context, which presumably includes one or more configured controllers
+3.2.3) standaloneSetup() expects you to manually instantiate and inject the controllers you want to test
+3.2.4) webAppContextSetup() works from an instance of WebApplicationContext, which itself was probably loaded by Spring.
+3.2.5) former is slightly more akin to a unit test in that you’ll likely only use it for very focused tests around a single controller. 
+3.2.6) The latter lets Spring load your controllers as well as their dependencies for a fullblown integration test.
+3.3) Creating a Mock MVC for integration testing controllers using webAppContextSetup():
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes = ReadingListApplication.class)
+@WebAppConfiguration		//Enables web context testing
+public class MockMvcWebTests {
+	@Autowired
+	private WebApplicationContext webContext;
+	private MockMvc mockMvc;
+	@Before
+	public void setupMockMvc() {
+		mockMvc = MockMvcBuilders.webAppContextSetup(webContext).build();
+	}
+}
+}
+3.3.1) annotate the test class with @WebAppConfiguration and use @Autowired to inject the WebApplicationContext into the test
+3.3.2) The setupMockMvc() passes the injected WebApplicationContext into the webAppContextSetup() method and then calls build() to produce a MockMvc instance.
+3.3.3) a test method 
+@Test
+public void homePage() throws Exception {
+	mockMvc.perform(MockMvcRequestBuilders.get("/readingList"))
+		.andExpect(MockMvcResultMatchers.status().isOk())
+		.andExpect(MockMvcResultMatchers.view().name("readingList"))
+		.andExpect(MockMvcResultMatchers.model().attributeExists("books"))
+		.andExpect(MockMvcResultMatchers.model().attribute("books", Matchers.is(Matchers.empty())));
+}
+3.3.4) a lot of static methods are being used in this test method, including static methods from Spring’s MockMvcRequestBuilders and MockMvcResultMatchers, as well as from the Hamcrest library’s Matchers.
+3.3.5) With static imports, the test method almost reads naturally:
+@Test
+public void homePage() throws Exception {
+	mockMvc.perform(get("/readingList"))
+		.andExpect(status().isOk())
+		.andExpect(view().name("readingList"))
+		.andExpect(model().attributeExists("books"))
+		.andExpect(model().attribute("books", is(empty())));
+}
+3.3.6) at no time is the application deployed to a web server. Instead it’s run within a mocked out Spring MVC, just capable enough to handle the HTTP requests we throw at it via the MockMvc instance.
+3.4) test http post
+	@Test
+    public void postBook() throws Exception {
+        mockMvc.perform(post("/readingList")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("title", "BOOK TITLE")
+                .param("author", "BOOK AUTHOR")
+                .param("isbn", "1234567890")
+                .param("description", "DESCRIPTION"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(header().string("Location", "/readingList"));
+        Book expectedBook = new Book();
+        expectedBook.setId(1L);
+        expectedBook.setReader("craig");
+        expectedBook.setTitle("BOOK TITLE");
+        expectedBook.setAuthor("BOOK AUTHOR");
+        expectedBook.setIsbn("1234567890");
+        expectedBook.setDescription("DESCRIPTION");
+        mockMvc.perform(get("/readingList"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("readingList"))
+                .andExpect(model().attributeExists("books"))
+                .andExpect(model().attribute("books", hasSize(1)))
+                .andExpect(model().attribute("books", contains(samePropertyValuesAs(expectedBook))));
+    }
+
+# Testing web security
+1) Spring Security offers support for testing secured web applications. 
+2) add Spring Security’s test module to your build:
+2.1) gradle
+testCompile("org.springframework.security:spring-security-test")
+2.2) maven
+<dependency>
+	<groupId>org.springframework.security</groupId>
+	<artifactId>spring-security-test</artifactId>
+	<scope>test</scope>
+</dependency>
+3) apply the Spring Security configurer when creating the MockMvc instance:
+@Before
+public void setupMockMvc() {
+	mockMvc = MockMvcBuilders
+		.webAppContextSetup(webContext)
+		.apply(springSecurity())
+		.build();
+}
+3.1) springSecurity() is a static method of SecurityMockMvcConfigurers, it returns a Mock MVC configurer that enables Spring Security for Mock MVC.
+3.2) Spring Security will be in play on all requests performed through MockMvc.
+3.3) The specific security configuration will depend on how you’ve configured Spring Security (or how Spring Boot has autoconfigured Spring Security).
+4) test unauthenticated:
+@Test
+public void homePage_unauthenticatedUser() throws Exception {
+	mockMvc.perform(get("/"))
+		.andExpect(status().is3xxRedirection())
+		.andExpect(header().string("Location", "http://localhost/login"));
+}
+5) perform an authenticated request:
+5.1) @WithMockUser—Loads the security context with a UserDetails using the given username, password, and authorization:
+@Test
+@WithMockUser(username="craig", password="password", roles="READER")
+public void homePage_authenticatedUser() throws Exception {
+	...
+}
+5.1.1) @WithMockUser bypasses the normal lookup of a UserDetails object and instead creates one with the values specified.
+5.2) @WithUserDetails—Loads the security context by looking up a UserDetails object for the given username
+
+# Testing a running application
+1) Firing up the application in a real server and hitting it with a real web browser is far more indicative
+of how it will behave in the hands of users than poking at it with a mock testing engine.
+2) By annotating a test class with @WebIntegrationTest, you declare that you want Spring Boot to not only create an application context for your test, but also to start an embedded servlet container.
+3) uses @WebIntegrationTest to start the application along with a server and uses Spring’s RestTemplate to perform HTTP requests against the application.
+
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes=ReadingListApplication.class)
+@WebIntegrationTest
+public class SimpleWebTest {
+	@Test(expected=HttpClientErrorException.class)
+	public void pageNotFound() {
+		try {
+			RestTemplate rest = new RestTemplate();
+			rest.getForObject("http://localhost:8080/bogusPage", String.class);
+			fail("Should result in HTTP 404");
+		} catch (HttpClientErrorException e) {
+			assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+			throw e;
+		}
+	}
+}
+
+# Testing HTML pages with Selenium
+1) RestTemplate is fine for simple requests and it’s perfect for testing REST endpoints.
+2) A better choice for testing HTML applications is Selenium (www.seleniumhq.org).
+3) Selenium does more than just perform requests and fetch the results for you to verify. Selenium actually fires up a web browser and executes your test within the context of the browser.
+4) To test our reading list application using Selenium, let’s write a test that fetches the home page, fills out the form for a new book, posts the form, and then finally asserts that the landing page includes the newly added book.
+4.1) testCompile("org.seleniumhq.selenium:selenium-java:2.45.0")
+4.2) A template for Selenium testing with Spring Boot
+@RunWith(SpringJUnit4ClassRunner.class)
+@SpringApplicationConfiguration(classes=ReadingListApplication.class)
+@WebIntegrationTest(randomPort=true)
+public class ServerWebTests {
+    private static FirefoxDriver browser;
+
+    @Value("${local.server.port}")
+    private int port;
+
+    @BeforeClass
+    public static void openBrowser() {
+        browser = new FirefoxDriver();
+        browser.manage().timeouts()
+                .implicitlyWait(10, TimeUnit.SECONDS);
+    }
+    @AfterClass
+    public static void closeBrowser() {
+        browser.quit();
+    }
+}
+
+4.3) The static openBrowser() method creates a new instance of FirefoxDriver, which will open a Firefox browser. 4.4) When we write our test method, we’ll perform browser operations through the FirefoxDriver instance. 
+4.5) The FirefoxDriver is also configured to wait up to 10 seconds when looking for any elements on the page.
+4.6) After the test has completed, closeBrowser() calls quit() on the FirefoxDriver instance to bring it down.
+4.7) it’s probably a good idea to write your tests to use any and all browsers you want to support.
+4.8) Testing the reading-list application with Selenium:
+4.8.1) The main thing to notice about this test is that @WebIntegrationTest was able to start up the application and server for us so that Selenium could start poking at it with a web browser.
+4.8.2) Selenium WebDriver in Practice by Yujun Liang and Alex Collins (http://manning.com/liang/)
+
+
+Chapter 5 Getting Groovy with the Spring Boot CLI
+1) Java has a few strict rules that add noise to the code. Line-ending semicolons, class and method modifiers (such as public and private), getter and setter methods, and import statements serve a purpose in Java, but they distract from the essentials of the code.
+2) build systems such as Maven and Gradle are also one more thing that must be developed and maintained.
+3) When working with the Spring Boot CLI, there is no build specification. The code itself serves as the build specification, providing hints that guide the CLI in resolving dependencies and producing deployment artifacts.
+
+# Setting up the CLI project
+1) Unlike Maven- and Gradle-based projects, Spring Boot CLI projects don’t have a strict project structure.
+2) For the reading-list project, however, you should create a fresh, clean directory to keep the code separate from anything else you keep
+on your machine:
++ readinglist
+	+ static
+		- style.css
+	+ templates
+		- readingList.html
+3) Eliminating code noise with Groovy
+3.1) Unlike Java, Groovy doesn’t require qualifiers such as public and private. 
+3.2) Nor does it demand semicolons at the end of each line.
+3.3) JavaBean standard accessor methods are unnecessary.
+4) Book.groovy
+class Book {
+	Long id
+	String reader
+	String isbn
+	String title
+	String author
+	String description
+}
+5) ReadingListRepository.groovy
+interface ReadingListRepository {
+		List<Book> findByReader(String reader)
+		void save(Book book)
+}
+6) JdbcReadingListRepository.groovy
+@Repository
+class JdbcReadingListRepository implements ReadingListRepository {
+	@Autowired
+	JdbcTemplate jdbc
+	List<Book> findByReader(String reader) {
+		jdbc.query(
+			"select id, reader, isbn, title, author, description from Book where reader=?",
+			{ rs, row -> new Book(id: rs.getLong(1),
+									reader: rs.getString(2),
+									isbn: rs.getString(3),
+									title: rs.getString(4),
+									author: rs.getString(5),
+									description: rs.getString(6))
+			} as RowMapper,		//RowMapper closure
+		reader)
+
+	void save(Book book) {
+		jdbc.update("insert into Book " +
+		"(reader, isbn, title, author, description) " +
+		"values (?, ?, ?, ?, ?)",
+		book.reader,
+		book.isbn,
+		book.title,
+		book.author,
+		book.description)
+		}
+}
+6.1) By writing it in Groovy, we’re able to apply some Groovy idioms in the implementation
+6.2) a Groovy closure is given as a parameter in the call to query() in place of a RowMapper implementation
+6.2.1) we can do something similar in Java 8 using lambdas (and method references).
+6.2.2) within the closure, a new Book object is created using Groovy’s support for setting object properties at construction.
+7) create a file named schema.sql
+create table Book (
+	id identity,
+	reader varchar(20) not null,
+	isbn varchar(10) not null,
+	title varchar(50) not null,
+	author varchar(50) not null,
+	description varchar(2000) not null
+);
+8) ReadingListController
+@Controller
+@RequestMapping("/")
+class ReadingListController {
+	String reader = "Craig"
+	@Autowired
+	ReadingListRepository readingListRepository
+	@RequestMapping(method=RequestMethod.GET)
+	def readersBooks(Model model) {
+			List<Book> readingList =
+		readingListRepository.findByReader(reader)
+		if (readingList) {
+			model.addAttribute("books", readingList)
+		}
+		"readingList"
+	}
+	@RequestMapping(method=RequestMethod.POST)
+	def addToReadingList(Book book) {
+		book.setReader(reader)
+		readingListRepository.save(book)
+		"redirect:/"
+	}
+}
+8.1) no class and method modifiers, semicolons, accessor methods
+8.2) both handler methods are declared with def rather than String
+8.3) explicit return statement
+9) Grabs.groovy
+@Grab("h2")
+@Grab("spring-boot-starter-thymeleaf")
+class Grabs {}
+9.1) tell Groovy to fetch a few dependency libraries on the fly as the application is started.
+10) $ spring run *
+11) key differences from traditional java webapp:
+11.1) There’s no Spring configuration. How are the beans created and wired together? Where does the JdbcTemplate bean come from?
+11.2) There’s no build file. Where do the library dependencies like Spring MVC and Thymeleaf come from?
+11.3) There are no import statements. How can Groovy resolve types like JdbcTemplate and RequestMapping if there are no import statements to specify what packages they’re in?
+11.4) We never deployed the app. Where’d the web server come from?
+
+# Spring Boot CLI mechanism:
+1) leverage Spring Boot auto-configuration and starter dependencies.
+2) detect when certain types are in use and automatically resolve the appropriate dependency libraries to support those types.
+3) knows which packages several commonly used types are in and, if those types are used, adds those packages to Groovy’s default packages.
+4) By applying both automatic dependency resolution and auto-configuration, the CLI can detect that it’s running a web application and automatically include an embedded web container (Tomcat by default) to serve the application.
+
+Steps:
+1) One of the very first things the CLI does is attempt to compile the Groovy code using an embedded Groovy compiler.
+2) Without you knowing it, however, the code fails to compile due to several unknown types in the code (such as JdbcTemplate, Controller, RequestMapping, and so on).
+3) But the CLI doesn’t give up. The CLI knows that JdbcTemplate can be added to the classpath by adding the Spring Boot JDBC starter as a dependency. It also knows that the Spring MVC types can be found by adding the Spring Boot web starter as a dependency. So it grabs those dependencies from the Maven repository
+4) Taking advantage of the ability to customize the Groovy compiler’s default package imports, the CLI adds all of the necessary packages to the Groovy compiler’s default imports list.
+5) CLI to attempt another compile.
+6) if the code compiles cleanly and the CLI will run it via an internal bootstrap method
+7) At this point, Spring Boot auto-configuration kicks in.
+
+#Grabbing dependencies
+1) It’s not strictly necessary to put the @Grab annotations in a separate class as we have
+2) The @Grab annotation comes from Groovy’s Grape (Groovy Adaptable Packaging Engine or Groovy Advanced Packaging Engine) facility.
+3) Grape enables Groovy scripts to download dependency libraries at runtime without using a build tool like Maven or Gradle.
+4) @Grab("com.h2database:h2:1.4.185")
+5) Spring Boot CLI extends @Grab in a couple of ways to make working with @Grab even easier.
+5.1) The specific version of the dependency is determined by the version of the CLI that you’re using. In the case of Spring Boot CLI 1.3.0.RELEASE, the H2 dependency resolved will be 1.4.190.
+@Grab("com.h2database:h2")
+@Grab("h2")
+
+#Overriding default dependency versions
+1) @GrabMetadata(“com.myorg:custom-versions:1.0.0”)
+2) load a properties file named custom-versions.properties from a Maven repository in the com/myorg directory
+3) Each line in the properties file should have a group ID and module ID as the key, and the version as the value.
+com.h2database:h2=1.4.186
+
+# Adding dependency repositories
+1) By default, @Grab-declared dependencies are fetched from the Maven Central repository (http://repo1.maven.org/maven2/).
+2) add repository via @GrabResolver:
+@GrabResolver(name='jboss', root='https://repository.jboss.org/nexus/content/groups/public-jboss')
+
+#Running tests with the CLI
+1) Because CLI-based applications don’t involve a traditional build system, the CLI offers a test command for running tests.
+2) mkdir tests
+3) ReadingListControllerTest.groovy
+4) spring test tests/ReadingListControllerTest.groovy *
+5) spring test tests //run all tests
+
+#write Spock specifications instead of JUnit tests
+1) Spock specification - ReadingListControllerSpec
+spring test tests //run all tests
+
+# Creating a deployable artifact
+1) $ spring jar ReadingList.jar *
+2) java -jar ReadingLkist.jar
+3) the executable JAR can be deployed to several Platform-as-a-Service (PaaS) cloud platforms including Pivotal Cloud Foundry and Heroku.
+
+Chapter 6 Applying Grails in Spring Boot
+# Using GORM for data persistence
+1) GORM (Grails object-relational mapping). GORM makes database work as simple as declaring the entities that will be persisted.
+1.1) Book entity from the reading-list example could be written in Groovy as a GORM entity.
+package readinglist
+import grails.persistence.*
+@Entity
+class Book {
+	Reader reader
+	String isbn
+	String title
+	String author
+	String description
+}
+1.2) annotated with the @Entity annotation from Grails. This simple entity does a lot, including mapping the object to the database and enabling Book with persistence methods through which it can be saved and retrieved.
+1.3) To use GORM with a Spring Boot project, all you must do is add the GORM dependency to your build
+compile("org.grails:gorm-hibernate4-spring-boot:1.1.0.RELEASE")
+1.3.1) This library carries some Spring Boot auto-configuration with it that will automatically configure all of the necessary beans to support working with GORM
+1.3.2) the gorm-hibernate4-spring-boot dependency enables GORM for data persistence via Hibernate
+1.3.3) GORM for MongoDB is also available for Spring Boot
+compile("org.grails:gorm-mongodb-spring-boot:1.1.0.RELEASE")
+1.4) A GORM Reader entity
+1.5) ReadingListController.groovy
+1.5.1) the most significant difference is that it doesn’t work with an injected ReadingListRepository anymore. Instead, it works directly with the Book type for persistence.
+@RequestMapping(method=RequestMethod.POST)
+def addToReadingList(Reader reader, Book book) {
+	Book.withTransaction {
+		book.setReader(reader)
+		book.save()
+	}
+	"redirect:/"
+}
+1.6) SecurityConfig in Groovy
+1.7) With GORM handling all of the persistence for us, ReadingListRepository is no longer needed. Neither are any of its implementations. I think you’ll agree that less code is a good thing.
+
+# Defining views with Groovy Server Pages
+1） add the GSP for Spring Boot library to your build: compile("org.grails:grails-gsp-spring-boot:1.0.0")
+2） GSP template is sprinkled with expression language references (the parts wrapped in ${}) and tags from the GSP tag library such as <g:if> and
+<g:each>.
+
+# Mixing Spring Boot with Grails 3
+1） Grails has always been a higher-level framework built upon the giants of Spring, Groovy, Hibernate, and others.
+2） With Grails 3, Grails is now built upon Spring Boot, enabling a very compelling developer experience that makes both Grails developers
+and Spring Boot developers feel at home.
+3） download and install grail
+4) grails -version
+5) Creating a new Grails project: grails create-app readinglist
+6) grails run-app then http://localhost:8080
+7) gradle bootRun
+
+# Defining the domain
+1) Although we could manually create a Book.groovy file, it’s usually better to use the grails tool to create domain types. That’s because it knows where the source files go and it’s also able to generate any related artifacts for us at the same time.
+$ grails create-domain-class Book
+1.1) generated two source files: a Book.groovy file and a BookSpec.groovy file:
+package readinglist
+class Book {
+	static constraints = {
+	}
+}
+1.2) add fields
+package readinglist
+class Book {
+	static constraints = {
+	}
+	String reader
+	String isbn
+	String title
+	String author
+	String description
+}
+1.2.1) The static constraints variable is where you can define any validation constraints to be enforced on instances of Book. In
+
+# Writing a Grails controller
+1) create-controller—Creates an empty controller, leaving it to the developer to write the controller’s functionality
+2) generate-controller—Generates a controller with scaffolded CRUD operations for a given domain type
+3) generate-all—Generates a scaffolded CRUD controller and associated views for a given domain type
+4) $ grails create-controller ReadingList
+4.1) creates a controller named ReadingListController in grails-app/controllers/readingList
+package readinglist
+class ReadingListController {
+	def index() { }
+}
+4.2) it will handle requests whose path is /readingList and forward the request to the view defined at grails-app/views/readingList/index.gsp
+4.3) Fleshing out the ReadingListController
+package readinglist
+
+import static org.springframework.http.HttpStatus.*
+import grails.transaction.Transactional
+class ReadingListController {
+	def index() {
+		respond Book.list(params), model:[book: new Book()]
+	} 
+	@Transactional
+	def save(Book book) {
+		book.reader = 'Craig'
+		book.save flush:true
+		redirect(action: "index")
+	}
+}
+
+# Creating the view
+1) Grails applications typically use GSP templates for their views. 
+2) take advantage of the layout facilities offered in Grails to apply a common design to all of the pages in the application
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="layout" content="main"/>
+		<title>Reading List</title>
+		<link rel="stylesheet" href="/assets/main.css?compile=false" />
+		<link rel="stylesheet" href="/assets/mobile.css?compile=false" />
+		<link rel="stylesheet" href="/assets/application.css?compile=false" />
+	</head>
+2.1) Use the main layout
+
+chapter 7 Taking a peek inside with the Actuator
+1) The Actuator offers production-ready features such as monitoring and metrics to Spring Boot applications.
+2) The Actuator’s features are provided by way of several REST endpoints, a remote shell, and Java Management Extensions (JMX).
+
+# Exploring the Actuator’s endpoints
+1) The key feature of Spring Boot’s Actuator is that it provides several web endpoints in your application through which you can view the internals of your running application.
+2) enable the Actuator endpoints (configuration endpoints, metrics endpoints, and miscellaneous endpoints.)
+compile 'org.springframework.boot:spring-boot-starter-actuator'
+2.1) if using spring boot cli
+@Grab('spring-boot-starter-actuator')
+
+3) Viewing configuration details: /beans
+3.1) response to concerns that auto-configuration hides how beans are wired up in the Spring application context
+3.2) e.g. GETTING A BEAN WIRING REPORT
+3.2.1) returns a JSON document describing every single bean in the application context, its Java type, and any of the other beans it’s injected with
+3.2.2) it would be reasonably easy to write a utility that processes the beans report and produces a graphical representation of the bean relationships.
+
+3.3) EXPLAINING AUTO-CONFIGURATION /autoconfig
+3.3.1) Whereas the /beans endpoint produces a report telling you what beans are in the Spring application context, the /autoconfig endpoint might help you figure out why they’re there—or not there.
+
+5) INSPECTING CONFIGURATION PROPERTIES: /env
+5.1) produces a list of all of the environment properties available to the application
+5.2) This includes environment variables, JVM properties, command-line parameters, and any properties provided in an application.properties or application.yml file.
+5.3) require single property value: /env/amazon.associateId
+
+6) PRODUCING ENDPOINT-TO-CONTROLLER MAP: /mappings
+
+# Tapping runtime metrics
+1) VIEWING APPLICATION METRICS: /metrics
+2) fetch only one metric value: curl localhost:8080/metrics/mem.free
+
+# TRACING WEB REQUESTS
+1) /trace : reports details of all web requests, including details such as the request method, path, timestamp, and request and response headers.
+
+#DUMPING THREAD ACTIVITY
+1) /dump endpoint produces a snapshot of current thread activity.
+
+#MONITORING APPLICATION HEALTH
+1) /health
+
+#Shutting down the application
+1) In a microservice architecture, for instance, you might have multiple instances of a microservice application running in the cloud.
+2) /shutdown
+3) curl -X POST http://localhost:8080/shutdown
+4) application.yml:
+endpoints:
+	shutdown:
+		enabled: true
+5) You should secure the /shutdown endpoint, requiring that only authorized users are allowed to bring the application down
+
+#Fetching application information
+1) /info : reports any information about your application that you might want to expose to callers.
+2) application.yml:
+info:
+  contact:
+    email: support@myreadinglist.com
+    phone: 1-888-555-1971
+
+# Connecting to the Actuator remote shell
+1) Spring Boot integrates with CRaSH, a shell that can be embedded into any Java application
+2) compile("org.springframework.boot:spring-boot-starter-remote-shell")
+@Grab("spring-boot-starter-remote-shell")
+3) watch for the password to be written to the log:
+Using default security password: efe30c70-5bf0-43b1-9d50-c7a02dda7d79
+4) ~% ssh user@localhost -p 2000
+5) The remote shell offers almost two dozen commands that you can execute within the context of the running application.
+5.1) CRaSH shell commands provided by Spring Boot
+5.1.1) autoconfig: Produces an auto-configuration explanation report. Similar to the /autoconfig endpoint, except that the results are plain text instead of JSON. e.g. autoconfig | less
+5.1.2) beans: Displays the beans in the Spring application context. Similar to the /beans 
+5.1.3) endpoint: endpoint Invokes an Actuator endpoint. e.g. endpoint list; endpoint invoke info
+5.1.4) metrics: Displays Spring Boot metrics. Similar to the /metrics endpoint, except presented as a live list of metrics that’s updated as the values change.
+
+# Monitoring your application with JMX
+1) In addition to the endpoints and the remote shell, the Actuator also exposes its endpoints as MBeans to be viewed and managed through JMX (Java Management Extensions).
+
+# Customizing the Actuator
+1) Actuator can be customized in several ways:
+1.1) Renaming endpoints
+1.2) Enabling and disabling endpoints
+1.3) Defining custom metrics and gauges
+1.4) Creating a custom repository for storing trace data
+1.5) Plugging in custom health indicators
+
+# Changing endpoint IDs
+1) set a property whose name is endpoints.endpoint-id.id.
+2) YAML:
+endpoints:
+	shutdown:
+		id: kill
+3) you might simply want to name the endpoints to match the terminology used by your team. But you might also think that renaming an endpoint
+will hide it from anyone who might be familiar with the default names, thus creating a sense of security by obscurity.
+
+# Enabling and disabling endpoints
+1) disable the /metrics endpoint
+endpoints:
+	metrics:
+		enabled: false
+2) only want to leave one or two of the endpoints enabled, it might be easier to disable them all and then opt in to the ones you want to enable.
+endpoints:
+	enabled: false
+	metrics:
+		enabled: true
+
+# custom metrics and gauges
+1) for instance, that we want a metric that reports how many times a user has saved a book to their reading list.
+2) the auto-configuration that enables the Actuator also creates an instance of CounterService and registers it as a bean in the Spring application context.
+3) Actuator auto-configuration will also configure a bean of type GaugeService, an interface similar to CounterService that lets you record a single value to a named gauge metric.
+4) need to inject the CounterService and GaugeService beans into ReadingListController and call their methods from the addToReadingList() method.
+5) Although CounterService and GaugeService are simple to use, there are some metrics that are hard to capture by incrementing a counter or recording a gauge value. For those cases, we can implement the PublicMetrics interface and provide as many custom metrics as we want.
+
+# Creating a custom trace repository
+1) declare your own InMemoryTraceRepository bean and set its capacity to some value higher than 100.
+2) Alternatively, we could store those trace entries elsewhere—somewhere that’s not consuming memory and that will be more permanent.
+2.1) All we need to do is implement Spring Boot’s TraceRepository interface:
+2.2) For demonstration purposes, perhaps we could create an instance of TraceRepository that stores trace entries in a MongoDB database.
+
+# Plugging in custom health indicators
+1) The AmazonHealth class isn’t terribly fancy. The health() method simply uses Spring’s RestTemplate to perform a GET request to Amazon’s home page. If it works, it returns a Health object indicating that Amazon is “UP”. On the other hand, if an exception is thrown while requesting Amazon’s home page, then health() returns a Health object indicating that Amazon is “DOWN”.
+Health.up().build();
+2) Health.down().withDetail("reason", e.getMessage()).build();
+"amazonHealth": {
+	"reason": "I/O error on GET request for
+	\"http://www.amazon.com\":www.amazon.com;
+	nested exception is java.net.UnknownHostException:
+	www.amazon.com",
+	"status": "DOWN"
+},
+
+# Securing Actuator endpoints
+1) many of the Actuator endpoints expose information that may be considered sensitive or even dangerous, e.g. /shutdown
+2) In a Spring Boot application, this means adding the Security starter as a build dependency and letting security auto-configuration take
+care of locking down the application, including the Actuator endpoints.
+3) To lock down Actuator endpoints, we’ll need to make a few changes to the configure() method in SecurityConfig.java.
+3.1) Suppose, for instance, that we want to lock down the /shutdown endpoint, requiring that the user have ADMIN access.
+@Override
+protected void configure(HttpSecurity http) throws Exception {
+http
+	.authorizeRequests()
+		.antMatchers("/").access("hasRole('READER')")
+		.antMatchers("/shutdown").access("hasRole('ADMIN')")
+		.antMatchers("/**").permitAll()
+	.and()
+	.formLogin()
+		.loginPage("/login")
+		.failureUrl("/login?error=true");
+}
+3.2) Adding an in-memory admin authentication user
+@Override
+protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+	auth
+		.userDetailsService(new UserDetailsService() {
+			@Override
+			public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+				UserDetails user = readerRepository.findOne(username);
+				if (user != null) {
+					return user;
+				}
+				throw new UsernameNotFoundException("User '" + username + "' not found.");
+			}
+		})
+		.and()
+			.inMemoryAuthentication()
+			.withUser("admin").password("s3cr3t").roles("ADMIN", "READER");
+}
+3.3) locking down a few end points:
+.antMatchers("/shutdown", "/metrics", "/configprops")
+.access("hasRole('ADMIN')")
+3.4) locking all endpoints:
+3.4.1) setting the endpoint’s context path by setting the management.context-path property; in application.yml
+management:
+	context-path: /mgmt
+.antMatchers("/mgmt/**").access("hasRole('ADMIN')")
+
+# Summary
+1) Spring Boot’s Actuator opens a portal into the inner workings of a Spring Boot application, exposing components, metrics, and gauges to help understand what makes the application tick.
+
+Chapter 9 Deploying Spring Boot applications
+1) unlike most Java web applications, which are typically deployed to an application server as WAR files, Spring Boot offers several deployment options.
+
+# Weighing deployment options
+1) ways to build and run Spring Boot applications
+1.1) Running the application in the IDE (either Spring ToolSuite or IntelliJ IDEA)
+1.2) Running from the command line using the Maven spring-boot:run goal or Gradle bootRun task
+1.3) Using Maven or Gradle to produce an executable JAR file that can be run at the command line
+1.4) Using the Spring Boot CLI to run Groovy scripts at the command line
+1.5) Using the Spring Boot CLI to produce an executable JAR file that can be run at the command line
+2) Executable JAR files and the Spring Boot CLI, however, are still on the table and are great choices when deploying to a cloud environment.
+3) how to deploy a Spring Boot application to a more traditional application server environment such as Tomcat, WebSphere, or WebLogic. In those cases, executable JAR files and Groovy source code won’t work.
+
+4) Spring Boot deployment choices
+Deployment artifact 				Produced by 						Target environment
+Raw Groovy source 					Written by hand 					Cloud Foundry and container deployment, such as with Docker
+Executable JAR 						Maven, Gradle, or Spring Boot CLI 	Cloud environments, including Cloud Foundry and Heroku, as
+																			well as container deployment, such as with Docker
+WAR 								Maven or Gradle 					Java application servers or cloud environments such as Cloud Foundry
+4.1) If you’re deploying to a Tomcat server running in your own data center, then the choice of a WAR file has been made for you. 
+4.2) if you’ll be deploying to Cloud Foundry, you’re welcome to choose any of the deployment options shown.
+4.3) focus our attention on the following options:
+4.3.1) Deploying a WAR file to a Java application server
+4.3.2) Deploying an executable JAR file to Cloud Foundry
+4.3.3) Deploying an executable JAR file to Heroku (where the build is performed by Heroku)
+
+# Deploying to an application server
+1) Tomcat server embedded in the application. unlike a conventional Java web application, the application has not been deployed in Tomcat; rather, Tomcat has been deployed in the application.
+2) if we’re going to deploy the application to a Java application server, we’re going to need to build a WAR file. And so that the application server will know how to run the application, we’ll also need to include a servlet initializer in that WAR file.
+3) Building a WAR file
+3.1) using gradle:
+apply plugin: 'war'
+war {
+	baseName = 'readinglist'
+	version = '0.0.1-SNAPSHOT'
+}
+3.2) using maven:
+4) But that WAR file will be useless unless it includes a web.xml file or a servlet initializer to enable Spring MVC’s DispatcherServlet.
+<packaging>war</packaging>
+4.1) Extending SpringBootServletInitializer for the reading-list application
+public class ReadingListServletInitializer extends SpringBootServletInitializer {
+@Override
+protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+	return builder.sources(Application.class);	//Specify Spring configuration
+	}
+}
+4.1.1) inject SpringApplicationBuilder as a parameter and returns it as a result. In between, it calls the sources() method to register
+any Spring configuration classes. 
+4.1.2) in this case, it only registers the Application class, which, as you’ll recall, served dual purpose as both a bootstrap class (with a
+main() method) and a Spring configuration class.
+4.1.3) $ gradle build or $ mvn package or gradle build -x test //skip test
+4.1.4) For Tomcat, you can deploy an application by copying the WAR file into Tomcat’s webapps directory.
+4.1.4.1) Assuming that you didn’t rename the WAR file before deploying it, the servlet context path will be the same as the base name of the WAR file, or /readinglist-0.0.1-SNAPSHOT
+4.1.4.2) even though we’re building a WAR file, it may still be possible to run it without deploying to an application server.
+java -jar readinglist-0.0.1-SNAPSHOT.war
+
+# Creating a production profile
+1) Thanks to auto-configuration, we have a DataSource bean that references an embedded H2 database.
+2) the DataSource bean is a data source pool, typically org.apache.tomcat.jdbc.pool.DataSource.
+3) in order to use some database, we simply need to declare our own DataSource bean, overriding the auto-configured DataSource:
+4) suppose that we wanted to work with a PostgreSQL database running on localhost with the name “readingList”.
+4.1) declare our DataSource bean:
+@Bean
+@Profile("production")
+public DataSource dataSource() {
+	DataSource ds = new DataSource();
+	ds.setDriverClassName("org.postgresql.Driver");
+	ds.setUrl("jdbc:postgresql://localhost:5432/readinglist");
+	ds.setUsername("habuma");
+	ds.setPassword("password");
+	return ds;
+}
+4.1.1) the DataSource type is Tomcat’s org.apache.tomcat.jdbc.pool.DataSource, not to be confused with javax.sql.DataSource, which it ultimately implements.
+4.1.2) With this bean declared, the default auto-configured DataSource bean will be passed over.
+4.1.3) this @Bean is also annotated with @Profile to specify that it should only be created if the “production” profile is active.
+4.1.4) we can still use the embedded H2 database while developing the application, but use the PostgreSQL database in production by activating the profile.
+4.2) configure the database details without explicitly declaring our own DataSource bean, but via properties in application.yml or application.properties.
+4.2.1) DataSource configuration properties
+Property (prefixed with spring.datasource.) 		Description
+name 												The name of the data source
+initialize 											Whether or not to populate using data.sql (default: true)
+schema 												The name of a schema (DDL) 
+script resource data 								The name of a data (DML) script resource
+sql-script-encoding 								The character set for reading SQL scripts
+driver-class-name 									The fully qualified class name of the JDBC driver
+													(can often be automatically inferred from the URL)
+url 												The database URL
+username 											The database username
+password 											The database password
+...
+4.2.2) in application.yaml
+---
+spring:
+  profiles: production
+  datasource:
+    url: jdbc:postgresql://localhost:5432/readinglist
+    username: postgres
+    password: atwjsw
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+4.2.2.1) starts with --- and the first property set is spring.profiles. This indicates that the properties that follow will only be applied if the “production” profile is active.
+4.2.2.2) The spring.jpa.database-platform property sets the underlying JPA engine to use Hibernate’s PostgreSQL dialect. 
+4.2.3) To enable this profile, we’ll need to set the spring.profiles.active property to “production”.
+4.2.3.1) $ export SPRING_PROFILES_ACTIVE=production
+4.2.3.1.1) You probably noticed that SPRING_PROFILES_ACTIVE is different from spring .profiles.active. It’s not possible to export an environment variable with periods in the name, so it was necessary to alter the name slightly.
+
+4.3) By default, Spring Boot configures Hibernate to create the schema automatically when using the embedded H2 database. More specifically, it sets Hibernate’s hibernate.hbm2ddl.auto to create-drop, indicating that the schema should be created when Hibernate’s SessionFactory is created and dropped when it is closed.
+4.3.1) But it’s set to do nothing if you’re not using an embedded H2 database.
+
+# Enabling database migration
+1) One option is to set the hibernate.hbm2ddl.auto property to create, create-drop, or update via Spring Boot’s spring.jpa.hibernate.ddl-auto property.
+1.1) application.yml:
+spring:
+	jpa:
+		hibernate:
+			ddl-auto: create-drop
+
+2) A better choice is to use a database migration library. Database migration libraries work from a set of database scripts and keep careful track of the ones that have already been applied so that they won’t be applied more than once.
+2.1) Spring Boot includes auto-configuration support for two popular database migration libraries:
+2.1.1) Flyway (http://flywaydb.org)
+2.1.2) Liquibase (www.liquibase.org)
+
+3.1) DEFINING DATABASE MIGRATION WITH FLYWAY
+3.1.1) Flyway is a very simple, open source database migration library that uses SQL for defining the migration scripts. The idea is that each script is given a version number, and Flyway will execute each of them in order to arrive at the desired state of the database.
+3.1.2) For the reading-list application, we’re starting with an empty database with no tables or data. Therefore, the script we’ll need to get started will need to create the Reader and Book tables, including any foreign-key constraints and initial data.
+create table Reader (
+	id serial primary key,
+	username varchar(25) unique not null,
+	password varchar(25) not null,
+	fullname varchar(50) not null
+);
+create table Book (
+	id serial primary key,
+	author varchar(50) not null,
+	description varchar(1000) not null,
+	isbn varchar(10) not null,
+	title varchar(250) not null,
+	reader_username varchar(25) not null,
+	foreign key (reader_username) references Reader(username)
+);
+create sequence hibernate_sequence;
+insert into Reader (username, password, fullname) values ('craig', 'password', 'Craig Walls');
+3.1.3) the Flyway script is just SQL. What makes it work with Flyway is where it’s placed in the classpath and how it’s named.
+3.1.4) Flyway scripts need to be placed in the path /db/migration relative to the application’s classpath root.
+3.1.4) Flyway scripts follow a naming convention that includes the version number:
+V1__initialize.sql
+3.1.5) Later, should we need to add a new table to the database or a new column to an existing table, we can create another script named with 2 in the version place.
+3.1.6) tell Hibernate to not attempt to create the tables by setting spring.jpa.hibernate.ddl-auto to none.
+3.1.7) compile("org.flywaydb:flyway-core")
+3.1.8) When the application is deployed and running, Spring Boot will detect Flyway in the classpath and auto-configure the beans necessary to enable it. Flyway will step through any scripts in /db/migration and apply them if they haven’t already been applied.
+3.1.9) As each script is executed, an entry will be written to a table named schema_version. The next time the application starts, Flyway will see that those scripts have been recorded in schema_version and skip over them.
+
+3.2) DEFINING DATABASE MIGRATION WITH LIQUIBASE
+3.2.1) defining migration scripts with SQL is a two-edged sword. Although it’s easy and natural to work with SQL, you run the risk of defining a migration script that works with one database platform but not another.
+3.2.2) Liquibase supports several formats (XML, YAML, and JSON) for writing migration scripts that are agnostic to the underlying platform.
+3.2.3) compile("org.liquibase:liquibase-core")
+3.2.4) /db/changelog/db.changelog-master.yaml
+3.2.5) Unlike Flyway, which has multiple scripts, one for each change set, Liquibase changesets are all collected in the same file.
+3.2.6) Future changes to the database can be included by adding a new changeset with a different id.
+3.2.7) When the application starts up, Liquibase will read the changeset instructions in db.changelog-master.yaml, compare them with what it may have previously written to the databaseChangeLog table, and apply any changesets that have not yet been applied.
+3.2.8) modify location of migration script: 
+liquibase:
+	change-log: classpath:/db/changelog/db.changelog-master.xml
+
+# Pushing to the cloud
+1) platform as a service (PaaS) are among the most compelling. 
+2) PaaS offers a ready-made application deployment platform with several add-on services (such as databases and message brokers) to bind to your applications.
+3) two of the most popular PaaS platforms available: Cloud Foundry and Heroku.
+4) Deploying to Cloud Foundry
+4.1) Cloud Foundry is a PaaS platform from Pivotal, the same company that sponsors the Spring Framework and the other libraries in the Spring platform.
+4.2) For the reading-list application, we’re going to deploy to Pivotal Web Services (PWS), a public Cloud Foundry hosted by Pivotal at http://run.pivotal.io.
+4.3) sign up for an account
+4.4) download and install the cf command-line tool from https://console.run.pivotal.io/tools.
+4.5) log into your PWS account:
+cf login -a https://api.run.pivotal.io
+API endpoint: https://api.run.pivotal.io
+Email> {your email}
+Password> {your password}
+Authenticating...
+OK
+4.6) use the cf tool to push applications to Cloud Foundry.
+$ cf push sbia-readinglist -p build/libs/readinglist.war
+4.6.1) The first argument to cf push is the name given to the application in Cloud Foundry. it will be used as the subdomain that the application will be hosted at.
+4.6.2) In this case, the full URL for the application will be http://sbia-readinglist.cfapps.io.
+4.7) randomly produce a subdomain:
+$ cf push sbia-readinglist -p build/libs/readinglist.war --random-route
+4.8) Cloud Foundry will be happy to deploy Spring Boot applications in any form they come in, including executable JAR files and even uncompiled Groovy scripts run via the Spring Boot CLI.
+http://sbia-readinglist-overprominent-totalitarianism.cfapps.io/
+4.9) restart the application: cf restart sbia-readinglist
+4.10) we’ll use the PostgreSQL service from the marketplace, which is named “elephantsql”.
+cf marketplace -s elephantsql
+4.11) cf create-service elephantsql turtle readinglistdb
+4.12) cf bind-service sbia-readinglist readinglistdb
+4.13) forces Cloud Foundry to redeploy the application and reevaluate the VCAP_SERVICES value.
+cf restage sbia-readinglist
+
+# Deploying to Heroku
+1） Rather than deploy a completely built deployment artifact, Heroku arranges a Git repository for your application and builds and deploys the application for you every time you push it to the repository.
+2） set up the application in Heroku using the Heroku command-line tool
+heroku apps:create sbia-readinglist-atwjsw
+2.1）This name will be used as the name of the Git repository as well as the subdomain of the application at herokuapps.com.
+2.2）you can leave off the name and Heroku will generate a unique name for you (such as “fierce-river-8120” or “serene-anchorage-6223”).
+2.3）The apps:create command creates a remote Git repository at https://git.heroku.com/sbia-readinglist.git and adds a remote reference to the repository named “heroku” in the local project’s Git configuration. That will enable us to push our project into Heroku using the git command.
+https://git.heroku.com/sbia-readinglist-atwjsw.git
+3）provide a file named Procfile that tells Heroku how to run the application after it has been built.
+3.1）For our reading-list application, we need to tell Heroku to run the WAR file produced by the build as an executable JAR file using the
+java command：
+web: java -Dserver.port=$PORT -jar build/libs/readinglist.war
+3.2）When Heroku tries to build our application, it will do so by executing a task named stage. Therefore, we’ll need to add a stage task to build.gradle:
+task stage(dependsOn: ['build']) {
+}
+3.3） inform Heroku of the Java version we’re building the application with so that it runs the application with the appropriate version of Java.
+java.runtime.version=1.7
+3.4） push the project into Heroku：
+$ git commit -am "Initial commit"
+$ git push heroku master
+3.4）After the code is pushed into Heroku, Heroku will build it using either Maven or Gradle (depending on which kind of build file it finds) and then run it using the instructions in Procfile.
+3.5）http://{app name}.herokuapp.com, where “{app name}” is the name given to the application when you used apps:create.
+3.6）/health endpoint
+3.7）create and bind to a PostgreSQL service
+$ heroku addons:add heroku-postgresql:hobby-dev
+3.8）Open db service dashboard and set the spring.datasource.* properties
+$ heroku addons:open waking-carefully-3728
+4) Spring Cloud Connectors project does. It works with both Cloud Foundry and Heroku to look up any services bound to an application and automatically configure the application to use those services.
+
+appendix A Spring Boot Developer Tools
+1） Spring Boot 1.3 introduced a new set of developer tools
+1.1）Automatic restart—Restarts a running application when files are changed in the classpath
+1.2）LiveReload support—Changes to resources trigger a browser refresh automatically
+1.3）Remote development—Supports automatic restart and LiveReload when deployed remotely
+1.4）Development property defaults—Provides sensible development defaults for some configuration properties
+2）build.gradle file: compile "org.springframework.boot:spring-boot-devtools"
+3）The developer tools will be disabled when your application is running from a fully packaged JAR or WAR file, so it’s unnecessary to remove this dependency before building a production deployment.
+
+# Automatic restart
+1) With the developer tools active, any changes to files on the classpath will trigger an application restart. 
+2) To make the restart as fast as possible, classes that won’t change (such as those in third-party JAR files) will be loaded into a base classloader, whereas application code that is being worked on will be loaded into a separate restart classloader.
+3) View templates, such as Thymeleaf templates, can be edited on the fly without restarting the application. Static resources in /static or /public likewise don’t require an application restart, so Spring Boot developer tools exclude the following paths from restart consideration: /META-INF/resources, /resources, /static, /public, /templates.
+4) The default set of restart path exclusions can be overridden by setting the spring.devtools.restart.exclude property.
+spring:
+	devtools:
+		restart:
+			exclude: /static/**,/templates/**
+5) disable automatic restart completely:
+spring:
+	devtools:
+		restart:
+			enabled: false
+6) Another option is to set a trigger file that must be changed in order for the restart to take place
+spring:
+	devtools:
+		restart:
+			trigger-file: .trigger
+
+# LiveReload
+1) Spring Boot’s developer tools integrate with LiveReload (http://livereload.com) to eliminate the Refresh step.
+2) When the developer tools are active, Spring Boot will start an embedded LiveReload server that can trigger a browser refresh whenever a resource is changed.
+3) install the LiveReload plugin into your web browser.
+4) disable the embedded LiveReload server:
+spring:
+	devtools:
+		livereload:
+			enabled: false
+
+
+

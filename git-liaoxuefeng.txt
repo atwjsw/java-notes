@@ -63,6 +63,8 @@ git reset --hard 4551b71: HEAD is now at 4551b71 remove test.txt and working and
 
 7）远程仓库操作
 7.1）git remote add origin git@github.com:atwjsw/learngit.git： 添加远程库， 
+7.1.1) 可以添加多个远程库： git remote add heroku https://git.heroku.com/sbia-readinglist-atwjsw.git
+7.1.2）这样便可以向多个远程库推送：git push heroku master
 7.2）本地Git仓库关联GitHub远程仓库，让这两个仓库进行远程同步，这样，GitHub上的仓库既可以作为备份，又可以让其他人通过该仓库来协作
 7.3）远程库的名字就是origin，这是Git默认的叫法，也可以改成别的，但是origin这个名字一看就知道是远程库。
 7.4）git push -u origin master： 把当前分支master推送到远程并关联本地的master分支和远程的master分支

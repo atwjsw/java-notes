@@ -1,0 +1,47 @@
+1. Spring Security: 对浏览器访问应用进行认证， 使用内置的user repository, session based
+2. Spring Social: 对浏览器访问应用进行认证， 使用内置的社交网站的user repository, session based
+3. Spring Security OAuth: 对app访问应用进行认证，token based
+
+Chapter 1: 开始开发
+# Development environment
+1) JDK installation
+2) STS installation: spring.io
+3) MySQL installation
+
+4)Create 5 modules
+5) dependency management: spring.io- spring.io.platform, spring cloud
+
+RESTful特点
+1)  用URL描述资源
+2） 使用HTTP方法描述行为。 使用HTTP状码来表示不同的结果
+3） 使用json交互数据
+4） RESTful只是一种风格， 并部署强制的标准
+
+level3： 使用超媒体，在资源的表达中包含了链接信息。 调用了一个Restful api后， 返回的结果中除了响应数据外，还有一些额外的链接信息， 你可以探索还有那些跟调用的信息相关的链接。
+
+1） restful api 的测试用例
+1.1） add dependency, introduce spring test framework: spring-boot-starter-test
+1.2) @RestController
+1.3) @RequestMapping(value = "/user", method=RequestMethod.GET)
+1.4) @RequestParam(value="username", required=false, defaultValue="tom") String nickname
+1.5) @RunWith, @SpringBootTest @Autowired WebApplicationContext, MockMvcBuilders, MockMvc.perform().andExpect()
+1.6) MockMvcRequestBudiler.get(...).param().contenType()
+1.7) @PageableDefault(page=2, size=17, sort="username,asc") Pageable pageable
+1.8) ReflectionToStringBuilder.toString(userQueryCondition, ToStringStyle.MULTI_LINE_STYLE)
+1.9) jsonPath: .andExpect(MockMvcResultMatchers.jsonPath("$.length()").value(3));
+https://github.com/json-path/JsonPath
+1.10) @PathVariable(name="id")  String userId
+1.11) RegExp to constraint pathVariable: @RequestMapping(value="/user/{id:\\d+}", method=RequestMethod.GET)
+1.12) @jsonView
+1.12.1) 使用接口来声明多个视图
+public interface UserSimpleView {};
+public interface UserDetailView extends UserSimpleView {};
+1.12.2）在值对象的get方法上指定视图
+	@JsonView(UserSimpleView.class)
+	public String getUsername() {
+		return username;
+	}
+1.12.3）在Controller方式上制定视图
+	@JsonView(UserSimpleView.class)
+	public List<User> query(...)
+1.13) @GetMapping(value = "/user") === @RequestMapping(value = "/user", method=RequestMethod.GET)
