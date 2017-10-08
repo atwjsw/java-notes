@@ -20,4 +20,581 @@ sudo docker run -it -p 80:80  -v `pwd`/logs:/var/log/nginx -d nginx
 
 docker kill $(docker ps -q) ; 
 docker rm $(docker ps -a -q) ;
-dockerrmi $(docker images -q -a) 
+docker rm $(docker images -q -a) 
+
+菜鸟教程
+1） Docker 架构
+1.1） Docker 使用客户端-服务器 (C/S) 架构模式，使用远程API来管理和创建Docker容器。
+1.2） Docker 容器通过 Docker 镜像来创建。 容器与镜像的关系类似于面向对象编程中的对象与类
+1.3） 核心概念
+1.3.1）镜像(Images)是创建 Docker 容器的模板。
+1.3.2）容器(Container)是独立运行的一个或一组应用。
+1.3.3）客户端(Client)通过命令行或者其他工具使用 Docker API (https://docs.docker.com/reference/api/docker_remote_api) 与 Docker 的守护进程通信。
+1.3.4）主机(Host) 一个物理或者虚拟的机器用于执行 Docker 守护进程和容器。
+1.3.5）仓库(Registry)用来保存镜像，可以理解为代码控制中的代码仓库。
+1.3.6）Hub(https://hub.docker.com) 提供了庞大的镜像集合供使用。
+1.3.7）Docker Machine是一个简化Docker安装的命令行工具，通过一个简单的命令行即可在相应的平台上安装Docker，比如VirtualBox、 Digital Ocean、Microsoft Azure。
+
+What is a Container?
+1) Containers are a way to package software in a format that can run isolated on a shared operating system. 
+2) Unlike VMs, containers do not bundle a full operating system - only libraries and settings required to make the software work are needed. 
+3) This makes for efficient, lightweight, self-contained systems and guarantees that software will always run the same, regardless of where it’s deployed.
+
+# Lab01 Hello World
+1) $ docker container run hello-world
+2) generate this message, Docker took the following steps:
+- The Docker client contacted the Docker daemon.
+- The Docker daemon pulled the "hello-world" image from the Docker Hub.
+- The Docker daemon created a new container from that image which runs the executable that produces the output you are currently reading.
+- The Docker daemon streamed that output to the Docker client, which sent it to your terminal.
+3) docker run -it ubuntu bash // interacitve mode
+
+# lab02 First Alpine Linux Container
+1.0) Running your first container
+1.0.1) docker image pull alpine //fetches the alpine image from the Docker registry and saves it in our system.
+1.0.2) docker image ls //see a list of all images on your system.
+
+1.1) Docker Container Run
+1.1.1) docker container run alpine ls -l  //run a Docker container based on this image.
+- When you call run, the Docker client finds the image (alpine in this case), creates the container and then runs a command in  that container. 
+- When you run "docker container run alpine", you provided a command (ls -l), so Docker started the command specified and you saw the listing.
+1.1.3) docker container run alpine echo "hello from alpine"
+- the Docker client ran the echo command in our alpine container and then exited it. 
+- If you’ve noticed, all of that happened pretty quickly. 
+- Imagine booting up a virtual machine, running a command and then killing it. Now you know why they say containers are fast!
+1.1.5) docker container run alpine /bin/sh
+1.1.6) docker container run -it alpine /bin/sh //run in an interactive terminal
+1.1.7) docker container ls //shows you all containers that are currently running. 
+1.1.8) docker container ls -a //a list of all containers that you ran
+1.1.9) docker container run --help to see a list of all flags it supports. 
+
+1.2) Terminology
+1.2.1) Images - The file system and configuration of our application which are used to create containers. 
+- To find out more about a Docker image, run docker image inspect alpine. 
+- In the demo above, you used the docker image pull command to download the alpine image. 
+- When you executed the command docker container run hello-world, it also did a docker image pull behind the scenes to download the hello-world image.
+1.2.2) Containers - Running instances of Docker images, containers run the actual applications. 
+- A container includes an application and all of its dependencies. 
+- It shares the kernel with other containers, and runs as an isolated process in user space on the host OS. 
+- You created a container using docker run which you did using the alpine image that you downloaded. 
+- A list of running containers can be seen using the docker container ls command.
+1.2.3) Docker daemon - The background service running on the host that manages building, running and distributing Docker containers.
+1.2.4) Docker client - The command line tool that allows the user to interact with the Docker daemon.
+1.2.5) Docker Store - Store is a registry of Docker images. You can think of the registry as a directory of all available Docker images. You’ll be using this later in this tutorial.
+
+# Lab03 Simple Web App
+
+2.1) Run a static website in a container
+2.1.1) docker container run -d seqvence/static-site //download and run the image directly in one go
+- a single-page website that was already created for this demo and is available on the Docker Store as seqvence/static-site.
+- the image doesn’t exist on your Docker host, the Docker daemon first fetches it from the registry and then runs it as a container.
+2.1.2) docker container ls  //view the running containers.
+2.1.3) docker container stop 6b94e5e7b8a2
+2.1.4) docker container rm 6b94e5e7b8a2
+2.1.5) docker container run --name static-site -e AUTHOR="Daniel Wen" -d -P seqvence/static-site //launch a container in detached mode: 
+-d will create a container with the process detached from our terminal
+-P will publish all the exposed container ports to random ports on the Docker host
+-e is how you pass environment variables to the container
+--name allows you to specify a container name
+AUTHOR is the environment variable name and Your Name is the value that you can pass
+2.1.6) docker container port static-site	//see the ports by running
+443/tcp -> 0.0.0.0:32768
+80/tcp -> 0.0.0.0:32769 
+- http://127.0.0.1:32769  //access web page
+2.1.7) docker container run --name static-site-2 -e AUTHOR="Your Name" -d -p 8888:80 seqvence/static-site // "-p 8888:80" = publish to designed port 8888
+2.1.8) docker container port static-site-2	
+2.1.9) docker container stop static-site; docker container rm static-site //stop and remove 
+2.2.0) docker container rm -f static-site-2 //a shortcut to remove container
+
+2.2) Docker Images
+2.2.1) docker image ls //to see the list of images that are available locally on your system
+REPOSITORY             TAG                 IMAGE ID            CREATED             SIZE
+seqvence/static-site   latest              92a386b6e686        2 hours ago        190.5 MB
+nginx                  latest              af4b3d7d5401        3 hours ago        190.5 MB
+python                 2.7                 1c32174fd534        14 hours ago        676.8 MB
+postgres               9.4                 88d845ac7a88        14 hours ago        263.6 MB
+containous/traefik     latest              27b4e0c6b2fd        4 days ago          20.75 MB
+node                   0.10                42426a5cba5f        6 days ago          633.7 MB
+redis                  latest              4f5f397d4b7c        7 days ago          177.5 MB
+mongo                  latest              467eb21035a8        7 days ago          309.7 MB
+alpine                 3.3                 70c557e50ed6        8 days ago          4.794 MB
+java                   7                   21f6ce84e43c        8 days ago          587.7 MB
+- The TAG refers to a particular snapshot of the image and the ID is the corresponding unique identifier for that image.
+- think of an image akin to a git repository - images can be committed with changes and have multiple versions. 
+- When you do not provide a specific version number, the client defaults to latest
+2.2.2) docker image pull ubuntu:12.04 // pull a specific version of ubuntu image
+2.2.3) docker image pull ubuntu	// default to a version named latest
+2.2.4) To get a new Docker image you can either get it from a registry (such as the Docker Cloud) or create your own.
+2.2.5) docker search //search for images directly from the command line 
+2.2.6) base images vs. child images
+- Base images are images that have no parent images, usually images with an OS like ubuntu, alpine or debian.
+- Child images are images that build on base images and add additional functionality.
+2.2.7) official images vs. user images. (Both of which can be base images or child images.)
+2.2.7.1) Official images are Docker sanctioned images. 
+- These are not prefixed by an organization or user name. In the list of images above, the python, node, alpine and nginx images are official (base) images. 
+2.2.7.2)
+- User images are images created and shared by users like you. 
+- They build on base images and add additional functionality. 
+- Typically these are formatted as user/image-name. The user value in the image name is your Docker Cloud user or organization name.
+
+2.3) Create your first image
+2.3.1 Create a Python Flask app that displays random cat pix
+...
+2.3.2) Write a Dockerfile
+- all user images are based on a base image. Since our application is written in Python, we will build our own Python image based on Alpine. 
+- A Dockerfile is a text file that contains a list of commands that the Docker daemon calls while creating an image. 
+- The Dockerfile contains all the information that Docker needs to know to run the app — a base Docker image to run from, location of your project code, any dependencies it has, and what commands to run at start-up. 
+- Dockerfile is a simple way to automate the image creation process. The best part is that the commands you write in a Dockerfile are almost identical to their equivalent Linux commands. This means you don't really have to learn new syntax to create your own Dockerfiles.
+2.3.2.1) Create a file called Dockerfile, and add content to it as described below.
+FROM alpine:3.5	// specifying our base image
+2.3.2.2) install the Python pip package to the alpine linux distribution. This will not just install the pip package but any other dependencies too, which includes the python interpreter.
+RUN apk add --update py2-pip
+2.3.2.3) add the files that make up the Flask Application.
+COPY requirements.txt /usr/src/app/
+RUN pip install --no-cache-dir -r /usr/src/app/requirements.txt
+COPY app.py /usr/src/app/
+COPY templates/index.html /usr/src/app/templates/
+2.3.2.4) Specify the port number which needs to be exposed. 
+EXPOSE 5000
+2.3.2.5) running the application
+CMD ["python", "/usr/src/app/app.py"]
+2.3.2.6) Verify your Dockerfile.
+cat Dockerfile
+
+2.3.3) Build the image
+docker build -t atwjsw/myfirstapp . 
+- an optional tag name with the -t flag, and 
+- the . indicates the current directory containing the Dockerfile 
+
+2.3.4 Run your image
+docker container run -p 8888:5000 --name myfirstapp atwjsw/myfirstapp
+localhost:8888
+docker container rm -f myfirstapp
+
+2.3.5) Dockerfile commands summary
+2.3.5.1) FROM starts the Dockerfile. 
+- Dockerfile must start with the FROM command. 
+- Images are created in layers, which means you can use another image as the base image for your own. 
+- The FROM command defines your base layer. 
+- it takes the name of the image As arguments.
+- Optionally, you can add the Docker Cloud username of the maintainer and image version, in the format username/imagename:version.
+
+2.3.5.2) RUN is used to build up the Image you’re creating. 
+- For each RUN command, Docker will run the command then create a new layer of the image. 
+- This way you can roll back your image to previous states easily. 
+- The syntax for a RUN instruction is to place the full text of the shell command after the RUN (e.g., RUN mkdir /user/local/foo). 
+- This will automatically run in a /bin/sh shell. You can define a different shell like this: RUN /bin/bash -c 'mkdir /user/local/foo'
+
+2.3.5.3) COPY copies local files into the container.
+
+2.3.5.4) CMD defines the commands that will run on the Image at start-up. 
+- Unlike a RUN, this does not create a new layer for the Image, but simply runs the command. 
+- There can only be one CMD per a Dockerfile/Image. 
+- If you need to run multiple commands, the best way to do that is to have the CMD run a script. 
+- CMD requires that you tell it where to run the command, unlike RUN. So example CMD commands would be: 
+CMD ["python", "./app.py"]
+CMD ["/bin/bash", "echo", "Hello World"]
+
+2.3.5.5) EXPOSE opens ports in your image to allow communication to the outside world when it runs in a container.
+
+#Lab04 Docker images deeper dive
+1) Image creation from a container
+1.1) docker container run -ti ubuntu bash  //running an interactive shell in a ubuntu container.
+1.2) apt-get update; apt-get install -y figlet //install the figlet package in this container. 
+1.3) exit //exit from this container
+1.4) docker container ls -a // Get the ID of this container
+1.5) docker container commit aee9421039ac //commit the container and create an image out of it
+1.6) docker image ls //see the newly created image
+1.7) docker image tag 9d58b21715f3 ourfiglet //get the ID of the newly created image and tag it as ourfiglet.
+1.8) docker container run ourfiglet figlet hello // run a container based on the newly created image named ourfiglet, and specify the command to be ran such as it uses the figlet package
+
+1.9) This example shows that we can create a container, add all the libraries and binaries in it and then commit this one in order to create an image. 
+1.10) We can then use that image as we would do for any other images. This approach is not the recommended one as it is not very portable.
+
+2) Image creation using a Dockerfile
+
+# build from official linux image
+2.1) a Dockerfile is a text file that contains all the instructions to build an image.
+2.2) build a hello world application in Node.js
+2.3) Copy the following content into index.js file.
+var os = require("os");
+var hostname = os.hostname();
+console.log("hello from " + hostname);
+2.4) plan: We will use alpine as the base image, add a Node.js runtime and then copy our source code. We will also specify the default command to be ran upon container creation.
+2.5) create Dockerfile 
+FROM alpine    //use alpine as the base image
+RUN apk update && apk add nodejs //add a Node.js runtime
+COPY . /app // copy our source code
+WORKDIR /app
+CMD ["node","index.js"] //default command to be ran
+2.5) docker image build -t hello:v0.1 .  //build from current directory, REPOSITARY is hello, TAG is v0.1
+2.6) docker container run hello:v0.1  //create container from hello:v0.1 with random assigned name
+hello from 853b9507d395
+
+# build from a user custom image
+2.7) There are always several ways to write a Dockerfile, we can start from a Linux distribution and then install a runtime (as we did above) or use images where this has already been done for us.
+2.8) we will use the mhart/alpine-node:6.9.4 image. This is not an official image but it’s a very well known and used one.
+2.9) Create a new Dockerfile named Dockerfile-v2
+FROM mhart/alpine-node:6.9.4
+COPY . /app
+WORKDIR /app
+CMD ["node","index.js"]
+2.10)  In this example, installing Node.js is not a big deal, but it is really helpful to use image where a runtime (or else) is already packages when using more complex environments.
+2.11) docker image build -f Dockerfile-v2 -t hello:v0.2 .   //use the -f option to point towards the dockerfile
+2.12) docker container run hello:v0.2
+hello from 2213f7b29665
+
+# ENTRYPOINT vs COMMAND 
+1)  Dockerfile-v3
+FROM alpine
+ENTRYPOINT ["ping"]
+CMD ["localhost"]
+2) define the ping command as the ENTRYPOINT and the localhost as the CMD
+3) the command that will be ran by default is the concatenation of ENTRYPOINT and CMD: ping localhost.
+4) This command can be seen as a wrapper around the ping utility to which we can change the address we provide as a parameter.
+5) docker image build -f Dockerfile-v3 -t ping:v0.1 .	//ping localhost
+6) docker container run ping:v0.1 8.8.8.8	//ping 8.8.8.8
+
+# Image Inspection
+1) docker image pull alpine //pull image
+- docker image inspect alpine
+- the layers the image is composed of
+- the driver used to store the layers
+- the architecture / os it has been created for metadata of the image
+2) docker image inspect --format "{{ json .RootFS.Layers }}" alpine | python -m json.tool //  Go template notation that enables to extract the part of information
+3) docker image inspect --format "{{ .Architecture }}" alpine  // query only the Architecture information
+
+# Filesystem exploration
+1) docker container stop $(docker container ls -aq) //stop all containers
+2) docker container rm $(docker container ls -aq) //remove all containers
+3) docker image rm $(docker image ls -q) //remove all the images
+4) ls /graph/overlay2 //look at the /graph/overlay2 folder where the image and container layers are stored.
+5) docker image pull nginx
+Using default tag: latest
+latest: Pulling from library/nginx
+5040bd298390: Pull complete
+d7a91cdb22f0: Pull complete
+9cac4850e5df: Pull complete
+Digest: sha256:33ff28a2763feccc1e1071a97960b7fef714d6e17e2d0ff573b74825d0049303
+Status: Downloaded newer image for nginx:latest
+5.1) 3 layers are pulled.
+6) ls /graph/overlay2
+06055391cfdebd41ef0a35b7575286d62db95d4bc11042bab4b9c91d05b9825f
+0709ac19f36f3d183788bf1f0fe33fc2e3118f3173a5655c9bc50bfa19319fc8
+56d6b090394e2072c2ba18c0189d805bda56eb7bcdfb830c219b819e3623dc7c
+6.1) Some folders, with names that looks like hash, were created. Those are the layers which, merged together, build the image filesystem.
+7) docker container run -d nginx // run a container based on nginx image 
+7.1) -d, --detach Run container in background and print container ID
+8) ls /graph/overlay2 
+06055391cfdebd41ef0a35b7575286d62db95d4bc11042bab4b9c91d05b9825f
+0709ac19f36f3d183788bf1f0fe33fc2e3118f3173a5655c9bc50bfa19319fc8
+378e9bcaa0f08581549eac2500ddb8fb422e387b87921d29f6107822466a05e6
+378e9bcaa0f08581549eac2500ddb8fb422e387b87921d29f6107822466a05e6-init
+56d6b090394e2072c2ba18c0189d805bda56eb7bcdfb830c219b819e3623dc7c
+8.1) We can now see 2 additional folders (ID, ID-init), those ones correspond to the read-write layer of the running container.
+
+# Lab#05 Docker containers deeper dive
+1) Launch containers
+1.1) Running a container in foreground
+- docker container run -ti alpine
+- docker container run -ti alpine sh
+
+1.2) Running a container in background: Very often, containers are ran in background. They can expose services like HTTP API, databases, ...
+1.2.1) docker container run -d --name mongo mongo:3.2 
+- run a container in background (using the -d option).
+- we have also used the –name option to assign a name to the container.
+1.2.2) docker container exec -ti mongo bash // use the name of the container or the ID returned by the previous command and jump into the running container.
+- We are now in the container, that can be really handy for debugging purposes sometimes. e.g. ps ax
+
+1.3)Inspection of a container
+1.3.1) docker container run --name www -d nginx
+1.3.2) docker container inspect www
+1.3.3) use the Go template notation to get only the information we are interested in:
+docker container inspect --format "{{ .Config.Hostname }}" www
+docker container inspect --format "{{ .NetworkSettings.IPAddress }}" www
+
+1.4) docker container --help //get other commands
+
+# Understand the container layer
+1) The container layer is the layer created when a container is run. This is the layer in which the changes applied are stored. 
+2) This layer is deleted when the container is removed and thus cannot be used for persistent storage.
+3) In fact, this new ubuntu container is different from the previous one, the one in which figlet was installed. Both containers have their own container’s layer. Remember, the container’s layer is the read-write layer created when a container is run, it’s the place where changes done within the container are saved.
+
+1.6) Cleanup
+- docker container ls -a
+- docker container ls -aq // -q option get us only the ID of the container.
+- docker container rm -f $(docker container ls -aq) //remove several containers at the same time as we can feed the rm command with this list of ids.
+
+1.7) container layer, the read-write layer that is added to each container that is ran. 
+1.8) container API : run, exec, ls, rm, inspect
+
+# Lab06 Docker Volumes
+1) Data persistency without a volume ? Not possible
+1.1) data is not persisted outside of a container by default.
+1.2) docker container run --name c1 -ti alpine sh  //run an interactive shell within an alpine container named c1.
+1.3) mkdir /data && cd /data && touch hello.txt //create the /data folder and a dummy hello.txt file in it
+1.4) exit  //exit the container
+1.5) docker container inspect c1 //check how the read-write layer (container layer) is accessible from the host.
+- scroll into the output until the GraphDriver key
+1.6) docker container inspect -f "{{ json .GraphDriver }}" c1 | python -m json.tool
+{
+    "Data": {
+        "LowerDir": "/graph/overlay2/55922a6b646ba6681c5eca253a19e90270e3872329a239a82877b2f8c505c9a2-init/diff:/graph/overlay2/30474f5fc34277d1d9e5ed5b48e2fb979eee9805a61a0b2c4bf33b766ba65a16/diff",
+        "MergedDir": "/graph/overlay2/55922a6b646ba6681c5eca253a19e90270e3872329a239a82877b2f8c505c9a2/merged",
+        "UpperDir": "/graph/overlay2/55922a6b646ba6681c5eca253a19e90270e3872329a239a82877b2f8c505c9a2/diff",
+        "WorkDir": "/graph/overlay2/55922a6b646ba6681c5eca253a19e90270e3872329a239a82877b2f8c505c9a2/work"
+    },
+    "Name": "overlay2"
+}
+1.7) ls /graph/overlay2/[YOUR_ID]/diff/data // inspect the folder which path is specified in UpperDir, we can see our /data and the hello.txt file we created are there.
+1.8) docker container rm c1 //remove our c1 container now
+1.9) data created in a container is not persisted. It’s removed with the container’s layer when the container is deleted.
+
+2) Defining a volume in a Dockerfile
+2.1) volumes come into the picture to handle the data persistency.
+2.2) creating a Dockerfile based on alpine and define the /data as a volume. This means that anything written by a container in /data will be persisted outside of the Union filesystem.
+2.3) Create a Dockerfile with the following content
+FROM alpine
+VOLUME ["/data"]
+ENTRYPOINT ["/bin/sh"]
+2.4) docker image build -t img1 . //build an image from this Dockerfile
+2.5) docker container run --name c2 -ti img1 // create a container in interactive mode
+2.6) From the shell we will go into /data and create a hello.txt file.
+cd /data
+touch hello.txt
+ls
+2.7) use the Control-P / Control-Q combination for exiting the container but making sure it remains running
+2.8) docker container inspect c2 // inspect this container and find the Mounts key…
+2.9) Or, 
+
+2.10) a volume bypasses the union filesystem and is not dependent on a container’s lifecycle. docker container inspect -f "{{ json .Mounts }}"  c2 | python -m json.tool
+[
+    {
+        "Destination": "/data",
+        "Driver": "local",
+        "Mode": "",
+        "Name": "2f5b7c6b77494934293fc7a09198dd3c20406f05272121728632a4aab545401c",
+        "Propagation": "",
+        "RW": true,
+        "Source": "/graph/volumes/2f5b7c6b77494934293fc7a09198dd3c20406f05272121728632a4aab545401c/_data",
+        "Type": "volume"
+    }
+]
+2.11) the volume defined in /data is stored in /graph/volumes/2f5…01c/_data on the host (removing part of the ID for a better readability).
+2.12) docker container stop c2 && docker container rm c2 //remove the c2 container.
+2.13) Check that the folder defined under the Source key is still there and contains hello.txt file.
+ls /graph/volumes/24eea8c1950fb84580814cb19655b3ba562fbd81c5ed6f859f5427737c0a8d9d/_data
+
+3) Defining a volume at runtime
+3.1) volumn can also be defined at runtime using the -v flag of the docker container run command.
+3.2） docker container run --name c3 -d -v /data alpine sh -c 'ping 8.8.8.8 > /data/ping.txt'
+3.3） docker container inspect -f "{{ json .Mounts }}" c3 | python -m json.tool
+3.4） tail -f /graph/volumes/OUR_ID/_data/ping.txt
+- The ping.txt file is updated regularly by the command running in the c3 container.
+
+4） Usage of the Volume API
+4.1） docker volume --help
+4.2） docker volume create --name html // create a volume named html.
+DRIVER              VOLUME NAME
+[other previously created volumes]
+local               html
+4.3） docker volume inspect html
+[
+    {
+        "Driver": "local",
+        "Labels": {},
+        "Mountpoint": "/graph/volumes/html/_data",
+        "Name": "html",
+        "Options": {},
+        "Scope": "local"
+    }
+]
+- The Mountpoint defined here is the path on the Docker host where the volume can be accessed. - this path uses the name of the volume instead of the auto-generated ID we saw in the example above.
+- We can now use this volume and mount it on a specific path of a container. 
+
+4.4） docker container run --name www -d -p 8080:80 -v html:/usr/share/nginx/html nginx
+- use a Nginx image and mount the html volume onto /usr/share/nginx/html folder within the container.
+- Note: /usr/share/nginx/html is the default folder served by nginx. It contains 2 files: index.html and 50x.html
+- use the -p option to map the nginx default port (80) to a port on the host (8080). 
+
+4.5） docker container inspect xxxx
+"Mounts": [
+            {
+                "Type": "volume",
+                "Name": "html",
+                "Source": "/graph/volumes/html/_data",
+                "Destination": "/usr/share/nginx/html",
+                "Driver": "local",
+                "Mode": "z",
+                "RW": true,
+                "Propagation": ""
+            }
+        ]
+4.6) ls /graph/volumes/html/_data // have a look at the content of the volume.
+- The content of the /usr/share/nginx/html folder of the www container has been copied into the /graph/volumes/html/_data folder on the host.
+4.7) Let’s have a look at the nginx’s welcome page
+4.8) modify the index.html file and verify the changes are taken into account within the container.
+4.9) have a look at the nginx’s welcome page. We can see the changes we have done in the index.html.
+cat<<END >/graph/volumes/html/_data/index.html
+SOMEONE HERE ?
+END
+
+5) Mount host’s folder into a container
+5.1) named bind-mount and consist of mounting a host’s folder into a container’s folder. 
+5.2) docker container run -v HOST_PATH:CONTAINER_PATH [OPTIONS] IMAGE [CMD]
+- HOST_PATH and CONTAINER_PATH can be a folder or file. HOST_PATH must exist before running this command.
+
+5.3) 1st case: the CONTAINER_PATH does not exist within the container
+5.3.1) docker container run -ti -v /tmp:/data alpine sh //run an alpine container bind mounting the local /tmp folder inside the container /data folder.
+-  By default, there is no /data folder in an alpine distribution. What is the impact of the bind-mount ?
+5.3.2) In a shell inside our container: ls /data
+- The /data folder has been created inside the container and it contains the content of the /tmp folder of the host. 
+- We can now, from the container, change files on the host and the other way round.
+
+5.4) 2nd case: the CONTAINER_PATH exists within the container
+5.4.1) docker container run -ti -v /tmp:/usr/share/nginx/html nginx bash
+//run a nginx container bind mounting the local /tmp folder inside the /usr/share/nginx/html folder of the containe
+- Are the default index.html and 50x.html files still there in the container’s /usr/share/nginx/html folder ?
+5.4.2) ls /usr/share/nginx/html
+5.4.3) The content of the container’s folder has been overridden with the content of the host folder.
+
+6) ***Bind-mounting is very usefull in development as it enables, for instance, to share source code on the host with the container.
+
+# Lab07 Swarm mode introduction
+1) his tutorial will show you how to setup a swarm and deploy your first services.
+2) docker swarm init --advertise-addr $(hostname -i) // Init your swarm
+- Swarm initialized: current node (x4rncinxcdcxlel55e16k8a49) is now a manager.
+2.1) Copy the join command (watch out for newlines) output and paste it in the other terminal.
+docker swarm join --token SWMTKN-1-1tnvwklvrepj1gbmag5wto8xdshoc543pmc0j5a45y6m9nww3l-2eiw7i5cikbewv262meb63b1k 10.0.146.3:2377
+
+3) docker node ls // Show members of swarm, type the below command in the first terminal:
+4) Creating services
+4.1) docker service create -p 80:80 --name web nginx:latest
+4.2) docker service ls //  list out the services
+4.3) curl http://localhost:80 // check that nginx is running
+
+4) Scaling up
+4.1) docker service inspect web //inspect the service
+4.2) docker service scale web=15 //scale the service:
+4.3) docker service ps web // Docker has spread the 15 services evenly over all of the nodes
+
+5) Updating nodes
+5.1) docker node update --availability drain node2 //drain a particular node, that is remove all services from that node. 
+- The services will automatically be rescheduled on other nodes.
+5.2) docker node ls
+- check out the nodes and see that node2 is still active but drained.
+
+6) Scaling down
+6.1) docker service scale web=10 // scale down the service
+6.2) docker service ps web //check our service status
+6.3) docker node update --availability active node2 //bring node2 back online
+6.4) docker node inspect node2 --pretty // show it’s new availability
+
+# Lab#08 Swarm stack introduction (swarm, stack, node, service, leader, worker)
+1) The purpose of this lab is to illustrate how to deploy a stack (multi services application) against a Swarm using a docker compose file.
+
+2) Init your swarm
+2.1) docker swarm init --advertise-addr $(hostname -i)
+2.2) copy the join command (watch out for newlines) and paste it in the other terminal.
+2.3) docker node ls // Show members of swarm
+2.4) Clone the voting-app
+git clone https://github.com/docker/example-voting-app
+cd example-voting-app
+2.5) Deploy a stack
+docker stack deploy --compose-file=docker-stack.yml voting_stack
+- A stack is a group of services that are deployed together. 
+- The docker-stack.yml in the current folder will be used to deploy the voting app as a stack.
+- create a stack from a docker compose file is a great feature added in Docker 1.13.
+2.6) docker stack ls //Check the stack deployed
+2.7) docker stack services voting_stack //check the service within the stack
+2.8) docker service ps voting_stack_vote //list the tasks of the vote service.
+
+===============================================================================================
+Docker in Action
+# Chapter 2 Running software in containers
+1) docker help
+2) docker help container
+3) docker run --detach --name web nginx:latest
+4) docker run -d --name mailer dockerinaction/ch2_mailer
+5) docker run --interactive --tty --link web:web --name web_test busybox:latest /bin/sh
+- --interactive (or -i) and –-tty (or –t)
+- linked to the container that’s running NGINX
+6) wget -O - http://web:80/
+-  wget to make an HTTP request to the web server
+7) It’s possible to create an interactive container, manually start a process inside that
+container, and then detach your terminal. You can do so by holding down the Crtl (or
+Control) key and pressing P and then Q.
+8) docker run -it --name agent --link web:insideweb --link mailer:insidemailer dockerinaction/ch2_agent
+9) docker ps //check which containers are currently running
+10) docker restart web // restart the containers
+11) docker logs web //examine the logs for each container
+11.1) Anything that the program writes to the stdout or stderr output streams will be recorded in this log. The problem with this pattern is that the log is never rotated or truncated, so the data written to the log for a container will remain and grow as long as the container
+exists. That long-term persistence can be a problem for long-lived processes. A better
+way to work with log data uses volumes and is discussed in chapter 4.
+12) docker logs agents -f  //display the logs and then continue watching and updating the display
+13) docker stop web
+14) docker logs mailer
+15) docker run -d --name namespaceA busybox:latest /bin/sh -c "sleep 30000"
+16) docker exec namespaceA ps // run additional processes in a
+running container. In this case the command you use is called ps, which shows all the
+running processes and their PID.
+17) docker run -d --name wp --read-only wordpress:4		//install worpress and run
+18) docker inspect --format "{{.State.Running}}" wp
+19) docker run -d --name wpdb -e MYSQL_ROOT_PASSWORD=ch2demo mysql:5 //install MySQL using Docker
+20) docker run -d --name wp2 --link wpdb:mysql -p 80 --read-only wordpress:4 //Create a link
+to the database
+21) docker run -d --name wp3 --link wpdb:mysql -p 80 -v /run/lock/apache2/ -v /run/apache2/ --read-only wordpress:4 // Start the container with specific volumes for read only exceptions
+22) docker run --env MY_ENVIRONMENT_VAR="this is a test" busybox:latest env
+23) docker create \
+--env WORDPRESS_DB_HOST=<my database hostname> \
+--env WORDPRESS_DB_USER=site_admin \
+--env WORDPRESS_DB_PASSWORD=MeowMix42 \
+wordpress:4
+
+CHapter 3 Software installation simplified
+1) What is a repository? A repository is a named bucket of images
+2) [REGISTRYHOST/][USERNAME/]NAME[:TAG]
+3) docker pull quay.io/dockerinaction/ch3_hello_registry:latest
+4) Distributing a Dockerfile with a project simplifies image builds on user
+machines.
+5) Images are usually related to other images in parent/child relationships. These
+relationships form layers. When we say that we have installed an image, we are
+saying that we have installed a target image and each image layer in its lineage.
+6) Structuring images with layers enables layer reuse and saves bandwidth during
+distribution and storage space on your computer.
+
+Chapter 4 Persistent storage and shared state with volumes
+1）需求场景1：When programs connect to the database and enter data, where is that data stored? Is it in a file inside the container? What happens to that data when you stop the container or remove it?
+2) 需求场景2：Where would you write log files so that they will outlive the container? How would you get access to those logs to troubleshoot a problem?
+3） A volume is a mount point on the container’s directory tree where a portion of the host directory tree has been mounted.
+4） docker run -d --volume /var/lib/cassandra/data --name cass-shared alpine echo Data Container //creating a single container that defines a volume. This is called a volume
+container.
+5）docker run -d --volumes-from cass-shared --name cass1 cassandra:2.2
+- After Docker pulls the cassandra:2.2 image from Docker Hub, it creates a new container
+and copies the volume definitions from the volume container.
+- After that, both containers have a volume mounted at /var/lib/cassandra/data that points to the same location on the host’s directory tree.
+6） docker run -it --rm --link cass1:cass cassandra:2.2 cqlsh cass //start a container from the cassandra:2.2 image, but run a Cassandra client tool and connect to your running server
+7） select * from system.schema_keyspaces where keyspace_name = 'docker_hello_world';
+8）create keyspace docker_hello_world 
+with replication = {
+'class' : 'SimpleStrategy',
+'replication_factor': 1
+};
+9）docker rm -vf cass1
+10） Both the Cassandra client and server you created will be deleted after running those
+commands. If the modifications you made are persisted, the only place they could
+remain is the volume container.
+11）If that is true, then the scope of that data has expanded to include two containers, and its life cycle has extended beyond the container where the data originated.If that is true, then the scope of that data has expanded to include two containers, and its life cycle has extended beyond the container where the data originated.
+12） docker run -d --volumes-from cass-shared --name cass2 cassandra:2.2
+13）docker run –it --rm --link cass2:cass cassandra:2.2 cqlsh cass
+14）select * from system.schema_keyspaces where keyspace_name = 'docker_hello_world';
+15）confirms the previous claims and demonstrates how volumes might be used to create durable systems.
+16）docker run -d --name bmweb -v ~/example-docs:/usr/local/apache2/htdocs -p 80:80 httpd:latest
+17) This example touches on an important attribute or feature of volumes. When you
+mount a volume on a container file system, it replaces the content that the image provides
+at that location. In this example, the httpd:latest image provides some default
+HTML content at /usr/local/apache2/htdocs/, but when you mounted a volume at
+that location, the content provided by the image was overridden by the content on the
+host. This behavior is the basis for the polymorphic container pattern discussed later
+in the chapter.
+18) docker run --name bmweb_ro --volume ~/example-docs:/usr/local/apache2/htdocs/:ro -p 80:80 httpd:latest //mount volumes as read-only by appending :ro to the volume map specification

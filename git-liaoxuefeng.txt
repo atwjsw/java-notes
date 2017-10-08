@@ -46,7 +46,7 @@ git reset --hard 4551b71: HEAD is now at 4551b71 remove test.txt and working and
 5.1) rm test.txt: use rm delete file from file system, Git知道你删除了文件，因此，工作区和版本库就不一致了，git status命令会立刻告诉你哪些文件被删除了
 5.2) git rm test.txt
 5.3) git commit -m "remove test.txt"
-
+ 
 6) 远程仓库概念
 6.1） 以上操作可以在Git仓库里对一个文件进行时光穿梭，你再也不用担心文件备份或者丢失的问题了。
 6.2） 如果只是在一个仓库里管理文件历史，Git和SVN真没啥区别。

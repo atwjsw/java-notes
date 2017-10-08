@@ -1,0 +1,779 @@
+Java-Persistence-with-Hibernate.txt
+1) Object persistence: means individual objects can outlive the application process; they can be saved to a data store and be re-created at a later point in time.
+2) When we talk about persistence in Java, we’re normally talking about mapping and storing object instances in a database using SQL.
+3) data lives longer than any application does.
+4) Instead of directly working with the rows and columns of a java.sql.ResultSet, the business logic of an application interacts with the application-specific object-oriented domain model.
+5) The business logic isn’t executed in the database (as an SQL stored procedure); it’s implemented in Java and executed in the application tier. This allows business logic to use sophisticated object-oriented concepts such as inheritance and polymorphism.
+
+# Introducing Hibernate
+1) Hibernate ORM—Hibernate ORM consists of a core, a base service for persistence with SQL databases, and a native proprietary API.
+1.1) You can use Hibernate ORM on its own, independent of any framework or any particular runtime environment with all JDKs. It works in every Java EE/J2EE application server, in Swing applications, in a simple servlet container, and so on.
+2) Hibernate EntityManager—This is Hibernate’s implementation of the standard Java Persistence APIs, an optional module you can stack on top of Hibernate ORM. You can fall back to Hibernate when a plain Hibernate interface or even a JDBC Connection is needed. Hibernate’s native features are a superset of the JPA persistence features in every respect.
+3) Hibernate Validator—Hibernate provides the reference implementation of the Bean Validation (JSR 303) specification. Independent of other Hibernate projects, it provides declarative validation for your domain model (or any other) classes.
+4) Hibernate Envers—audit logging and keeping multiple versions of data in your SQL database. This helps you add data history and audit trails to your application, similar to version control systems you might already be familiar with such as Subversion and Git.
+5) Hibernate Search—Hibernate Search keeps an index of your domain model data up to date in an Apache Lucene database. It lets you query this database with a powerful and naturally integrated API. Many projects use Hibernate Search in addition to Hibernate ORM, adding full-text search capabilities. If you have a free text search form in your application’s user interface, and you want happy users, work with Hibernate Search. you can find more information in Hibernate Search in Action by Emmanuel Bernard (Bernard, 2008).
+6) Hibernate OGM—The most recent Hibernate project is the object/grid mapper. It provides JPA support for NoSQL solutions, reusing the Hibernate core engine but persisting mapped entities into a key/value-, document-, or graph-oriented data store. Hibernate OGM isn’t covered in this book.
+
+# “Hello World” with JPA
+1) pom.xml
+        <artifactId>junit</artifactId>
+        <version>4.11</version>
+        <scope>test</scope>
+
+        <artifactId>hibernate-entitymanager</artifactId>
+        <version>4.3.10.Final</version>
+
+        <artifactId>mysql-connector-java</artifactId>
+        <version>5.1.18</version>
+
+        <artifactId>slf4j-api</artifactId>
+        <version>1.7.21</version>
+
+        <artifactId>slf4j-simple</artifactId>
+        <version>1.7.21</version>
+
+1.1) The hibernate-entitymanager module includes transitive dependencies on other modules you’ll need, such as hibernate-core and the Java Persistence interface stubs.
+2) persistence unit: A persistence unit is a pairing of your domain model class mappings with a database connection, plus some other configuration settings.
+2.1) Every application has at least one persistence unit; some applications have several if they’re talking to several (logical or physical) databases.
+2.1.1) PATH: /model/src/main/resources/META-INF/persistence.xml
+<persistence version="2.1"
+        xmlns="http://xmlns.jcp.org/xml/ns/persistence"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence
+	http://xmlns.jcp.org/xml/ns/persistence_2_1.xsd">
+    <persistence-unit name="HelloWorldPU" transaction-type="RESOURCE_LOCAL">
+        <class>org.jpwh.model.helloworld.Message</class>
+        <exclude-unlisted-classes>true</exclude-unlisted-classes>
+        <properties>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQL5Dialect" />
+            <property name="hibernate.connection.driver_class" value="com.mysql.jdbc.Driver" />
+            <property name="hibernate.connection.username" value="root" />
+            <property name="hibernate.connection.password" value="123456" />
+            <property name="hibernate.connection.url" value="jdbc:mysql:///jpa?useUnicode=true&amp;characterEncoding=UTF-8" />
+            <!--<property name="javax.persistence.schema-generation.database.action" value="drop-and-create"/>-->
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.format_sql" value="true"/>
+            <property name="hibernate.use_sql_comments" value="true"/>
+        </properties>
+    </persistence-unit>
+</persistence>
+2.1.2)
+2.1.2.1) The persistence.xml file configures at least one persistence unit; each unit must have a unique name.
+2.1.2.2) Each persistence unit must have a database connection. 
+2.1.2.3) A persistent unit has persistent (mapped) classes. You list them here.
+2.1.2.4) Hibernate can scan your classpath for mapped classes and add them automatically to your persistence unit. This setting disables that feature.
+2.1.2.5) Standard or vendor-specific options can be set as properties on a persistence unit. Any standard properties have the javax.persistence name prefix; Hibernate’s settings use hibernate.
+2.1.2.6) The JPA engine should drop and re-create the SQL schema in the database automatically when it boots. This is ideal for automated testing, when you want to work with a clean database for every test run.
+2.1.2.7) When printing SQL in logs, let Hibernate format the SQL nicely and generate comments into the SQL string so you know why Hibernate executed the SQL statement.
+2.1.2.8) Most applications need a pool of database connections, with a certain size and optimized thresholds for the environment. You also want to provide the DBMS host and credentials for your database connections.
+
+2.2) persistent class
+@Entity
+public class Message {
+    @Id
+    @GeneratedValue
+    private Long id;
+    private String text;
+    public String getText() {
+        return text;
+    }
+    public void setText(String text) {
+        this.text = text;
+    }
+}
+2.2.1) Every persistent entity class must have at least the @Entity annotation. Hibernate maps this class to a table called MESSAGE.
+2.2.2) Every persistent entity class must have an identifier attribute annotated with @Id. Hibernate maps this attribute to a column named ID.
+2.2.3) Someone must generate identifier values; this annotation enables automatic generation of IDs.
+2.2.4) You usually implement regular attributes of a persistent class with private or protected fields and public getter/setter method pairs. Hibernate maps this attribute to a column called TEXT.
+2.2.5) The class also has a (default) constructor with no parameters.
+2.2.6) This example uses Long for the type of the identifier attribute, but this isn’t a requirement. Hibernate allows virtually anything for the identifier type
+2.2.7) Because the Message object doesn’t implement any persistencespecific classes or interfaces, You can use the persistent class in any execution context—no special container is needed.
+2.2.8) You don’t have to use annotations to map a persistent class. Later we’ll show you other mapping options, such as the JPA orm.xml mapping file, and native hbm.xml mapping files, and when they’re a better solution than source annotations.
+
+2.3) EntityManagerFactory: EntityManagerFactory API represents your persistence unit; most applications have one EntityManagerFactory for
+one configured persistence unit
+2.3.1) HelloWorldJPA.java
+	@Test
+    public void persistMessage() throws Exception {
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("HelloWorldPU");
+        EntityManager em = emf.createEntityManager();
+        em.getTransaction().begin();
+        Message message = new Message();
+        message.setText("Hello World!");
+        em.persist(message);
+        em.getTransaction().commit();
+        em.close();
+        emf.close();
+    }
+
+1) Get access to the standard transaction API, and begin a transaction on this thread of execution.
+2) Begin a new session with the database by creating an EntityManager. This is your context for all persistence operations.
+3) Create a new instance of the mapped domain model class Message, and set its text property.
+4) Enlist the transient instance with your persistence context; you make it persistent.
+5) Hibernate now knows that you wish to store that data, but it doesn't necessarily call the database immediately.
+6) Commit the transaction. Hibernate automatically checks the persistence context and executes the necessary SQL INSERT statement.
+7) If you create an EntityManager, you must close it.
+2.3.2) HelloWorldJPA.java
+	EntityManagerFactory emf = Persistence.createEntityManagerFactory("HelloWorldPU");
+        EntityManager em = emf.createEntityManager();
+        em.getTransaction().begin();
+        List<Message> messages = em.createQuery("select m from Message m").getResultList();
+        logger.info("message size: " + messages.size());
+        logger.info("message text: " + messages.get(0).getText());
+//        assertEquals(messages.size(), 1);
+        assertEquals(messages.get(0).getText(), "Hello World!");
+        messages.get(0).setText("Take me to your leader!");
+        em.getTransaction().commit();
+        em.close();
+        emf.close();
+8) Every interaction with your database should occur within explicit transaction boundaries, even if you’re only reading data.
+9) You can change the value of a property. Hibernate detects this automatically because the loaded Message is still attached to the persistence context it was loaded in.
+10) On commit, Hibernate checks the persistence context for dirty state and executes the SQL UPDATE automatically to synchronize in-memory with the database state.
+11) The query language you’ve seen in this example isn’t SQL, it’s the Java Persistence Query Language (JPQL). Although there is syntactically no difference in this trivial example, the Message in the query string doesn’t refer to the database table name,
+but to the persistent class name. If you map the class to a different table, the query will still work.
+12) Hibernate detects the modification to the text property of the message and automatically updates the database. This is the automatic dirty-checking feature of JPA in action. It saves you the effort of explicitly asking your persistence manager to update the database when you modify the state of an instance inside a transaction.
+
+2.4) Native Hibernate configuration
+2.4.1) hibernate.cfg.xml
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <property name="hibernate.connection.username">root</property>
+        <property name="hibernate.connection.password">123456</property>
+        <property name="hibernate.connection.driver_class">com.mysql.jdbc.Driver</property>
+        <property name="hibernate.connection.url">jdbc:mysql:///hibernate?useUnicode=true&amp;characterEncoding=UTF-8</property>
+        <property name="hibernate.dialect">org.hibernate.dialect.MySQL5Dialect</property>
+
+        <property name="hibernate.show_sql">true</property>
+        <property name="hibernate.format_sql">true</property>
+        <!--<property name="hbm2ddl.auto">create</property>-->
+        <property name="hibernate.current_session_context_class">thread</property>
+        <mapping class="org.jpwh.model.helloworld.Message"></mapping>
+    </session-factory>
+</hibernate-configuration>
+2.4.2)  SessionFactory and Session
+		sessionFactory = new MetadataSources(
+                new StandardServiceRegistryBuilder().configure("hibernate.cfg.xml")
+                        .build()).buildMetadata().buildSessionFactory();
+        session = sessionFactory.getCurrentSession();
+         Message message = new Message();
+        message.setText("Hello World!");
+        Transaction tx = session.beginTransaction();
+        session.persist(message);
+        tx.commit();
+2.4.2.1） This loads all settings from a Hibernate configuration file. If you have an existing Hibernate project, you most likely have this file on your classpath.
+2.5.2）use java configuration:
+@Before
+    public void setup() {
+        StandardServiceRegistryBuilder serviceRegistryBuilder = new StandardServiceRegistryBuilder();
+        serviceRegistryBuilder
+//                .applySetting("hibernate.connection.datasource", "myDS")
+                .applySetting("hibernate.connection.username", "root")
+                .applySetting("hibernate.connection.password", "123456")
+                .applySetting("hibernate.connection.driver_class", "com.mysql.jdbc.Driver")
+                .applySetting("hibernate.connection.url", "jdbc:mysql:///hibernate?useUnicode=true&amp;characterEncoding=UTF-8")
+                .applySetting("hibernate.dialect", "org.hibernate.dialect.MySQL5Dialect")
+                .applySetting("hibernate.show_sql", "true")
+                .applySetting("hibernate.format_sql", "true")
+                .applySetting("hibernate.use_sql_comments", "true")
+//                .applySetting("hibernate.hbm2ddl.auto", "create")
+                .applySetting("hibernate.current_session_context_class", "thread");
+        ServiceRegistry serviceRegistry = serviceRegistryBuilder.build();
+        MetadataSources metadataSources = new MetadataSources(serviceRegistry);        
+        metadataSources.addAnnotatedClass(Message.class);
+		// Add hbm.xml mapping files
+		// metadataSources.addFile(...);
+		// Read all hbm.xml mapping files from a JAR
+		// metadataSources.addJar(...)
+        MetadataBuilder metadataBuilder = metadataSources.getMetadataBuilder();
+        Metadata metadata = metadataBuilder.build();
+        assertEquals(metadata.getEntityBindings().size(), 1);
+        SessionFactory sessionFactory = metadata.buildSessionFactory();
+        session = sessionFactory.getCurrentSession();
+    }
+
+2.5.2.1) StandardServiceRegistryBuilder helps you create the immutable service registry with chained method calls.
+2.5.2.2) Configure the services registry by applying settings.
+2.5.2.3) The MetadataSources API has many methods for adding mapping sources; 
+2.5.2.4) building all the metadata needed by Hibernate, with the MetadataBuilder you obtained from the metadata sources.
+2.5.2.5) You can then query the metadata to interact with Hibernate’s completed configuration programmatically
+
+2.5.3) HelloWorldHibernate.java
+ 	session = sessionFactory.getCurrentSession();
+    }
+
+    @Test
+    public void testHelloWorld() {
+        Transaction tx = session.beginTransaction();
+        Message message = new Message();
+        message.setText("Hello World!");
+        session.persist(message);
+        tx.commit();
+    };
+2.5.3.1) Get access to the standard transaction API, and begin a transaction on this thread of execution.
+2.5.3.2) Whenever you call getCurrentSession() in the same thread, you get the same org.hibernate.Session. It’s bound automatically to the ongoing transaction and is closed for you automatically when that transaction commits or rolls back.
+2.5.3.3) The native Hibernate API is very similar to the standard Java Persistence API, and most methods have the same names.
+2.5.3.4) Hibernate synchronizes the session with the database and automatically closes the “current” session on commit of the bound transaction.
+2.5.3.5) A Hibernate criteria query is a type-safe programmatic way to express queries, automatically translated into SQL.
+2.5.3.6) Most of the examples in this book don’t use the SessionFactory or Session API. From time to time, when a particular feature is only available in Hibernate, we show you how to unwrap() the native interface given a standard API.
+
+Chapter 3 Domain models and metadata
+1) mapping metadata options—the ways you tell Hibernate how your persistent classes and their properties relate to database tables and columns. (annotations and XML)
+2) Bean Validation, which helps to automatically verify the integrity of the domain model data not only for persistent information but all business logic
+3) presentation presentation layer may require its own special data-transfer model, representing only a transmittable subset of the domain model
+4) In some systems, this layer has its own internal representation of the business domain entities. Alternatively, it relies on a domain model implementation, shared with the other layers of the application.
+5) Persistence layer needs a model of the business domain entities for which you’d like to keep persistent state. The persistence layer is where the bulk of JPA and Hibernate use takes place.
+6) the entities in a domain model should encapsulate state and behavior. For example, the User entity should define the name and address of a customer and the logic required to calculate the shipping costs for items
+7) The presentation layer can access instances and attributes of domain model entities when rendering views.
+8) The controller components in the business layer can also access the state of domain model entities and call methods of the entities to execute business logic.
+9) The persistence layer can load and store instances of domain model entities from and to the database, preserving their state.
+10) A persistence-capable plain-old Java class declares attributes, which represent state, and business methods, which define behavior. Some attributes represent associations to other persistence-capable classes.
+
+1) JPA doesn’t require that persistent classes implement java.io.Serializable. But when instances are stored in an HttpSession or passed by value using RMI, serialization is necessary.
+2) The class can be abstract and, if needed, extend a non-persistent class or implement an interface. 
+3) It must be a top-level class, not nested within another class. 
+4) The persistence-capable class and any of its methods can’t be final (a requirement of the JPA specification).
+5) Unlike the JavaBeans specification, which requires no specific constructor, Hibernate (and JPA) require a constructor with no arguments for every persistent class.
+6) Hibernate calls classes using the Java reflection API on such a noargument constructor to create instances.
+7) You usually implement properties as private or protected member fields, together with public or protected property accessor methods:
+8) Hibernate doesn’t require accessor methods. You can choose how the state of an instance of your persistent classes should be persisted. 
+9) collections are compared by identity! For a property mapped as a persistent collection, you should return exactly the same collection
+instance from the getter method that Hibernate passed to the setter method.
+10) JPA requires interfaces for collection-typed properties, where you must use java.util.Set, java.util.List, or java.util.Collection rather than HashSet, for example.
+11) bidirectional 
+public void addBid(Bid bid) {
+	if (bid == null) throw new NullPointerException("Can't add null Bid");
+	if (bid.getItem() != null) throw new IllegalStateException("Bid is already assigned to an Item");
+	getBids().add(bid);
+	bid.setItem(this);
+}
+
+# Domain model metadata
+1) ORM tools also require metadata, to specify the mapping between classes and tables, properties and columns, associations and foreign keys, Java types and SQL types, and so on.
+2) This object/relational mapping metadata governs the transformation between the different type systems and relationship representations in objectoriented and SQL systems.
+
+# Chapter 4
+1) A major objective of Hibernate is support for fine-grained and rich domain models.
+2) grained means more classes than tables.
+3) In Java, all classes are of equal standing—all instances have their own identity and life cycle. When you introduce persistence, some instances may not have their own identity and life cycle but depend on others.
+
+4) You can retrieve an instance of entity type using its persistent identity: for example, a User, Item, or Category instance. A reference to an entity instance (a pointer in the JVM) is persisted as a reference in the database (a foreign key–constrained value). An entity instance has its own life cycle; it may exist independently of any other entity. You map selected classes of your domain model
+as entity types.
+5) An instance of value type has no persistent identifier property; it belongs to an entity instance. Its lifespan is bound to the owning entity instance. A value type instance doesn’t support shared references. The most obvious value types are all JDK-defined classes such as String, Integer, and even primitives. You can also map your own domain model classes as value types: for example, Address and MonetaryAmount.
+
+
+========================================================================================================================================
+Hibernate Tutorials from tutorials points
+
+总而言之
+1） Core classes: 
+1.1) Configuration: hibernate.config.xml, mapping class or mapping resources
+1.1.1) hibernate.connection.driver_class; url; username; password; pool_size; autocommit
+1.1.2) autocommit: create, update...
+1.1.3) hibarnte.dialect: makes Hibernate generate the appropriate SQL for the chosen database.
+
+1.2) mapping resources: Empolyee.hbm.xml
+1.2.1) class<->table; id<->primary key; field<->column
+1.2.2) key generation strategy: AUTO, IDENTITY...
+1.2.2.1) @GeneratedValue: mark an id property as generated
+@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
+1.2.2.2) You can specify the strategy used (default to AUTO) by setting strategy.
+1.2.3) Collection mappings: Set/List/Map...
+Employee {
+	...
+	@Column(name = "certificate")
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, targetEntity = Certificate.class)
+	private Set certificates;
+	...
+}
+1.2.4) One-to-One: Employee <-> Address
+1.2.5) One-to-Many: EMployee <-> Certificates; use SET, LIST, 
+1.2.6) Many-to-One: Employee <-> Address
+1.2.7) Many-to-Many: Employee <-> Certificates; use SET, LiST
+1.2.8) fetch = FetchType.EAGER... LAZY
+1.2.9) CascadeType.ALL... 
+1.3) mapping class: @Entity, @Table, @Id, @Generator(GeneratorType.AUTO...), @Column
+
+1.2) SessionFactory: heavyweight object; created during application start up and kept for later use. one SessionFactory object per database using a separate configuration file.
+
+1.3) Session: used to get a "physical connection" with a database; lightweight and instantiated each time an interaction is needed with the database. 
+1.3.1) save(employee), persiste=(employee), get(Employee.class, employeeId), session.createQuery(hqlString).list(), session.createSQLQuery(sqlString).list(), session.createCriteria(Employee.class)..., session.delete(employee), session.updateEmployee
+
+1.4) Transaction: a unit of work with the database
+1.4.1) Transaction tx = session.beginTransaction; tx.commit()
+
+1.5) Query: use "native SQL or Hibernate Query Language (HQL)"" string to retrieve data; bind query parameters, limit the number of results returned by the query, and finally to execute the query.
+1.5.1) Query query = session.createQuery(hqlString).list()
+1.5.2) String hsqlString = "FROM EMPLOYEE";
+1.5.4) "FROM EMPLOYEE E WHERE E.salary > 100"
+1.5.5) "FROM Employee E WHERE E.salary > 100 ORDER BY E.salary DESC"
+1.5.6) "FROM Employee E WHERE E.salary > :salary ORDER BY E.salary DESC"; query.setParameter("salary", 200);
+1.5.7) "DELETE FROM Employee WHERE id = :employee_id"; query.executeUpdate();
+1.5.8) INSERT??
+1.5.9) "SELECT count(distinct E.firstName) FROM Employee E";
+1.5.10) pagination: query.setFirstResult(1); query.setMaxResults(10);
+1.5.11) native sql
+String sql = "SELECT * FROM EMPLOYEE";
+SQLQuery query = session.createSQLQuery(sql);
+query.addEntity(Employee.class);
+List results = query.list();
+
+1.6) Criteria: used to create and execute "object oriented criteria queries" to retrieve objects.
+1.6.1) Restrains: 
+1.6.1.1) cr.add(Restrictions.eq("salary", 2000));
+1.6.1.2) cr.add(Restrictions.like("firstName", "zara%"));
+1.6.1.3) cr.add(Restrictions.between("salary", 1000, 2000));
+1.6.1.4) pagination: cr.setFirstResult(1); cr.setMaxResults(10);
+
+
+
+
+
+
+
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+1) An ORM solution consists of the following four entities
+1.1） An API to perform basic CRUD operations on objects of persistent classes.
+1.2） A language or API to specify queries that refer to classes and properties of classes.
+1.3） A configurable facility for specifying mapping metadata.
+1.4） A technique to interact with transactional objects to perform dirty checking, lazy association fetching, and other optimization functions.
+
+2) Hibernate sits between traditional Java objects and database server to handle all the works in persisting those objects based on the appropriate O/R mechanisms and patterns.
+
+3）Hibernate Advantages
+3.1)Hibernate takes care of mapping Java classes to database tables using XML files and without writing any line of code.
+3.2)Provides simple APIs for storing and retrieving Java objects directly to and from the database.
+3.3)If there is change in the database or in any table, then you need to change the XML file properties only.
+3.4)Abstracts away the unfamiliar SQL types and provides a way to work around familiar Java Objects.
+3.5)Hibernate does not require an application server to operate.
+3.6)Manipulates Complex associations of objects of your database.
+3.7)Minimizes database access with smart fetching strategies.
+3.8)Provides simple querying of data.
+
+4) Hibernate core classes
+4.1) Configuration
+4.1.1) The Configuration object is the first Hibernate object you create in any Hibernate application. It is usually created only once during application initialization. It represents a configuration or properties file required by the Hibernate.
+4.1.2) Configuration object provides two keys components:
+4.1.2.1) Database Connection: This is handled through one or more configuration files supported by Hibernate. These files are hibernate.properties and hibernate.cfg.xml.
+4.1.2.2) Class Mapping Setup: This component creates the connection between the Java classes and database tables.
+
+4.2) SessionFactory
+4.2.1) Configuration object is used to create a SessionFactory object which in turn configures Hibernate for the application using the supplied configuration file and allows for a Session object to be instantiated. The SessionFactory is a thread safe object and used by all the threads of an application.
+4.2.2) The SessionFactory is a heavyweight object; it is usually created during application start up and kept for later use. You would need one SessionFactory object per database using a separate configuration file. So, if you are using multiple databases, then you would have to create multiple SessionFactory objects.
+
+4.3) Session
+4.3.1) A Session is used to get a "physical connection" with a database. The Session object is lightweight and designed to be instantiated each time an interaction is needed with the database. 
+4.3.2) Persistent objects are saved and retrieved through a Session object. 
+4.3.3) The session objects should not be kept open for a long time because they are not usually thread safe and they should be created and destroyed them as needed.
+
+4.4) Transaction Object
+4.4.1) A Transaction represents a unit of work with the database and most of the RDBMS supports transaction functionality. Transactions in Hibernate are handled by an underlying transaction manager and transaction (from JDBC or JTA).
+4.4.2) This is an optional object and Hibernate applications may choose not to use this interface, instead managing transactions in their own application code.
+
+4.5) Query Object
+4.5.1) Query objects use "SQL or Hibernate Query Language (HQL)"" string to retrieve data from the database and create objects. 
+4.5.2) A Query instance is used to bind query parameters, limit the number of results returned by the query, and finally to execute the query.
+
+4.6) Criteria
+4.6.1) Criteria objects are used to create and execute "object oriented criteria queries" to retrieve objects.
+
+# Configuration
+1) Hibernate requires to know in advance — where to find the mapping information
+2) Hibernate also requires a set of configuration settings related to database and other related parameters. 
+3) All such information is usually supplied in hibernate.properties, or as an XML file named hibernate.cfg.xml.
+4) Most of the properties take their default values and it is not required to specify them in the property file unless it is really required.
+5) the file is kept in the root directory of your application's classpath.
+6.1) Hibernate Properties
+6.1.1) properties required to configure for a databases in a standalone situation:
+6.1.2) hibernate.dialect: This property makes Hibernate generate the appropriate SQL for the chosen database.
+6.1.3) hibernate.connection.driver_class: The JDBC driver class.
+6.1.4) hibernate.connection.url: The JDBC URL to the database instance.
+6.1.5) hibernate.connection.username: The database username.
+6.1.6) hibernate.connection.password: The database password.
+6.1.7) hibernate.connection.pool_size: Limits the number of connections waiting in the Hibernate database connection pool.
+6.1.8) hibernate.connection.autocommit: Allows auto-commit mode to be used for the JDBC connection.
+6.2) using a database along with an application server and JNDI:
+6.2.1) hibernate.connection.datasource: The JNDI name defined in the application server context, which you are using for the application.
+6.2.2) hibernate.jndi.class: The InitialContext class for JNDI.
+6.2.3) hibernate.jndi.<JNDIpropertyname>: Passes any JNDI property you like to the JNDI InitialContext.
+6.2.4) hibernate.jndi.url: Provides the URL for JNDI.
+6.2.5) hibernate.connection.username: The database username.
+6.2.6) hibernate.connection.password: The database password.
+
+5) Mapping
+<!-- List of XML mapping files -->
+<mapping resource="Employee.hbm.xml"/>
+
+# Session
+1) session instances may exist in one of the following three states at a given point in time:
+1.1) transient: A new instance of a persistent class, which is not associated with a Session and has no representation in the database and no identifier value is considered transient by Hibernate.
+1.2) persistent: You can make a transient instance persistent by associating it with a Session. A persistent instance has a representation in the database, an identifier value and is associated with a Session.
+1.3) detached: Once we close the Hibernate Session, the persistent instance will become a detached instance.
+
+# Persistence class
+1) Java classes whose objects or instances will be stored in database tables are called persistent classes in Hibernate.
+1.1) default constructor.
+1.2) contain an ID in order to allow easy identification of your objects within Hibernate and the database. This property maps to the primary key column of a database table.
+1.3) All attributes that will be persisted should be declared private and have getXXX and setXXX methods defined in the JavaBean style.
+1.4) A central feature of Hibernate, proxies, depends upon the persistent class being either non-final, or the implementation of an interface that declares all public methods.
+1.5) All classes that do not extend or implement some specialized classes and interfaces required by the EJB framework.
+
+# Mapping file: 
+1) Employee.hbm.xml.
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+	"-//Hibernate/Hibernate Mapping DTD//EN"
+	"http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+	<class name="Employee" table="EMPLOYEE">
+		<meta attribute="class-description">
+			This class contains the employee detail.
+		</meta>
+		<id name="id" type="int" column="id">
+			<generator class="native"/>
+		</id>
+		<property name="firstName" column="first_name" type="string"/>
+		<property name="lastName" column="last_name" type="string"/>
+		<property name="salary" column="salary" type="int"/>
+	</class>
+</hibernate-mapping>
+
+2) The mapping document is an XML document having <hibernate-mapping> as the root element, which contains all the <class> elements.
+3) The <class> elements are used to define specific mappings from a Java classes to the database tables. The Java class name is specified using the name attribute of the class element and the database table name is specified using the table attribute.
+4) The <meta> element is optional element and can be used to create the class description.
+5) The <id> element maps the unique ID attribute in class to the primary key of the database table. The name attribute of the id element refers to the property in the class and the column attribute refers to the column in the database table. 
+5.1) The type attribute holds the hibernate mapping type, this mapping types will convert from Java to SQL data type.
+6) The <generator> element within the id element is used to generate the primary key values automatically. 
+6.1) The class attribute of the generator element is set to native to let hibernate pick up either identity, sequence, or hilo algorithm to create primary key depending upon the capabilities of the underlying database.
+7) The <property> element is used to map a Java class property to a column in the database table. The name attribute of the element refers to the property in the class and the column attribute refers to the column in the database table. The type attribute holds the hibernate mapping type, this mapping types will convert from Java to SQL data type.
+
+# mapping types
+1) Hibernate mapping types can translate from Java to SQL data types and vice versa. 
+2) primitive types: 
+2.1) integer/int or java.lang.Integer/INTEGER
+2.2) long/long or java.lang.Long/BIGINT
+2.3) short/short or java.lang.Short/SMALLINT
+2.4) float/float or java.lang.Float/FLOAT
+2.5) double/double or java.lang.Double/DOUBLE
+2.6) big_decimal/java.math.BigDecimal/NUMERIC
+2.7) character/java.lang.String/CHAR(1)
+2.8) string/java.lang.String/VARCHAR
+2.9) byte/byte or java.lang.Byte/TINYINT
+2.10) boolean/boolean or java.lang.Boolean/BIT
+2.11) yes/no /boolean or java.lang.Boolean /CHAR(1) ('Y' or 'N')
+2.12 true/false / boolean or java.lang.Boolean /CHAR(1) ('T' or 'F')
+
+3) Date and Time Types
+3.1) date/java.util.Date or java.sql.Date/DATE
+2.2) time/java.util.Date or java.sql.Time/TIME
+2.3) timestamp/java.util.Date or java.sql.Timestamp/TIMESTAMP
+2.4) calendar/java.util.Calendar/TIMESTAMP
+2.5) calendar_date/java.util.Calendar/DATE
+
+4) Binary and Large Object Types
+
+5) JDK-related Types
+
+1) Basic mapping(one entity to one table)
+2) Mapping of collections
+2.1) Hibernate can persist instances of java.util.Map, java.util.Set, java.util.SortedMap, java.util.SortedSet, java.util.List, and any array of persistent entities or values.
+2.2) one-to-many relationship between EMPLOYEE and CERTIFICATE objects:
+		<set name="certificates" cascade="all" lazy="false">
+            <key column="employee_id"/>
+            <one-to-many class="com.tutorialspoint.hibernate.domain.one2many.Certificate"/>
+        </set>
+2.2.1） The <set> element is new here and has been introduced to set the relationship between Certificate and Employee classes. 
+2.2.2） We used the cascade attribute in the <set> element to tell Hibernate to persist the Certificate objects at the same time as the Employee objects. 
+2.2.3）The name attribute is set to the defined Set variable in the parent class, in our case, it is certificates. For each set variable, we need to define a separate set element in the mapping file.
+2.2.4）The <key> element is the column in the CERTIFICATE table that holds the foreign key to the parent object i.e. table EMPLOYEE.
+2.2.5）The <one-to-many> element indicates that one Employee object relates to many Certificate objects and, as such, the Certificate object must have an Employee parent associated with it. You can use either <one-to-one>, <many-to-one> or <many-to-many> elements based on your requirement.
+2.2.6) 这是因为Hibernate Annotation的默认的FetchType在ManyToOne是EAGER的,在OneToMany上默认的是LAZY. 就是说这段代码中，User是FetchType.EAGER。 而Group是FetchType.LAZY。 获取certificates还需要连接数据库，但是session已经提交关闭了。所以会报 failed to lazily initialize a collection of role 异常。
+
+2.3) one-to-many relationship between EMPLOYEE and CERTIFICATE objects using sorted set:
+2.3.1) The sort attribute can be set to natural to have natural sorting or it can be set to a custom class implementing java.util.Comparator. We have used a class MyClass, which implements java.util.Comparator to reverse the sorting order implemented in Certificate class.
+		<!--<set name="certificates" cascade="all" lazy="false" sort="natural">-->
+        <set name="certificates" cascade="all" lazy="false" sort="com.tutorialspoint.hibernate.domain.one2many.sortedset.DescComparator">
+            <key column=" employee_id"/>
+            <one-to-many class="com.tutorialspoint.hibernate.domain.one2many.sortedset.Certificate"/>
+        </set>
+2.3.2) If we use sort="natural" setting, then we do not need to create a separate class because Certificate class already has implemented Comparable interface and hibernate will use compareTo() method defined in Certificate class to compare certificate names. 
+2.3.3) But we are using a custom comparator class MyClass in our mapping file so we would have to create this class based on our sorting algorithm. Let us do descending sorting in this class using this class.
+
+2.4) Hibernate – List Mappings
+create table CERTIFICATE (
+	id INT NOT NULL auto_increment,
+	certificate_name VARCHAR(30) default NULL,
+	idx INT default NULL,
+	employee_id INT default NULL,
+	PRIMARY KEY (id)
+);
+
+
+<list name="certificates" cascade="all">
+	<key column="employee_id"/>
+	<list-index column="idx"/>
+	<one-to-many class="Certificate"/>
+</list>
+
+public class Employee {
+	private int id;
+	private String firstName;
+	private String lastName;
+	private int salary;
+	private List certificates;
+	...
+}
+2.4.1) The <list> element is used to set the relationship between Certificate and Employee classes. 
+2.4.2) The <list-index> element is used to keep the position of the element and map with the index column in the collection table. The index of the persistent list starts at zero. You could change this, for example, with <list-index base="1".../> in your mapping.
+
+2.5) Hibernate – Bag Mappings
+2.5.1) A Bag is a java collection that stores elements without caring about the sequencing, but allow duplicate elements in the list. A bag is a random grouping of the objects in the list. A Collection is mapped with a <bag> element in the mapping table and initialized with java.util.ArrayList.
+<bag name="certificates" cascade="all">
+	<key column="employee_id"/>
+	<one-to-many class="Certificate"/>
+</bag>
+
+public class Employee {
+	...
+	private Collection certificates;
+	...
+}
+
+2.6) Hibernate – Map Mappings
+2.6.1) A Map is mapped with a <map> element in the mapping table and an unordered map can be initialized with java.util.HashMap.
+public class Employee {
+	...
+	private Map certificates;
+	...
+}
+
+<map name="certificates" cascade="all">
+	<key column="employee_id"/>
+	<index column="certificate_type" type="string"/>
+	<one-to-many class="Certificate"/>
+</map>
+2.6.1) The <index> element is used to represents the key parts of the key/value map pair. The key will be stored in the column certificate_type using a type of string.
+
+2.6.2） cascade="all-delete-orphan"： 附表全部删除，而不是只删除关联字段
+		<map name="certificates" cascade="all-delete-orphan" lazy="false" >
+            <key column="employee_id"/>
+            <index column="certificate_type" type="string"/>
+            <one-to-many class="com.tutorialspoint.hibernate.domain.one2many.Certificate"/>
+        </map>
+
+2.7) Hibernate – SortedMap Mappings
+1) A SortedMap is a similar java collection as Map that stores elements in key-value pairs and provides a total ordering on its keys. 
+2) Duplicate elements are not allowed in the map. The map is ordered according to the natural ordering of its keys, or by a Comparator typically provided at sorted map creation time.
+3) A SortedMap is mapped with a <map> element in the mapping table and an ordered map can be initialized with java.util.TreeMap.
+4) mapping file:
+<map name="certificates" cascade="all" sort="MyClass">
+	<key column="employee_id"/>
+	<index column="certificate_type" type="string"/>
+	<one-to-many class="Certificate"/>
+</map>
+
+3) Mapping of associations between entity classes
+3.1) The mapping of associations between entity classes and the relationships between tables is the soul of ORM
+3.2) An association mapping can be unidirectional as well as bidirectional.
+3.3) four ways in which the cardinality of the relationship between the objects can be expressed.
+3.3.1) Many-to-One: Mapping many-to-one relationship using Hibernate
+3.3.2) One-to-One: Mapping one-to-one relationship using Hibernate
+3.3.3) One-to-Many: Mapping one-to-many relationship using Hibernate
+3.3.4) Many-to-Many: Mapping many-to-many relationship using Hibernate
+
+3.4) Hibernate – Many-to-One Mappings
+3.4.1) A many-to-one association is the "most common" kind of association where an Object can be associated with multiple objects. For example, the same address object can be associated with multiple employee objects.
+3.4.2)
+<many-to-one name="address" column="address"
+        class="com.tutorialspoint.hibernate.domain.many2one.Address" not-null="true"/>
+3.4.2.1) The <many-to-one> element is used to set the relationship between EMPLOYEE and ADDRESS entities. The name attribute is set to the defined variable in the parent class, in our case it is address. The column attribute is used to set the column name in the parent table EMPLOYEE.
+
+3.5) Hibernate – One-to-One Mappings
+3.5.1) A one-to-one association is similar to many-to-one association with a difference that the column will be set as unique. For example, an address object can be associated with a single employee object.
+<many-to-one name="address" column="address" unique="true"
+class="Address" not-null="true"/>
+
+4) Component Mappings.
+4.1) It is very much possible that an Entity class can have a reference to another class as a member variable. If the referred class does not have its own life cycle and completely depends on the life cycle of the owning entity class, then the referred class hence therefore is called as the Component class.
+4.2) The mapping of Collection of Components is also possible in a similar way just as the mapping of regular Collections with minor configuration differences. We will see these two mappings in detail with examples.
+<component name="address" class="Address">
+	<property name="street" column="street_name" type="string"/>
+	<property name="city" column="city_name" type="string"/>
+	<property name="state" column="state_name" type="string"/>
+	<property name="zipcode" column="zipcode" type="string"/>
+</component>
+
+# HIBERNATE – ANNOTATIONS
+1) Hibernate annotations are the newest way to define mappings without the use of XML file.
+2) Hibernate detects that the @Id annotation is on a field and assumes that it should access properties of an object directly through fields at runtime. 
+2) If you placed the @Id annotation on the getId() method, you would enable access to properties through getter and setter methods by default. Hence, all other annotations are also placed on either fields or getter methods, following the selected strategy.
+3) The EJB 3 standard annotations are contained in the javax.persistence package
+4) @Entity:  marks the class as an entity bean, so it must have a no-argument constructor that is visible with at least protected scope.
+@Entity
+@Table(name = "EMPLOYEE")
+public class Employee {...}
+5) The @Table annotation allows you to specify the details of the table that will be used to persist the entity in the database.
+5.1) The @Table annotation provides four attributes, allowing you to override the name of the table, its catalogue, and its schema, and enforce unique constraints on columns in the table.
+6) @Id: primary key; The primary key can be a single field or a combination of multiple fields depending on your table structure.
+7) @GeneratedValue: two parameters strategy and generator; 
+7.1) default key generation strategy let Hibernate determine which generator type to use makes your code portable between different databases.
+8) @Column: specify the details of the column to which a field or property will be mapped.
+7.1) name attribute: permits the name of the column to be explicitly specified.
+7.2) length attribute: permits the size of the column used to map a value particularly for a String value.
+7.3) nullable attribute permits the column to be marked NOT NULL when the schema is generated.
+7.4) unique attribute permits the column to be marked as containing only unique values.
+
+# Hibernate Query Language (HQL) 
+1) HQL is an object-oriented query language, similar to SQL, but 
+2) instead of operating on tables and columns, HQL works with persistent objects and their properties. 
+3) HQL queries are translated by Hibernate into conventional SQL queries, which in turns perform action on database.
+4) Although you can use SQL statements directly with Hibernate using Native SQL, but I would recommend to use HQL whenever possible to avoid database portability hassles, and to take advantage of Hibernate's SQL generation and caching strategies.
+5) Keywords like SELECT, FROM, and WHERE, etc., are not case sensitive, but properties like table and column names are case sensitive in HQL.
+
+6) FROM Clause
+6.1) use FROM clause if you want to load a complete persistent objects into memory.
+String hql = "FROM Employee";
+Query query = session.createQuery(hql);
+List results = query.list();
+
+7) AS Clause
+7.1) The AS clause can be used to assign aliases to the classes in your HQL queries, especially when you have the long queries. For instance, our previous simple example would be the following:
+String hql = "FROM Employee AS E";
+Query query = session.createQuery(hql);
+List results = query.list();
+7.2) The AS keyword is optional and you can also specify the alias directly after the class name, as follows:
+String hql = "FROM Employee E";
+
+8) SELECT Clause
+The SELECT clause provides more control over the result set then the from clause. If you want to obtain few properties of objects instead of the complete object, use the SELECT clause. Following is the simple syntax of using SELECT clause to get just first_name field of the Employee object:
+String hql = "SELECT E.firstName FROM Employee E";
+Query query = session.createQuery(hql);
+List results = query.list();
+
+9) ORDER BY Clause
+
+10) GROUP by Clause
+
+11) Using Named Parameters
+String hql = "FROM Employee E WHERE E.id = :employee_id";
+Query query = session.createQuery(hql);
+query.setParameter("employee_id",10);
+List results = query.list();
+
+11) UPDATE Clause: query.executeUpdate();
+String hql = "UPDATE Employee set salary = :salary WHERE id = :employee_id";
+Query query = session.createQuery(hql);
+query.setParameter("salary", 1000);
+query.setParameter("employee_id", 10);
+int result = query.executeUpdate();
+System.out.println("Rows affected: " + result);
+
+12) DELETE Clause
+
+13) INSERT Clause
+
+# Aggregate Methods
+
+1 avg(property name): The average of a property's value
+2 count(property name or *): The number of times a property occurs in the results
+3 max(property name): The maximum value of the property values
+4 min(property name): The minimum value of the property values
+5 sum(property name): The sum total of the property values
+
+
+14) pagination
+String hql = "FROM Employee";
+Query query = session.createQuery(hql);
+query.setFirstResult(1);
+query.setMaxResults(10);
+List results = query.list();
+
+# HIBERNATE – CRITERIA QUERIES
+1) Hibernate provides alternate ways of manipulating objects and in turn data available in RDBMS tables. One of the methods is Criteria API, which allows you to build up a criteria query object programmatically where you can apply filtration rules and logical conditions.
+Criteria cr = session.createCriteria(Employee.class);
+List results = cr.list();
+2) Restrictions with Criteria
+Criteria cr = session.createCriteria(Employee.class);
+cr.add(Restrictions.eq("salary", 2000));
+List results = cr.list();
+Criteria cr = session.createCriteria(Employee.class);
+// To get records having salary more than 2000
+cr.add(Restrictions.gt("salary", 2000));
+// To get records having salary less than 2000
+cr.add(Restrictions.lt("salary", 2000));
+// To get records having fistName starting with zara
+cr.add(Restrictions.like("firstName", "zara%"));
+// Case sensitive form of the above restriction.
+crit.addOrder(Order.desc("salary"));
+
+# Projections & Aggregations
+The Criteria API provides the org.hibernate.criterion.Projections class, which can be used to get average, maximum, or minimum of the property values. The Projections class is similar to the Restrictions class, in that it provides several static factory methods for obtaining Projection instances.
+
+# HIBERNATE – NATIVE SQL
+1）You can use native SQL to express database queries if you want to utilize database-specific features such as query hints or the CONNECT keyword in Oracle. 
+2) Hibernate 3.x allows you to specify handwritten SQL, including stored procedures, for all create, update, delete, and load operations.
+3) Your application will create a native SQL query from the session with the createSQLQuery() method on the Session interface.:
+public SQLQuery createSQLQuery(String sqlString) throws HibernateException
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+#HIBERNATE – CACHING
+1) Caching is a mechanism to enhance the performance of a system. 
+2) It is a buffer memory that lies between the application and the database. 
+3) Cache memory stores recently used data items in order to reduce the number of database hits as much as possible.
+3.1) First-level Cache: Session cache and is a mandatory cache through which all requests must pass. The Session object keeps an object under its own power before committing it to the database.
+3.1.1) If you issue multiple updates to an object, Hibernate tries to delay doing the update as long as possible to reduce the number of update SQL statements issued. If you close the session, all the objects being cached are lost and either persisted or updated in the database.
+
+3.2) Second-level Cache: optional cache and first-level cache will always be consulted before any attempt is made to locate an object in the second-level cache. 
+3.2.1) second level cache can be configured on a per-class and per-collection basis and mainly responsible for caching objects across sessions.
+
+3.3) Query-level Cache: a cache for query resultsets that integrates closely with the second-level cache.
+3.3.1) optional feature and requires two additional physical cache regions that hold the cached query results and the timestamps when a table was last updated. This is only useful for queries that are run frequently with the same parameters.
+3.3.2) First, you have to decide which concurrency strategy to use. 
+3.3.2.1) A concurrency strategy is a mediator, which is responsible for storing items of data in the cache and retrieving them from the cache. If you are going to enable a second-level cache, you will have to decide, for each persistent class and collection, which cache concurrency strategy to use.
+3.3.2.2) Transactional: Use this strategy for read-mostly data where it is critical to prevent stale data in concurrent transactions, in the rare case of an update.
+3.3.2.3) Read-write: Again use this strategy for read-mostly data where it is critical to prevent stale data in concurrent transactions, in the rare case of an update.
+3.3.2.4) Nonstrict-read-write: This strategy makes no guarantee of consistency between the cache and the database. Use this strategy if data hardly ever changes and a small likelihood of stale data is not of critical concern.
+3.3.2.5) Read-only: A concurrency strategy suitable for data, which never changes. Use it for reference data only.
+
+3.3.3) <cache usage="read-write"/>
+3.3.4) Cache Provider: 
+EHCache: It can cache in memory or on disk and clustered caching and it supports the optional Hibernate query result cache.
+3.3.5) specify a cache provider in hibernate.cfg.xml configuration file
+<property name="hibernate.cache.provider_class">
+	org.hibernate.cache.EhCacheProvider
+</property>
+
+3.3.6) ehcache.xml
+<diskStore path="java.io.tmpdir"/>
+<defaultCache
+    maxElementsInMemory="1000"
+    eternal="false"
+    timeToIdleSeconds="120"
+    timeToLiveSeconds="120"
+    overflowToDisk="true"
+/>
+<cache name="Employee"
+       maxElementsInMemory="500"
+       eternal="true"
+       timeToIdleSeconds="0"
+       timeToLiveSeconds="0"
+       overflowToDisk="false"
+/>
+
+# Hibernate 4.3 community documentation
+Chapter 23. Example: Parent/Child
+1) One of the first things that new users want to do with Hibernate is to model a parent/child type relationship. 
+2) The most convenient approach, especially for new users, is to model both Parent and Child as entity classes with a <one-to-many> association from Parent to Child. 
+3) The alternative approach is to declare the Child as a <composite-element>. 
+4) use a bidirectional one-to-many association with cascades to model a parent/child relationship efficiently and elegantly.
+
+
+
+
+
+
+
+

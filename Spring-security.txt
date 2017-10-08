@@ -2,6 +2,8 @@
 2. Spring Social: 对浏览器访问应用进行认证， 使用内置的社交网站的user repository, session based
 3. Spring Security OAuth: 对app访问应用进行认证，token based
 
+https://github.com/jojozhai/security 每个小节都有对应的feature分支
+
 Chapter 1: 开始开发
 # Development environment
 1) JDK installation
@@ -19,7 +21,7 @@ RESTful特点
 
 level3： 使用超媒体，在资源的表达中包含了链接信息。 调用了一个Restful api后， 返回的结果中除了响应数据外，还有一些额外的链接信息， 你可以探索还有那些跟调用的信息相关的链接。
 
-1） restful api 的测试用例
+SpringMVC restful api
 1.1） add dependency, introduce spring test framework: spring-boot-starter-test
 1.2) @RestController
 1.3) @RequestMapping(value = "/user", method=RequestMethod.GET)
@@ -45,3 +47,790 @@ public interface UserDetailView extends UserSimpleView {};
 	@JsonView(UserSimpleView.class)
 	public List<User> query(...)
 1.13) @GetMapping(value = "/user") === @RequestMapping(value = "/user", method=RequestMethod.GET)
+1.14）@RequestBody maps json string to java object
+1.15) Handling of Date/Time parameter: 前后台只传递时间戳，不传递有格式的日期字符串
+1.16) @Valid + BindingResult to validate parameters
+public User create(@Valid @RequestBody User user, BindingResult errors) {
+		if (errors.hasErrors()) {
+			errors.getAllErrors().stream().forEach(error -> System.out.println(error.getDefaultMessage()));
+		}
+		...
+}
+1.17) Validation annotaion
+@NotNull, @Null, @Pattern(regex=), @Size(min=, max=), @CreditCardNumber(ignorNonDigitCharacter), @Email
+@Length(min=,max=), @NotBlank, @NotEmpty, @Range(min=,max=), @SafeHtml, @URL, @AssertFalse, @AssertTrue,
+@DecimalMax(value=,inclusive=), @DecimalMin(value=,inclusive=), @Digits(integer=,franction=), @Future, @Past
+@Max(vlaue=), @Min(value=)
+1.18) custom validation message
+	@NotBlank(message = "密码不能为空")
+	private String password;	
+	@Past(message = "生日必须是过去的时间")
+	private Date birthday;
+1.19) custom validation annotation
+1.19.1) define a Constraint
+@Target({ElementType.METHOD, ElementType.FIELD})
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = MyConstraintValidator.class)
+public @interface MyConstraint {	
+	String message();
+	Class<?>[] groups() default { };
+	Class<? extends Payload>[] payload() default { };
+}
+1.19.2) define a Validator
+public class MyConstraintValidator implements ConstraintValidator<MyConstraint, Object> {
+	@Autowired
+	HelloService helloService;	
+	@Override
+	public void initialize(MyConstraint constraintAnnotation) {
+		System.out.println("my validator init");		
+	}
+	@Override
+	public boolean isValid(Object value, ConstraintValidatorContext arg1) {
+		helloService.greeting("Tom");		
+		System.out.println(value);		
+		return false;
+	}
+}
+1.19.3) use the constraint annotation
+	@MyConstraint(message = "这是一个测试校验")
+	private String username;
+1.20) Spring boot default exception handling
+1.20.1) for browser(contentType=text/html): whitelabel error page
+1.20.2) for app(contentType=applicaiton/json): default json error string
+1.20.2.1) if use @Valid, will return validation errors as well.
+1.21) Custom exception handling:
+1.21.1) for browser(contentType=text/html): create resources/error/404.html (500.html...)
+1.21.2) for app: create ControllerExceptionHandler, route the exception to handler to return custom error json string
+@ControllerAdvice
+public class ControllerExceptionHandler {	
+	@ExceptionHandler(UserNotExistException.class)
+	@ResponseBody
+	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+	public Map<String, Object> handleUserNotExistException(UserNotExistException ex) {
+		Map<String, Object> result = new HashMap<>();
+		result.put("id", ex.getId());
+		result.put("message", ex.getMessage());
+		return result;		
+	}
+}
+1.22) restful api的拦截（e.g. 为了记录服务时间）
+1.22.1）Filter
+- doesn't have any information of spring component such as controller 
+1.22.2) Interceptor
+- doesn't have value of args
+1.22.3) Aspect
+- doesn't have access to request, response
+1.23) file upload
+1.23.1) FileController
+	@PostMapping
+	public FileInfo upload(MultipartFile file) throws Exception {
+		File localFile = new File(folder, new Date().getTime() + ".txt");
+		file.transferTo(localFile);
+		return new FileInfo(localFile.getAbsolutePath());	
+	}
+1.23.2) Test Case:
+	@Test
+	public void whenUploadSuccess() throws Exception {
+		String result = mockMvc.perform(fileUpload("/file")
+				.file(new MockMultipartFile("file", "test.txt", "multipart/form-data", "hello upload".getBytes())))
+				.andExpect(status().isOk())
+				.andReturn().getResponse().getContentAsString();
+		System.out.println(result);
+	}
+1.24) file download
+1.24.1) FileController
+	@GetMapping("/{id}")
+	public void download(@PathVariable String id, HttpServletRequest request, HttpServletResponse response) throws Exception {
+		try (
+			InputStream inputStream = new FileInputStream(new File(folder, id + ".txt"));
+			OutputStream outputStream = response.getOutputStream();
+		) {
+			response.setContentType("application/x-download");
+			response.addHeader("Content-Disposition", "attachment;filename=test.txt");
+			IOUtils.copy(inputStream, outputStream);
+			outputStream.flush();			
+		}
+	}
+1.25) 异步处理REST服务
+1.25.1）当你需要压榨一个机器的极限时，tomcat的并发线程并不是无限提高的，还是要受到机器性能的限制，如果你想在有限的线程数里支持更多的并发，就可以用这种异步的方式。
+1.25.2）Callable
+@RestController
+public class AsyncController {	
+	private Logger logger = LoggerFactory.getLogger(getClass());
+	//异步执行请求
+	@RequestMapping("/order")
+	public Callable<String> order() throws Exception {
+		logger.info("主线程开始");		
+		Callable<String> result = new Callable<String>() {
+			@Override
+			public String call() throws Exception {
+				logger.info("副线程开始");
+				Thread.sleep(1000);
+				logger.info("副线程完成");				
+				return "success";
+			}			
+		};
+		logger.info("主线程完成");
+		return result;
+	}
+}
+1.25.3）DeferredResult
+messaging scenario
+
+2) 与前端开发并行工作
+2.1） 使用Swagger自动生成html文档
+2.2.1) add dependency
+2.2.1.1) springfox-swagger2
+<dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-swagger2</artifactId>
+    <version>2.7.0</version>
+</dependency>
+2.2.1.1) springfox-swagger-ui
+<dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-swagger-ui</artifactId>
+    <version>2.7.0</version>
+</dependency>
+2.2.2) enable swagger
+@EnableSwagger2
+public class DemoApplication { ...}
+2.2.21 access  http://localhost:8080/swagger-ui.html
+2.2.3) customize generated document using annotation
+2.2.3.1) @ApiOperation
+	@ApiOperation(value = "用户查询服务")
+	public List<User> query(...)
+2.2.3.2) @ApiModelProperty
+	@ApiModelProperty("用户年龄起始值")
+	private int age;	
+2.2.3.3) @ApiParam
+	public User getInfo(@ApiParam("用户id") @PathVariable(name="id")  String userId) {
+
+2.2） 使用WireMock快速伪造Restful服务
+2.2.1) download wiremock jar
+2.2.2) run mock server: java -jar wiremock-standalone-2.8.0.jar --port 8062
+2.2.3) add dependency
+	<dependency>
+    	<groupId>com.github.tomakehurst</groupId>
+        <artifactId>wiremock</artifactId>
+	</dependency>
+2.2.4) com.imooc.wiremock
+2.2.5) define class MockServer
+public class MockServer {
+	public static void main(String[] args) {
+		configureFor(8062);
+		removeAllMappings();		
+		stubFor(get(urlPathEqualTo("/order/1"))
+				.willReturn(aResponse().withBody("{\"id\":1}").withStatus(200)));
+	}
+}
+
+PART 2 form based authentication
+1) default is basic login with user and generated password
+2) WebSecurityConfigurerAdapter
+3) Spring Security 基于过滤器链
+3.1）UsernamePasswordAuthenticationFilter: 检查当前请求是否带用户名密码，如果有的话，尝试登录， 成功的话会做一个标记
+3.2) BasicAuthenticationFilter： 检查请求头中是否有basicAuthentication的信息， 如果有的话，进行Base64解码，并尝试登录， 成功的话会做一个标记
+3.3）Other authenticationFilter
+3.4）ExceptionTranslationFilter： 捕获FilterSecurityInterceptor抛出的异常，根据不同的异常进行处理，例如跳转到登录页面或者弹出登录框。
+3.5）FilterSecurityInterceptor: 过滤器链最后一环，守门人，根据配置判断是否允许请求访问， 如果不允许，则根据不能访问的原因，抛出不同异常
+3.6）各种形式的Spring Security的功能特性都是基于此过滤器链，短信登录、QQ登录、微信登录都是在过滤器链上增加绿色的过滤器来支持不同的身份认证方式
+3.7）AuthenticationFilter can be configured or disabled, but ExceptionTranslationFilter and FilterSecurityInterceptor are always enabled
+
+# 自定义用户认证逻辑
+1) 处理用户信息获取逻辑 UserDetailsService interface
+UserDetails UserDetailsService.loadUserByUsername(String username) throws UsernameNotExistException
+
+2）处理用户校验逻辑 UserDetails interface
+2.1) password maching is done by spring security
+2.2) UserDetails.isAccountNonExpired(): 根据UserRepository， 判断账号是否过期， 例如使用用户创建日期
+2.3) UserDetails.isAccountNonLocked()： 账户是否锁定，如果账户冻结了，就返回false
+2.4) UserDetails.isCredentialsNonExpired()： 根据UserRepository， 判断密码是否过期， 例如使用密码更改日期，
+2.5) UserDetails.isEnabled()： 账户是否可用，用户是否被删除了，一般不能恢复
+2.6) any of above return false, spring will throw exception and authentication will fail.
+
+3）处理密码加密解密 PasswordEncoder interface
+3.1) declare PasswordEncoder implements PasswordEncoder interface
+3.2) declare PasswordEncoder bean
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
+3.3) when creating/updating user repository, inject passwordEncoder and passwordEncoder.encode(rawPassword)
+3.4) During the login, Spring will use the passwordEncoder.match(rawPassword, encodedPassword) method to compare the login password and encodedPassword retrieved returned from UserDetailsService 
+
+# 个性化用户认证流程
+1） 自定义登录页面
+1.1) create login page: src/main/resources/resources/imooc-signin.html
+	<form action="/authentication/form" method="post">
+		<table>
+			<tr>
+				<td>用户名:</td>
+				<td><input type="text" name="username"></td>
+			</tr>
+			<tr>
+				<td>密码:</td>
+				<td><input type="password" name="password"></td>
+			</tr>
+			<tr>
+				<td colspan="2"><button type="submit" name="submit">登录</td>
+			</tr>
+		</table>
+	</form>
+1.1.1) action="/authentication/form", name="username" and name="password" are significant
+1.2) configure login page in security config:
+	http.formLogin()
+			.loginPage("/imooc-signin.html")
+			.loginProcessingUrl("/authentication/form")			
+			.and()
+			.authorizeRequests()
+			.antMatchers("/imooc-signin.html").permitAll()
+			.anyRequest()
+			.authenticated();
+			.and()
+			.csrf().disable();
+1.2.1) need permission for accessing /imooc-signin.html, otherwise will enter redirection loop
+1.2.2) .loginProcessingUrl("/authentication/form") define login processing url
+1.2.3) need to disable csrf, otherwise without csrf token, authentication will fail.
+
+# 自定义登录响应（页面或者json）
+2.2）场景：根据不同的请求返回不同的信息，如果请求URL是.html,则重定向到登录页面，如果是restful请求，则返回401状态码+错误信息的json string
+2.2.1）思路： 如需认证,跳转到自定义的Controller，而不是登录页面，在Controller中判断请求类型，并重定向到登录页面，或返回json信息。
+2.2.2）define BrowserSecurityController
+@RequestMapping("/authentication/require")
+	@ResponseStatus(code = HttpStatus.UNAUTHORIZED)
+	public SimpleResponse requireAuthentication(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		// 从session中获取cached request
+		SavedRequest savedRequest = requestCache.getRequest(request, response);
+		// 判断引发跳转的请求是html与否
+		if (savedRequest != null ) {
+			String targetUrl = savedRequest.getRedirectUrl();
+			logger.info("引发跳转的请求是: " + targetUrl);
+			if (StringUtils.endsWithIgnoreCase(targetUrl, ".html")) {
+				redirectStrategy.sendRedirect(request, response, securityProperties.getBrowser().getLoginPage());
+			};
+		}		
+		return new SimpleResponse("访问的服务需要身份认证, 请引导用户到登录页");
+	}
+2.3.4) configure loginPage to point to rowserSecurityController
+	http.formLogin()
+			.loginPage("/authentication/require")
+
+2.3）场景， 如何让使用此安全模块的不同应用自定义其登录页面，只有不定义时，才使用默认页面.
+2.3.1) 思路： 用properties配置登录页面文件名
+2.3.2) in application.properties
+imooc.security.browser.loginPage = /demo-signin.html
+2.3.3) define SecurityProperties class
+@ConfigurationProperties(prefix = "imooc.security")
+public class SecurityProperties {
+	// read all properties starting with imooc.security, 
+	// any properties starting with imooc.security.browser will be read into BrowserProperties
+	private BrowserProperties browser = new BrowserProperties();	
+	...
+}
+2.3.4) in application.configuration
+imooc.security.browser.loginPage = /demo-signin.html
+2.3.5) use the imooc.security.browser.loginPage as the redirect url:
+redirectStrategy.sendRedirect(request, response, securityProperties.getBrowser().getLoginPage());
+
+2） 自定义登录成功处理 
+2.1）默认是前往登录前请求URL， 但可能需要进行用户中心积分和签到记录等等，需要前往另一页面, 或者只是返回json格式的用户数据\
+2.2）AuthenticationSuccessHandler
+@Component("imoocAuthenticationSuccessHandler")
+public class ImoocAuthenticationSuccessHandler implements AuthenticationSuccessHandler{
+	private Logger logger = LoggerFactory.getLogger(getClass());	
+	// jackson objectMapper
+	@Autowired
+	private ObjectMapper objectMapper;
+	
+	@Override
+	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
+			throws IOException, ServletException {
+		logger.info("登录成功");		
+		response.setContentType("application/json;charset=UTF-8");
+		response.getWriter().write(objectMapper.writeValueAsString(authentication));		
+	}
+}
+2.2.1) Authentication interface: encasulpate authentication information including UserDetails, ip address, session...)
+2.3) SecurityConfiguration
+	http.formLogin()
+			.loginPage("/authentication/require")
+			.loginProcessingUrl("/authentication/form")
+			.successHandler(imoocAuthenticationSuccessHandler)	
+
+3） 自定义登录失败处理
+3.1）默认前往/login， 显示错误信息，但我们可能需要记录错误日志，错三次不让登录。。。
+3.2）AuthenticationFailureHandler
+@Component("imoocAuthenticationFailureHandler")
+public class ImoocAuthenticationFailureHandler implements AuthenticationFailureHandler {
+	private Logger logger = LoggerFactory.getLogger(getClass());	
+	// jackson objectMapper
+	@Autowired
+	private ObjectMapper objectMapper;
+	@Override
+	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException authenticationException)
+			throws IOException, ServletException {
+		logger.info("登录失败");		
+		response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+		response.setContentType("application/json;charset=UTF-8");
+		response.getWriter().write(objectMapper.writeValueAsString(authenticationException));		
+	}
+}
+3.2.1) AuthenticationException: superclass of all authentication exceptions 
+3.3) SecurityConfiguration
+	http.formLogin()
+			.loginPage("/authentication/require")
+			.loginProcessingUrl("/authentication/form")
+			.failureHandler(imoocAuthenticationFailureHandler)	
+
+4) 配置式成功及失败处理
+4.1） 场景：允许用户配置使用json响应还是网页重定向
+4.2）BrowserProperties
+
+# 认证流程源码级详解
+1） 认证流程说明
+1.1) UsernamePasswordAuthenticationFilter： 负责处理表单登录请求
+1.1.1）获取用户名和密码
+1.1.2）build UsernamePasswordAuthenticationToken using username,, password and details, UsernamePasswordAuthenticationToken extending Authentication
+1.2) AuthenticationManager： 管理AuthenticationProvider
+.authenticate(UsernamePasswordAuthenticationToken) 
+1.3) AuthenticationProvider： authentication logic
+AuthenticationManager have a collection of AuthenticationProviders, 不同的登录方式的认证方式是不一样的， 例如微信登录是不需要验证密码的
+根据Authentication类型选取一个AuthenticationProvider来进行认证
+DaoAuthenticationProvider调用UserDetailsService.loadUserByUsername
+1.4) 获取了UserDetails
+1.5） DefaultUserDetailsService 进行 preAuthorization, isEnabled, isNonExpired...
+1.6) passwordMatching
+1.7) postAuthentication
+1.8) UserDertails 信息拼装入Authentication， 认证状态未true
+1.9）调用SuccesssHandler
+1.10) 如果中间出现异常，会执行FailureHandler
+
+2） 认证结果如何在多个请求间共享
+2.1） 把认证成功的Authentication Object放入SecurityContext, 再放入SecurityContextHolder
+2.2）SecurityContextHolder是ThreadLocal的封装，ThreadLocal线程级的全局变量
+2.3） SecurityContextPersistenceFilter是Spring Security过滤器链的首位，当请求到来时，检查session里面是否有SecurityContext， if yes, 拿出来放到线程里，没有就直接过去了，请求返回的时候，如果线程里面有SecurityContext， 就拿出来放到session里面。
+
+3） 获取认证用户信息
+3.1）@GetMapping("/me")
+	public Object getCurrentUser(Authentication authentication) {
+		return SecurityContextHolder.getContext().getAuthentication();
+	}	
+
+# 图片验证码
+1）思路： 在UsernamePasswordAuthenticationFilter前面自定义一个过滤器，对验证码进行校验
+2) throws exception when validate fails
+public class ValidateCodeException extends AuthenticationException {
+	private static final long serialVersionUID = -7285211528095468156L;
+	public ValidateCodeException(String msg) {
+		super(msg);
+	}
+}
+3) ValidateCodeFilter
+public class ValidateCodeFilter extends OncePerRequestFilter {	
+	@Autowired
+	private AuthenticationFailureHandler authenticationFailureHandler;	
+	private SessionStrategy sessionStrategy = new HttpSessionSessionStrategy();
+	@Override
+	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+			throws ServletException, IOException {		
+		//如果请求属于认证请求，则validate request中验证码信息
+		if (StringUtils.equals("/authentication/form", request.getRequestURI())
+			&& StringUtils.equalsIgnoreCase(request.getMethod(), "post")) {		
+			try {
+				validate(new ServletWebRequest(request));
+			} catch (ValidateCodeException e) {
+				authenticationFailureHandler.onAuthenticationFailure(request, response, e);
+			}
+		}
+		//执行security filter chain的下一个filter
+		filterChain.doFilter(request, response);
+	}
+
+	private void validate(ServletWebRequest request) throws ServletRequestBindingException {		
+		ImageCode codeInSession = (ImageCode) sessionStrategy.getAttribute(request, ValidateCodeController.SESSION_KEY);		
+		String codeInRequest = ServletRequestUtils.getStringParameter(request.getRequest(), "imageCode");
+		if (StringUtils.isBlank(codeInRequest)) {
+			throw new ValidateCodeException("验证码不能为空");
+		}		
+		if (codeInRequest == null) {
+			throw new ValidateCodeException("验证码不存在");
+		}		
+		if (codeInSession.isExpired()) {
+			sessionStrategy.removeAttribute(request, ValidateCodeController.SESSION_KEY);
+			throw new ValidateCodeException("验证码已过期");
+		}		
+		if (!StringUtils.equals(codeInSession.getCode(), codeInRequest)) {
+			throw new ValidateCodeException("验证码不匹配");
+		}		
+		sessionStrategy.removeAttribute(request, ValidateCodeController.SESSION_KEY);
+	}
+4) add ValidateCodeFilter to filterChain
+		ValidateCodeFilter validateCodeFilter = new ValidateCodeFilter();
+		validateCodeFilter.setAuthenticationFailureHandler(imoocAuthenticationFailureHandler);
+		
+		http.addFilterBefore(validateCodeFilter, UsernamePasswordAuthenticationFilter.class)
+			.formLogin()
+
+# 图形验证码代码重构
+1） 验证码基本参数可配置
+图片大小，验证码有效期。。。
+1.1）默认配置： 配置值写在imooc-security-core 的 ImageCodeProperties中
+
+1.2）应用级配置： 配置值写在imooc-security-demo 的application.properties中
+
+1.3）请求级配置： 配置值在调用接口时传递
+
+2） 验证码拦截的接口可配置
+application.properties中
+
+3） 验证码的生成逻辑可配置
+3.1) 思路： 要把生成逻辑抽象成接口，就像我们要扩展Spring Security的功能，都是要去实现一些接口
+
+# RememberMe 
+RememberMe功能 - 用户在登录成功后，系统记住用户，下次不需要重新登录就可以使用系统
+
+1）基本原理
+1.1) 认证成功后会调用RememberMeService
+1.2) RememberMeService有一个TokenRepository
+1.3) RememberMeService把生成的Token写入Cookie， 同时通过TokenRepository将token写入数据库，用户名也同时写入数据库
+1.4）服务请求会经过RememberMeAuthenticationFilter
+1.5）RememberMeAuthenticationFilter读取Cookie中的token，交给RememberMeService
+1.6) RememberMeService通过TokenRepository到数据库中查询，如果数据库中有记录，就把username取出来
+1.7) 调用UserDetailsService.loadUserByusername, 获取用户信息，放到SecurityContext里面， 完成登录
+
+# 短信验证码实现
+1) 短信验证码发送实现思路：
+用户输入手机号，点击页面链接“发送手机验证码”-> sms/code-> Controller -> 生成随机数 -> 放入session -> 调用运营商接口 -> 运营商发送短信验证码到手机
+2) 短信验证码登录实现思路：
+2.1）用户输入短信验证码, 点击提交 -> /authentication/mobile -> SmsCodeValidationFilter -> 取出session中的短信验证码 - > 校验比对 -> 如果为空，不一致。。。 -> throw AuthenticationException -> authenticationFailureHandler 返回登录页面或者返回json错误 -> 如果没问题，则继续执行filterChain
+2.2）配置SmsCodeSecurityConfig
+2.3）SmsCodeAuthenticationFilter拦截/authentication/mobile请求 -> 生成SmsCodeAuthenticationToken（未认证），包含Princical手机号 -> 通过AuthenticationManager轮询AuthenticationProvider
+-> 发现SmsCodeAuthenticationProvider支持SmsCodeAuthenticationToken认证 -> 执行SmsCodeAuthenticationProvider认证 -> SmsCodeAuthenticationProvider调用UserDetiailsService, 传入principal， 返回UserDetails -> if null, throw SmsCodeAuthenticationException -> 执行AuthenticationFailureHandler -> if not null, 生成SmsCodeAuthenticationToken, 包含UserDetails，已认证 -> 将SmsCodeAuthenticationToken放入SecurityContext -> 执行AuthenticationSuccessHandler
+
+Chapter 4 使用Spring Social开发第三方登录
+# OAuth协议简介
+1）场景： application(e.g. 慕课微信助手) 可以对微信用户的图片进行美化， 微信可以利用此应用提升客户体验，慕课微信助手可以获取微信用户，但是如何能够让慕课微信助手得到微信的认证授权，执行相应的api来下载图片，美化后再上传回去呢？ 
+1）核心思路： 用户提供给Application一个token， 里面有授权，有效期, Application用token访问微信（or facebook)
+2）角色：
+2.1) Provider: 服务提供商 （微信，Facebook），provide token
+2.1.1） Authorization Server: 认证服务器，认证用户身份，产生Token
+2.1.2) Resource Server: 资源服务器，保存用户资源（e.g. 用户自拍数据) + 验证Token， 如通过则提供用户资源
+2.2）Resource Owner: 资源所有者，即用户，把资源放在provider处。
+2.3) Client: 第三方应用，即application(e.g. 慕课微信助手)
+
+3） 流程
+3.0） 用户Resource owner访问应用Client
+3.1) 应用向用户请求授权
+3.2）用户同意授权
+3.3）应用向Authorization Server申请token
+3.4) Authoriztion Server发放token
+3.5）应用使用token向Resource Server申请资源
+3.6）Resource Server向应用开发资源
+
+3.2）应用同意授权
+3.2.1） 4种授权模式
+3.2.1.1）authorization code授权码模式： 功能最完整， 授权最严密的模式， 基本上所以提供商都采用这种模式
+3.2.2.2) implicit （较少使用）
+3.2.2.3) Resource owner password credentials
+3.2.2.4) client credentials （较少使用）
+3.2.2) authorization code授权码模式详细
+0. 用户Resource owner访问应用Client
+1. 如果需要授权，应用将用户导向认证服务器
+2. 用户在认证服务器上完成同意授权
+3. 如果用户同意，认证服务器导向回应用并携带授权码（并非token），导向地址是第三方应用事先与认证服务器商定的
+4. 应用拿着授权码向认证服务器申请令牌
+5. 认证服务器核对授权码，发放令牌token
+3.2.3）本模式的特点：
+3.2.3.1）特点一：用户同意授权的动作是在认证服务器上完成的； 认证服务器知道用户确实同意了授权
+3.2.3.2）其他授权模式， 包括密码模式，客户端模式都是在第三方应用上完成的， 完成后，第三方应用再向认证服务器申请令牌时带着一些信息表示用户已授权， 此时认证服务器无法确认用户授权是否真实，有可能为认证服务器伪造
+3.2.3.2）特点二： 用户同意授权后，认证服务器返回第三方应用的是一个授权码，而不是token
+3.2.3.3）第三方应用接到授权码后要再发一次请求给认证服务器，拿授权码换令牌，因此要求第三方应用要有一个服务器
+3.2.3.4）由于有些网站是静态的，没有服务器，因此其会使用简化模式，即直接返回token； 返回到一个页面，并用脚本读取
+3.2.3.5）why authorization code?
+The authorization code provides a few important security benefits such as the ability to authenticate the client, and the transmission of the access token directly to the client without passing it through the resource owner’s user-agent, potentially exposing it to others, including the resource owner.
+
+# 第三方登录开发
+1）场景： 第三方应用Client希望能够通过社交媒体网站，例如微信，facebook等来进行登录认证， 而不是强制要求用户创建账户
+2）实现思路： 
+2.1） 用户（resource owner)访问应用时, 应用将用户导向认证服务器， 要求用户授权应用使用用户信息（包括用户头像，用户ID）等等，用户同意授权。。。
+2.2）认证服务器向应用发放令牌， 应用拿着令牌向资源服务器申请用户信息，应用使用用户信息构建Authentication，放入SecurityContext
+2.3）当SecurityContext中有Authentication实例时，对于spring security来说就已经登录成功了， 这意味着实际上通过第三方认证实现了登录
+2.4）这也是微信登录，QQ登录，facebook登录的实现机制
+3) Spring social功能
+3.1) 封装实现了以上通过第三方登录的逻辑， 封装在SocialAuthenticationFilter里面
+3.2）将SocialAuthenticationFilter加入到security filter chain
+3.3) 当用户访问应用时，SocialAuthenticationFilter会拦截请求，带着用户走完整个认证流程。。。， 实现了微信登录
+4）Spring social机制
+4.1) ServiceProvider interface: abstractation of Provider
+4.1.1) AbstractOAuth2ServiceProvider: common logic for all provider, step 1-5
+4.1.2) OAuth2Operations and OAuth2Template 提供 common logic for step 1-5
+4.1.3）Api： 需要自定义实现一个获取用户信息的接口。 由于step 6. 获取用户信息是个性化的（各个provider的用户信息字段数量， 名称各不相同），
+4.1.4）AbstractOAuth2ApiBinding： 帮助我们实现Api接口
+4.1.5） Connection： 封装前6步认证完成后获取到的用户信息，provider信息
+4.1.6） OAuth2Connection： Connection的实现类
+4.1.7) ConnectionFactory： 创建Connection， 封装ServiceProvider来走1-6的认证流程，获取用户信息并封装成connection返回； 过程中用ApiAdapter映射
+4.1.8) OAuth2ConnectionFactory: ConnectionFactory的实现类
+4.1.9）ApiAdpter： 将Api获取的用户信息映射到Connection的标准数据结构
+4.1.10）UserConnection DB : store mapping from serviceProvider user id to 第三方应用自己的user id； 
+4.1.11）UserConnectionRepository(JdbcUsersConnectionRepository): 对UserConnection DB进行操作
+
+# Spring social implementation
+1) spring-social-facebook
+2) spring-social-twitter
+3) spring-social-linkedin
+4) spring-social-weibo
+...
+
+# spring-social-qq实现
+1）实现思路：
+1.1) 需要获得一个包含QQ用户信息的connection, 
+1.2) 就需要一个包含QQ service provider和ApiAdapter的ConnectionFactory
+1.3) QQ service provider需要OAuth2Operations/OAuth2Template和Api实现，来读取用户信息
+2) 实现步骤
+2.1）先实现Api，QQImpl extends AbstractOAuth2ApiBinding implements QQ
+public class QQImpl extends AbstractOAuth2ApiBinding implements QQ {
+	
+	private static final String URL_GET_OPENID = 
+			"https://graph.qq.com/oauth2.0/me?access_token=%s";	
+	private static final String URL_GET_USERINFO =
+			"https://graph.qq.com/user/get_user_info?oauth_consumer_key=%s&openid=%s";	
+	private String appId;	
+	private String openId;	
+	private ObjectMapper objectMapper = new ObjectMapper();	
+	public QQImpl(String accessToken, String appId) {
+		...
+	}
+
+	@Override
+	public QQUserInfo getUserInfo() throws Exception {		
+		String url = String.format(URL_GET_USERINFO, appId, openId);
+		String result = getRestTemplate().getForObject(url, String.class);
+		System.out.println(result);
+		return objectMapper.readValue(result, QQUserInfo.class);
+	}
+}
+2.2）用实现的Api+默认的OAuth2Template构建出ServiceProvider, 
+public class QQServiceProvider extends AbstractOAuth2ServiceProvider<QQ> {	
+	private static final String URL_AUTHORIZE = "https://graph.qq.com/oauth2.0/authorize";
+	private static final String URL_ACCESS_TOKEN = "https://graph.qq.com/oauth2.0/token";
+	public QQServiceProvider(String appId, String appSecret) {
+		super(new OAuth2Template(appId, appSecret, URL_AUTHORIZE, URL_ACCESS_TOKEN));
+	}
+	private String appId;	
+	@Override
+	public QQ getApi(String accessToken) {
+		return new QQImpl(accessToken, appId);
+	}
+} 
+2.3）实现ApiAdapter
+public class QQAdapter implements ApiAdapter<QQ> {
+	@Override
+	public boolean test(QQ api) {
+		return true;
+	}
+	@Override
+	public void setConnectionValues(QQ api, ConnectionValues values) {
+		QQUserInfo userInfo = api.getUserInfo();
+		values.setDisplayName(userInfo.getNickname());
+		values.setImageUrl(userInfo.getFigureurl_qq_1());
+		values.setProfileUrl(null);
+		values.setProviderUserId(userInfo.getOpenId());
+	}
+	@Override
+	public UserProfile fetchUserProfile(QQ api) {
+		return null;
+	}
+	@Override
+	public void updateStatus(QQ api, String message) {
+		// do nothing
+	}
+}
+2.4）用实现的ApiAdapter + ServiceProvider构建ConnectionFactory
+public class QQConnectionFactory extends OAuth2ConnectionFactory<QQ> {
+	public QQConnectionFactory(String providerId, String appId, String appSecret) {
+		super(providerId, new QQServiceProvider(appId, appSecret), new QQAdapter());	
+	}
+}
+2.5) 用ConnectionFactory获取connection， 包含用户信息
+2.6）配置JdbcUsersConnectionRepository，以在DB UserConnection表中创建映射记录
+create table imooc_UserConnection (userId varchar(255) not null,
+	providerId varchar(255) not null,
+	providerUserId varchar(255),
+	rank int not null,
+	displayName varchar(255),
+	profileUrl varchar(512),
+	imageUrl varchar(512),
+	accessToken varchar(512) not null,
+	secret varchar(512),
+	refreshToken varchar(512),
+	expireTime bigint,
+	primary key (userId, providerId, providerUserId));
+create unique index UserConnectionRank on imooc_UserConnection(userId, providerId, rank);
+2.7) 通过UserDetailsService 获取SocialUserDetails
+	@Override
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+		logger.info("表单登录用户名：" + username);
+		return buildUser(username);
+	}
+	@Override
+	public SocialUserDetails loadUserByUserId(String userId) throws UsernameNotFoundException {
+		logger.info("社交登录用户Id：" + userId);
+		return buildUser(userId);
+	}	
+	private SocialUserDetails buildUser(String userId) {
+		// 根据用户Id查找用户信息, using injected user repository
+		// 根据查找到的用户信息判断用户是否被冻结, 实际项目中false应使用用户数据判断得来
+		String encodedPassword = passwordEncoder.encode("123456");
+		logger.info("encoded database password: " + encodedPassword);		
+		return new SocialUser(userId, encodedPassword, true, true, true, true, AuthorityUtils.commaSeparatedStringToAuthorityList("admin"));
+	}
+2.8) 增加appId， appSecret的配置
+2.8.1) create QQProperties
+imooc.security.social.qq.app-id = 100550231
+imooc.security.social.qq.app-secret = 69b6ab57b22f3c2fe6a6149274e3295e
+2.8.2) create configuration
+@Configuration
+@ConditionalOnProperty(prefix = "imooc.security.social.qq", name = "app-id")
+public class QQAutoConfig  extends SocialAutoConfigurerAdapter {	
+	@Autowired
+	private SecurityProperties securityProperties;
+	
+	@Override
+	protected ConnectionFactory<?> createConnectionFactory() {
+		QQProperties qqConfig = securityProperties.getSocial().getQq();
+		return new QQConnectionFactory(qqConfig.getProviderId(), qqConfig.getAppId(), qqConfig.getAppSecret());
+	}
+}
+2.9）imooc-signin.html
+<h3>社交登录</h3>
+<a href="auth/qq">登录</a>
+2.9.1) 所有/auth/** 请求会被SocialAuthenticationFilter拦截
+2.9.2) qq是providerId
+
+# session <Test>
+session expiry time
+session cuncurrency
+shared session
+REDIS
+
+# Logout
+default
+custom url
+custom handler
+
+调用所有OpenAPI时，除了各接口私有的参数外，所有OpenAPI都需要传入基于OAuth2.0协议的通用参数：
+参数					含义
+access_token		可通过使用Authorization_Code获取Access_Token 或来获取。 access_token有3个月有效期。
+oauth_consumer_key	申请QQ登录成功后，分配给应用的appid
+openid				用户的ID，与QQ号码一一对应。 可通过调用https://graph.qq.com/oauth2.0/me?access_token=YOUR_ACCESS_TOKEN 来获取
+
+Chapter 6 Spring Security OAuth
+1）场景
+1.1）浏览器认证授权一般是基于Session实现的，Application Server create session and write JSESSIONID cookie to browser
+1.2) 随着业务的发展，客户端APP需要接入AS  
+1.3) 前后端分离，Host静态页面的Web Server与AS分别部署在单独的服务器上，例如web server用Nginx，browser通过Nginx加载html/css和js， js通过AJAX连接到backend AS来获取json数据
+1.4） 因此访问AS的不只是浏览器，而是其他的应用。
+1.5） 虽然在客户端支持cookie的情况下，前端仍然可以使用cookie/session技术， 但存在一些问题：
+1.5.1）开发繁琐：浏览器本身支持cookie, 但APP则需要手工处理cooki
+1.5.2） 安全性和客户体验差：possible session hijacking, timeout small then bad customer exp
+1.5.3) 有些前端技术不支持Cookie， 例如小程序
+
+2）Token based
+2.1) when request are from app not browser, we should use token to store authentication info
+2.2) 原理跟cookie/session差不多， 同样要给客户端一个唯一标识，但cookie/session方式是将JESSIONID写到cookie里面发给客户端， Token方式是发给用户一个token， 用户每次访问要带着令牌过来，AS不在session中存储用户信息，而是根据Token判断用户是谁，有什么权限，能干什么。
+2.3） 认证授权行为不再基于session中的用户信息，而是基于令牌， token的表现形式就是字符串
+2.4）session中的认证是由服务器完成， 无法干涉，而token可以扩展，例如刷新机制（refreshToken）
+2.5）客户端不需要支持cookie， 只要能传参数即可
+
+3）实现思路
+3.1) 可以基于OAuth2协议开发token-based authorization/authentication
+3.2) 此时开发的应用角色为服务提供商（Provider)，为各种app提供服务 （spring-social解决的是Client（第三方应用）通过服务提供商验证的问题）
+3.3）需要实现Authoriztion Server and Resource Server
+3.4）Authoriztion Server负责通过4种模式对APP授权，授权后生成Token并存储，
+3.5）但我们不可能让每个手机客户端走标准的4种标准授权模式，例如手机验证码流程与标准4种模式是搭不上的， 4种模式里面没有一种是发短信验证然后发出token的， 因此需要“自定义的认证”，认证后发token给应用
+3.6）Resource Server负责保护资源，使用Spring Security filter chain的OAuth2AuthenticationProcessingFilter从请求中取出token， 根据存储策略取出存储的token，根据token中用户信息判断用户是否存在，是否有权限来决定是否能访问特定资源
+
+4) 实现步骤：
+4.1）实现标准的OAuth协议provider
+4.2) implement Authorization Server:
+@Configuration
+@EnableAuthorizationServer
+public class imoocAuthorizationServerConfig {}
+4.2) must have ROLE_USER to access /oauth/authorize:
+return new SocialUser(userId, encodedPassword, true, true, true, true, AuthorityUtils.commaSeparatedStringToAuthorityList("admin,ROLE_USER"));
+4.3) configure appId, appSecret for 3rd party app, so that they can access Provider
+security.oauth2.client.clientId = imooc
+security.oauth2.client.secret = imoocsecret
+4.3）test 2 service endpoints of Authorization Server of "authorization code mode"
+/oauth/authorize
+4.3.1) http://localhost:8080/oauth/authorize?response_type=code&client_id=imooc&redirect_uri=http://www.example.com&scope=all
+4.3.2) User approved authorization in html page
+4.3.3) Authorization server callback: http://www.example.com/?code=IFy8Xa
+/oauth/token
+4.3.4) post: http://localhost:8080/oauth/token
+4.3.4.1) App authentication information in headers
+HEADERS: Authorization: Basic aW1vb2M6aW1vb2NzZWNyZXQ=
+username=imooc
+password=imoocsecret
+4.3.4.2) in headers: Content-Type=application/x-www-form-urlencoded
+4.3.4.3) form parameters:
+grant_type=authorization_code
+code=IFy8Xa
+client_id=imooc
+redirect_uri=www.example.com
+scope=all
+4.3.4.4) Authorization Server response:
+{
+	"access_token": "38857a83-3773-429b-a630-8ce580b8105a",
+	"token_type": "bearer",
+	"refresh_token": "5f38a096-47a5-49a9-850f-9a5dc25c5c02",
+	"expires_in": 43199,
+	"scope": "all"
+}
+
+4.3.5) 密码模式
+4.3.5.1）不需要访问/oauth/authorize, 直接访问/oauth/token
+4.3.5.2）post: http://localhost:8080/oauth/token
+grant_type=password
+username=daniel
+password=123456
+scope=all
+4.3.5.3) Authorization Server response:
+{
+	"access_token": "38857a83-3773-429b-a630-8ce580b8105a",
+	"token_type": "bearer",
+	"refresh_token": "5f38a096-47a5-49a9-850f-9a5dc25c5c02",
+	"expires_in": 42079,
+	"scope": "all"
+}
+4.3.5.3) instead of direct user to authorization server, app send 客户端的username\password to Authorization Server to ask for token, Authorization Server doesn't know the username and password is actually issued by the 客户端， but this is ok if app is trusted by the provider, especially in the same organization.
+
+3.2）Configure resource server:
+3.2.1) 
+@Configuration
+@EnableResourceServer
+public class imoocResourceServerConfig {}
+3.2.2) http://localhost:8080/user/me
+Authorization: bearer c307e98c-de2f-449d-8bc6-ebd612a899bb  //token string
+3.2.3）resource server response with user info：
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

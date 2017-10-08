@@ -1,0 +1,880 @@
+imooc-spring-boot-blog.txt
+
+# Gradle
+1) 为什么在 build.gradle 中 build-script{ }里面有一个repositories 后面末尾处又有一个repositories?
+1.1) buildscript中的声明是gradle脚本自身需要使用的资源。可以声明的资源包括依赖项、第三方插件、maven仓库地址等。 
+1.2) 而在build.gradle文件中直接声明的依赖项、仓库地址等信息是项目自身需要的资源。
+1.3) gradle在执行脚本时，会优先执行buildscript代码块中的内容，然后才会执行剩余的build脚本。
+1.4）classpath声明说明了在执行其余的脚本时，ClassLoader可以使用这些依赖项
+dependencies {
+	classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+}
+1.5) 自定义依赖版本号override spring-boot-starter中默认的依赖版本
+buildscript {
+	ext['thymeleaf.version'] = '3.0.3.RELEASE'
+	ext['thymeleaf-layout-dialect.version'] = '2.2.0'
+}
+
+2) 自定义Maven repository，加速依赖下载：
+	repositories {
+		// mavenCentral()
+		maven {
+			url 'http://maven.aliyun.com/nexus/content/groups/public/'
+		}
+	}
+
+3）Gradle Wrapper： 省去安装gradle的步骤，实现不同开发机器上的环境的一致性
+3.1) gradlew.bat和gradlew： gradle wrapper的命令脚本，执行后配置gradle的环境变量； gradlew for linux; gradlew.bat for windows
+3.2) gradle/wrapper/gradle-wrapper.jar is the gradle wrapper app.
+3.3）对gradle/wrapper/gradle-wrapper.properties进行配置
+change the version in: distributionUrl=https\://services.gradle.org/distributions/gradle-3.5.1-bin.zip
+3.4) gradlew build
+
+4) Spring Boot自定义依赖版本
+4.1) Spring Boot Starter 已经提供了各种依赖的集成，对于用户来说，只需要设置相应的Spring Boot Starter 版本即可。 但有时，Spring Boot Starter 中依赖版本，并不是我们想要的，此时需要自定义依赖的版本。
+实现自定义Spring Boot版本
+4.2) 比如，我们想修改 slf4j 的版本，我们可以这么做：
+<properties>
+    <slf4j.version>1.7.5<slf4j.version>
+</properties>
+4.3) 如果你想知道 slf4j.version 这个依赖的默认版本是什么，可以查看:
+https://github.com/spring-projects/spring-boot/blob/1.5.x/spring-boot-dependencies/pom.xml
+
+# Spring Boot
+1) MockMvc can be injected directly:
+@AutoConfigureMockMvc
+public class HelloControllerTest {
+    @Autowired
+    private MockMvc mockMvc;
+    ...
+}
+2) 三种运行方式：
+2.1）java -jar build/libs/xxx.jar
+2.2) in IDE: Run Application as java application
+2.3) Spring Boot Gradle Plugin: gradle bootRun or gradlew bootRun
+
+# Thymeleaf
+1) Java模板引擎，类似JSP、 Freemaker
+2）静态模板 + 动态数据
+3）自然模板。 原型即页面
+4） 语法优雅易懂. 支持OGNL, SpringEL标准
+
+# Thymeleaf标准方言
+1) <span th:text="..."> //需要引入命名空间
+<html xmlns:th="http://www.thymeleaf.org">
+<p th:text="#{home.welcome}">
+2) <span data-th-text="..."> //属于html5标准， 不需要引入命名空间
+
+2.5) expression, properties, loop, if/else, layout, comment, inline css/js, basic object, object util...
+3）表达式
+3.1) 变量expression: ${...} e.g. <span th:text="${book.author.name}">  book.author.name is the value of name field of book.author object??
+3.2) 消息expression: #{...} e.g. <span th:text="#{header.address.city}"> header.address.city is the key of a message??
+3.2.1) message也称为文本外部化，国际化或者i8n
+3.3） 选择expression: *{...} 
+<div th:object="${book}">
+	<span th:text="*{title}">...</span>
+</div>
+3.3.1) 与变量表达式的区别： 选择表达式在当前选择的对象而不是全局上下文变量映射上执行。 效率性能有优化
+3.4）链接表达式： @{...} 主要用于生成url链接
+3.4.1） 路径相对： <a th:href="@{../documents/report}">...</a>
+3.4.2) 服务器相对： <a th:href="@{~/contents/main}">...</a>
+3.4.3) 协议相对： <a th:href="@{//static.mycompany.com/res/initial}">...</a> 加htto或https
+3.4.4）绝对的: <a th:href="@{http://www.mycompany.com/main}">...</a> 
+3.5) 分段表达式： th:insert或者th:replace
+<div th:fragment="copy">
+	&Copy; 2017 <a href="https://waylau.com">waylau.com</a>
+</div>
+<div th:insert="~{footer :: copy}"></div>
+3.6) 字面量（文字）
+3.6.1） 文本： <span th:text="'working web application'">template file</span>
+3.6.2) 数字： <span th:text="2013"> <span th:text="2013 + 2">t
+3.6.3) 布尔： <div th:if="${user.isAdmin()} == false">
+3.6.4) null: <div th:if="${variable.something} == null">
+3.7）算术操作 + - * / %
+3.7.1）<div th:with="isEven=(${prodStat.count} % 2 == 0)">
+3.8) 比较 > < >= <= (gt lt ge le)
+<ul class="pagination" data-th-if="${page.totalPages le 7}" >
+3.9) 等价 == != (eq ne)
+data-th-selected="${i eq page.size}"
+3.10) 条件运算符
+<tr th:class="${row.even}? 'even" : 'odd'"></tr>
+3.11) 无操作 _
+<span th:text="${user.name} ?: _">no user authentication</span>
+
+4) 设置属性值
+4.1） 设置任意属性值 th:attr
+<form action="subscribe.html" th:attr="action=@{/subscribe}">
+<input type="submit" value="Subsribe!" th:attr="value=#{sunscribe.submit}"/>
+
+效果：覆盖原型中的属性
+<form action="/gtvg/subscribe">
+<input type="submit" value="!SubScribe!"
+
+4.2）设置制定属性, 更加直观，不容易出错
+<form action="subscribe.html" th:action="@{/subscribe}">
+<input type="submit" value="Subsribe!" th:value="#{sunscribe.submit}"/>
+基本囊括了所有html属性
+
+4.3) 固定值布尔属性
+<input type="checkbox" name="option2" checked /> <!-- HTML -->
+<input type="checkbox" name="option2" th:checked="${user.active}" />
+
+4.4) 迭代器 th：each
+<li th:each="book: ${books}" th:text="${book.title}">En las Orillas del Sar</li>
+4.4.1) 状态变量
+index, count, size, current, even/odd, first, last
+
+4.5) 条件语句 th:if, th:unless, th:switch
+<a href="..." ... th:if="${not #lists.isEmpty(prod.comments)}">view</a>
+<a href="..." ... th:unless="${#lists.isEmpty(prod.comments)}">view</a>
+
+<div th:switch="${user.role}">
+	<p th:case="'admin'">User is an administrator</p>
+	<p th:case="#{roles.manager}">User is an manager</p>
+	<p th:case="*">User is some other thing</p>
+</div>
+
+4.6) 模板布局 th:fragment th:insert
+公用部分定义和使用
+<div th:fragment="copy">
+	&Copy; 2017 <a href="https://waylau.com">waylau.com</a>
+</div>
+<div th:insert="~{footer :: copy}"></div>
+
+4.6.1) 不使用th:fragment
+<div id="copy-section">
+	&Copy; 2017 <a href="https://waylau.com">waylau.com</a>
+</div>
+<div th:insert="~{footer :: #copy-section}"></div>
+
+4.6.2) th:insert, th:replace, th:include三者区别
+th:insert 简单插入指定片段作为正文的主标签
+th:replace 用指定片段作来替换其主标签
+th:include 类似于th:insert， 不再推荐使用
+
+4.7） 属性优先级
+<li th:each="item:${item}" th:text="${item.description}">Item description here...</li>
+4.7.1) Fragment inclusion: th:insert. th:replace  
+4.7.2) Fragment iteration: th:each 
+4.7.3) Conditional evaluation: h:if, th:unless, th:switch, th:case
+4.7.4) Local variable definition: th:object, th:with
+4.7.5) General attribute modification: th:attr, th:attrprepend, th:attrappend
+4.7.6) Specific attribute modification: th:value, th:href, th:src
+4.7.7) Text(tag body modification): th:text, th:utext
+4.7.8) Fragment specification: th:fragment
+4.7.9) Fragment removal: th:remove
+
+4.8) comments
+4.8.1) 标准HTML/XML注释： <!-- User info follows -->
+4.8.2）Thymeleaf解析器级注释块： /* */
+<!--/*-->
+	<div>you can see me only before Thymeleaf processes me!</div>	
+<!--*/-->
+4.8.2.1）静态时， <!--/*--> <!--*/--> HTML注释生效, 不影响中间代码，模板执行时，/* ... */生效, 不显示中间代码， 同时<!-- --> 也生效
+4.8.3) 原型注释块： 当模板静态打开时（比如原型设计）， 原型注释块所注释的代码不生效，而在模板执行时，执行注释的代码， 就能被显示出来。
+<span>hello!</span>
+<!--/*/
+	<div th:text="${...}">
+	...
+	</div>
+/*/-->
+<span>goodbye!</span>
+4.8.3.1) 静态时， <!-- ... --> HTML注释生效，中间代码被注释， 模板执行时，<!--/*/ ... /*/--> 生效, 显示中间代码
+
+4.8） 内联: 直接将表达式写入html文本
+4.8.1) 内联表达式: [[...]]}或 [(...)] 分别对应于th:text和th:utext
+4.8.2) th:text会对特殊符号进行转义，th:utext不会
+<p>The message is "[(${msg})]"</p> => <p>The message is "This is <b>great!</b>"</p> <!-- 不转义， 有特殊符号-->
+<p>The message is "[[${msg}]]"</p> => <p>The message is "This is &lt;b&gt;great!&lt;/b&gt;"</p>
+4.8.3) 禁用内联:
+<p th:inline="none">A double array looks like this: [[1,2,3],[4,5]]!</p>
+
+4.9） JS内联： 将表达式写入JS
+<script th:inline="javascript">
+	...
+	var username = /*[[${session.user.name}]*/ "Gertrud Kiwifruit";
+	...
+</script>
+
+4.10）CSS内联：将表达式写入CSS
+classname = 'main elems'
+align = 'center'
+
+<style th:inline="css">
+	.[[${classname}]] {
+		text-align: [[${align}]];
+	}
+</style>
+
+4.11) 表达式基本对象： 存在于上下文中，随时可以访问的对象
+4.11.1） #ctx: 
+${#ctx.locale}
+${#ctx.variablenames}
+${#ctx.request}
+${#ctx.response}
+${#ctx.session}
+${#ctx.servletContext}
+4.11.2) #locale: 直接访问与java.util.Locale关联的当前的请求
+${#locale}
+4.11.3） #param
+${param.foo}
+${param.size()}
+${param.isEmpty()}
+${param.containsKey('foo')}
+4.11.4) session
+${session.foo}
+${session.size()}
+${session.isEmpty()}
+${session.containsKey('foo')}
+4.11.5） application
+${application.foo}
+${application.size()}
+${application.isEmpty()}
+${application.containsKey('foo')}
+4.11.6)  #request
+${#request.getAttribue('foo')}
+${#request.getParameter('foo')}
+${#request.getContextPath()}
+${#request.getRequestName()}
+4.11.7） #session
+${#session.getAttribute('foo')}
+${#session.id}
+${#session.lastAccessedTime}
+4.11.8) #servletContext
+${#servletContext.getAttribute('foo')}
+${#servletContext.contextPath}
+
+4.11.8) #servletContext
+
+4.12） 表达式工具对象
+4.12.1）执行信息： 获取模板相关信息
+#execInfo.templateName
+#execInfo.templateMode
+...
+
+4.12.2) 消息： 获取外部化消息的使用方法，与#{...}效果相同
+$(#messages.msg('msgKey')
+$(#messages.msg('msgKey', param1)
+$(#messages.msg('msgKey', param1, param2)
+
+4.12.3) URI/URL: URI/URL转义/取消转义
+${uris.escapePath(uri))}
+${uris.escapePath(uri, encoding))}
+
+4.12.4) 转换： 将对象转换成目标类型
+${#conversions.convert(object, 'java.util.Timezone')}
+${#conversions.convert(object, targetClass)}
+
+4.12.5) 日期： Date对象的转换方法
+#{#dates.format(date)}
+#{#dates.format(date, 'dd/MMM/yyyy HH:mm')}
+
+4.12.5) 日历： Calendar对象的转换方法
+4.12.6）数字： ${#numbers.xxx()}
+4.12.7) 字符串： ${#strings.indexOf(...)}
+4.1.2.8) 对象： #objects
+4.12.9）#arrays
+4.12.10） #lists
+4.12.11） #sets
+4.12.12） #maps
+4.12.13） #aggregates
+4.12.14） #ids
+
+Thymeleaf与Spring Boot集成
+1) 修改build.gradle
+1.1） 添加Thymeleaf依赖
+compile('org.springframework.boot:spring-boot-starter-thymeleaf')
+1.2） 自定义Thymeleaf和Thymeleaf Layout Dialect的版本
+buildscript {
+	...
+	ext['thymeleaf.version'] = '3.0.3.RELEASE'
+	ext['thymeleaf-layout-dialect.version'] = '2.2.0'
+	...
+}
+1.3） application.properties
+spring.thymeleaf.encoding=UTF-8
+# 禁用缓存实现热部署文件
+spring.thymeleaf.cache=false
+# 使用HTML5标准
+spring.thyemleaf.mode=HTML5
+
+2) Thymeleaf代码
+2.1）用AtomicLong和ConcurrentMap<Long, User>来模拟后台数据库，实现增删改查
+public class UserRepositoryImpl implements UserRepository {
+    //模拟用户唯一标识
+    private static AtomicLong counter= new AtomicLong();
+    //开发时模拟数据库
+    private final ConcurrentMap<Long, User> userMap = new ConcurrentHashMap<>();
+    ...
+}
+
+2.2) Thymeleafyem
+2.2.1）引入命名空间
+<html xmlns:th="http://www.thyeleaf.org"
+       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+2.2.2) 相对于服务器，覆盖静态的href="/users"
+<a href="/users" th:href="@{~/users}">首页</a>
+2.2.3) 引入header, footer
+2.2.3.1) in fragments/header.html
+	<div th:fragment="header">
+        <h1>Thymleaf in action</h1>
+        <a href="/users" th:href="@{~/users}">首页</a>
+    </div>
+    in fragments/footer.html
+    <div th:fragment="footer">
+        <a href="https://waylau.com">Welcome to waylau.com</a>
+    </div>
+2.2.3.2) 
+<div th:replace="~{fragments/header::header}"></div>
+<div th:replace="~{fragments/footer::footer}"></div>
+2.2.4) 原型即效果页面; 直接在原型界面上开发
+<h3 th:text="${userModel.title}">页面标题</h3>
+2.2.5）if
+	<tr th:if="${userModel.userList.size()} eq 0">
+        <td colspan="3">没有用户信息！</td>
+    </tr>
+2.2.6) loop
+	<tr th:each="user : ${userModel.userList}">
+        <td th:text="${user.id}">1</td>
+        <td th:text="${user.name}">Daniel</td>
+        <td th:text="${user.email}">wendaniel@hotmail.com</td>
+    </tr>
+2.2.7) href
+<a href="/users/form.html" th:href="@{/users/form}">创建用户</a>
+<a th:href="@{'/users/delete/' + ${userModel.user.id}}">删除用户</a>
+<a th:href="@{'/users/modify/' + ${userModel.user.id}}">修改用户</a>
+
+2.2.8) form
+	<form action="/users" th:action="@{/users}" method="POST" th:object="${userModel.user}">
+        <input type="hidden" name="id" th:value="*{id}">
+        名称：<br>
+        <input type="text" name="name" th:value="*{name}"><br>
+        邮箱: <br>
+        <input type="text" name="email" th:value="*{email}"><br>
+        <input type="submit" value="提交">
+    </form>
+
+2.3) SpringBoot项目在IntelliJ IDEA中实现热部署
+https://my.oschina.net/u/3479308/blog/903134
+spring-boot-devtools是一个为开发者服务的一个模块，自动应用代码更改到最新的应用上面去，
+原理：在发现代码有更改之后，重新启动应用，速度比手动停止后再启动更快些
+
+# JPA
+1) 什么是JPA？ Java Persistence API, standard Java ORM API
+2) 实现： EclipseLink, Hibernate, Apache OpenJPA
+3) @Entity, @Id, @OneToOne, @OneToMany, @ManyToOne, @ManyToMany
+4) EntityManager
+@PersistenceUnit
+EntityManagerFactory emf;
+EntityManager em;
+@Resource
+UserTransaction utx;
+...
+em = emf.createEntityManager();
+try {
+	utx.begin();
+	em.persist(someEntity);
+	em.merge(anotherEntiry);
+	em.remove(thirdEntity);
+	utx.commit();
+} catch (Exception e) {
+	utx.rollback();
+}
+
+4.1）find entity
+@PersistenceContext
+EntityManager em;
+public void enterOrder(int custID, CustomerOrder newOrder) {
+	Customer cust = em.find(Customer.class, custID);
+	cust.getOrders().add(newOrder);
+	newOrder.setCustomer(cust);
+}
+
+# Spring Data JPA
+1) Spring Data是Spring数据管理模块，包括Spring DATA JPA，与NoSQL和ElasticSearch系统的集成等等
+2） Spring Data JPA是Spring DATA家族中，基于JPA的数据访问层的增强支持
+3） 简化基于使用Spring Data访问技术栈的应用程序 ？？
+4) 常用接口 
+4.1) CrudRepository （基础增删改查接口）extends Repository<T, ID>
+save(S entity);
+T findOne(ID primaryKey);
+Iterable<T> findAll();
+Long count();
+void delete(T entity);
+boolean exists(ID primaryKey);
+
+4.2) PagingAndSortingRepository (分页和排序接口， 数据量大的时候必须的) extends CrudRepository<T, ID>
+Iterable<T> findAll(Sort sort);
+Page<T> findAll(Pageable pageable)
+
+4.3） 自动义接口： generate query based on method name
+//必须要继承Repository<T, ID>
+public interface PersonRepository extends Repository<User, Long> {
+	
+	// 按照规则构建方法名
+	List<Person> findByEmaikAddressAndLastname(EmailAddress emailAddress, String lastname);
+
+	//启用distinct标志
+	List<Person> findDistinctPeopleByLastnameOrFirstname(String lastname, String firstname);
+	List<Person> findPeopleDistinctByLastnameOrFirstname(String lastname, String firstname);
+
+	//给属性启用ignore case
+	List<Person> findByLastnameIgnoreCase(String lastname);
+	//给所有合适属性启用ignore case
+	List<Person> findByLastnameAndFirstnameAllIgnoreCase(String lastname, String firstname);
+
+	// 启用ORDER BY
+	List<Person> findByLastnameOrderByFirstnameAsc(String lastname);
+	List<Person> findByLastnameOrderByFirstnameDesc(String lastname);
+}
+4.3.1) encapsulate JPA operations??
+
+#CSRF
+1） Thymeleaf自动在form表单中添加CSRF token，但AJAX请求需要自己处理
+2) header中添加CSRF token
+	<!-- CSRF -->
+	<meta name="_csrf" th:content="${_csrf.token}"/>
+	<!-- default header name is X-CSRF-TOKEN -->
+	<meta name="_csrf_header" th:content="${_csrf.headerName}"/>	
+2） 在AJAX请求需要自己处理
+// 获取 CSRF Token
+		var csrfToken = $("meta[name='_csrf']").attr("content");
+		var csrfHeader = $("meta[name='_csrf_header']").attr("content");
+
+
+		$.ajax({
+			url: "/users/" + $(this).attr("userId") ,
+			type: 'DELETE',
+			beforeSend: function(request) {
+				request.setRequestHeader(csrfHeader, csrfToken); // 添加  CSRF Token
+			},
+
+# Spring Data JPA + Hibernate + Spring Boot集成
+1）配置环境
+MySQL Community Server 5.7.17
+Spring Data JPA 1.11.1.RELEASE
+Hibernate 5.2.8.Final
+MySQL Connector/J 6.0.5
+
+2) modify build.gradle
+// Spring Data JPA依赖（包括Hibernate，spring-data-jpa，spring-orm...)
+compile('org.springframework.boot:spring-boot-starter-data-jpa')
+// MySQL 连接驱动
+compile('mysql:mysql-connector-java:6.0.5')
+
+// 自定义Hibernated版本以利用其最新功能
+ext['hibernate.version'] = '5.2.8.Final'
+
+2.1) gradle bootRun 出错： 因为引入了JPA，需要配置数据源或者引入embedded db such as H2.
+2.2）增加h2内嵌数据库
+// H2内嵌数据库
+runtime('com.h2database:h2:1.4.193')
+2.2.1) 查看h2数据信息
+2.2.1.1) application.properties:
+# 使用H2控制台
+spring.h2.console.enabled=true
+2.2.1.2) 设置 JDBC URL为 jdbc:h2:mem:testdb
+2.2.1.3) 访问localhost:8080/h2-console
+
+3) 集成mysql
+3.1) 在application.properties中指定数据源：
+# DataSource
+spring.datasource.url=jdbc:mysql://localhost/blog?useSSL=false&serverTimezone=UTC&characterEncoding=utf-8
+spring.datasource.username=root
+spring.datasource.password=123456
+spring.datasource.driver-class=com.mysql.jdbc.Driver
+
+# JPA
+spring.jpa.show-sql=true
+spring.jpa.hibernate.ddl-auto=create-drop
+
+3.2) create blog database;
+DROP DATABASE IF EXITS blog;
+CREATE DATABASE blog DEFAULT CHARSET utf8 COLLATE utf8_general_ci;
+
+5) spring项目集成基本上可以通过添加dependency + application.properties来完成，不需要自己去配置各种bean
+6) JPA是规范，Hibernate是JPA的实现，Spring Data JPA是JPA的扩展
+
+# ElasticSearch
+1) 全文搜索
+1.1）结构化数据： 具有固定格式以及有限长度的数据， 如数据库、元数据
+1.2）非结构化数据： 不定长或无固定格式的数据， 如邮件，word文档等。
+
+2） 非结构化数据的检索
+2.1） 顺序扫描法（Serial Scanning）： 逐行逐字比对，例如操作系统搜索文件， Linux grep命令，对于小数据量是OK的，几兆几G Ok
+2.2） 全文搜索原理（Full-text Search）： 将非结构化数据中的一部分信息提取出来， 重新组织使其变的有一定结构，对有一定结构的数据进行搜索
+2.3） 本质上是将非结构化的数据的一部分信息转为结构化数据，然后创建索引，以实现快速搜索的目的。
+2.4） 索引：例如查字典，先查索引，发现页数，直接翻到那页。 搜索有不同的策略
+2.5） 全文搜索定义： 全文搜索是一种将文件中所有文本与搜索项匹配的文字资料检索方法
+2.6） 全文搜索实现原理： 建立文本库-》建立索引-》执行搜索-》过滤结果
+2.7） 全文搜索实现技术： 基于java的开源实现： Lucence (全文搜索引擎) + ElasticSearch （工具） （or Solr（工具）)
+2.8） Solr在分布式管理当中利用了zookeeper， ES自身带有分布式管理功能。 Solr支持数据格式多，json， xml，csv，ES只支持json， Solr功能更全面，solr在传统的搜索比较好，ES在实时搜索效果更好。
+
+3） ElasticSearch
+3.1) 高度可扩展的开源全文搜索和分析引擎， 
+3.2） 快速地，近实时地对大数据进行存储、搜索和分析
+3.3）用来支撑有复杂的数据搜索需求的企业级应用
+3.4） 特点：分布式， 索引/数据分片； 高可用； 多数据类型； 多API； 面向文档（类似NoSQL）； 异步写入； 近实时；基于Lucene； Apache开源协议
+
+4） ES核心概念
+4.1）近实时（约1秒），一般每隔1秒刷新一次 index.refresh.interval
+4.2) 集群
+4.3）节点： 集群中的单台服务器
+4.4）索引: 相似文档的集合
+4.5） 类型： 索引中的分类
+4.6） 文档： 索引的基本单位， 例如每个产品对应 一个文档，对应机构化数据中的一个实体的实例
+4.7） 分片： 把索引分成多个分片， 实现并行处理
+4.8） 副本： 分片的副本，实现高可用性， 增加吞吐量
+
+5） ES与Spring-Boot集成
+5.1） Elasticsearch 2.4.4， Spring Data Elasticsearch 2.1.3.RELEASE, JNA 4.3.0 访问操作系统原生的library
+5.2） add depenency
+// Spring Data Elasticsearch依赖, Spring与ES集成
+compile('org.springframework.boot:spring-boot-starter-data-elasticsearch')
+// JNA依赖，用于访问操作系统原生的library
+compile('net.java.dev.jna:jna:4.3.0')
+5.3) application.properties
+# Elasticsearch服务地址
+spring.data.elasticsearch.cluster-nodes=localhost:9300
+# 设置连接超时时间
+spring.data.elasticsearch.properties.transport.tcp.connect_timeout=120s
+
+5.4) 后台编码
+5.4.1) 文档EsBlog
+@Document(indexName = "blog", type="blog") //文档
+public class EsBlog implements Serializable {
+    @Id //主键
+    private String id;
+    private String title;
+    private String summary;
+    private String content;
+    ...
+}
+5.4.2) 资源库EsBlogRepository
+public interface EsBlogRepository extends ElasticsearchRepository<EsBlog, String> {
+}
+5.4.3) 资源库测试用例 EsBlogRepositoryTest
+public void testindDistinctEsBlogByTitleContainingOrSummaryContainingOrContentContaining()
+    {
+        Pageable pageable = new PageRequest(0, 20);
+        String title = "思";
+        String summary = "相思";
+        String content = "相思";
+        Page<EsBlog> page = esBlogRepository
+                .findDistinctEsBlogByTitleContainingOrSummaryContainingOrContentContaining(title, summary, content, pageable);
+        assertThat(page.getTotalElements(), is(2L));
+        ...
+     }
+
+5.4.4) Controller测试
+http://localhost:8080/blogs/?title=思&summary=相思&content=相思
+http://localhost:8080/blogs/?title=想思&summary=相思&content=相思
+5.4.5）elasticSearch运行
+download 2.4.4 version zip file, run elasticSearch.bat
+5.4.6）elasticSearch清除数据
+删除$ELASTICSEARCH_HOME/data/elasticsearch 目录
+
+5.5) 测试用例中通过ElasticsearchRepository注入三条数据，再通过ElasticsearchRepository查询出来。在实际生产场景中是如何处理的呢？ 是在对RDBMS插入/更新数据时，同时通过ElasticsearchRepository对ES进行数据插入/更新？ 还是说在ES和RDBMS间建立同步机制。。。
+
+这个问题问的很好，其实，你在问题已经给出了答案。基本上会有两种方式：
+1. 插入数据时，同时向关系型数据库和ES种插入。优点是实现方便，实时性好。缺点是，没有办法处理历史遗留数据。所以合适在新项目种采用。这也是本课程采用的方式。
+2. 先插入数据到关系型数据库，而后再通过采用同步机制，将数据同步到ES。这种方式优点是，即便后期引入ES，也能保证前期的历史数据同步到ES。缺点是，同步插件需要额外开发，目前市面上能用的插件还是比较少，更新慢。另一个缺点是，更新速度有延时。
+
+# 博客系统 + 文件管理系统
+1） 博客系统 -》 RDBMS（MySQL， H2) + NoSQL (ElasticSearch)
+2) 文件管理系统 （图片存储） -》 NoSQL（MongoDB）
+3）博客系统 -》 RESTful API -> 文件管理系统
+
+# Bootstrap
+1） 基于HTML， CSS， JS的前端框架
+2) 实现响应式布局
+3） 移动设备优先
+4） 支持HTML5， 需要HTML5 DOCTYPE
+<!DOCTYPE html>
+<html lang="en">
+	...
+</html>
+5） 响应式meta标签
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+6) 需要Normalize.css， 实现跨浏览器样式统一
+如果Normalize.css里面没有对应的样式，则采用其自身的Reboot样式？？
+
+7) 移动优先策略
+7.1） 基础的CSS是移动优先。 优先适应更小的宽度
+7.2） 再通过媒体查询适配平板电脑，台式电脑
+7.3） 渐进增强. 随着屏幕大小的增加而添加元素
+
+8）grid system
+8.1) 响应式： viewport尺寸的增加，系统会自动分为最多12列
+8.2） 网格选项
+超小设备（<768px)。小型设备平板电脑(>=768px)， 中型设备台式电脑(>=992px)， 大型设备台式电脑(>=1200px)
+class前缀 .col-xs- 	.col-sm  	.col-md- 	.col-lg
+
+9) Bootstrap常用的组件和样式
+9.1）Typogrphy 小图标
+9.2）Table 
+9.3）Form
+9.4）Button
+9.5) Dropdown
+9.6) Button Group
+9.7) Input Group
+9.8) Navbar
+9.9) Pagination 分页
+9.10） Tag
+9.11） Alert
+9.12） Modal Dialog 弹窗
+9.13) Progress Bar
+9.14） List Group
+9.15） Card
+9.16） Tooltip 
+
+#Bootstrap 与SpringBoot集成
+1）依赖Tether 1.4.0来实现，需要先导入Tether http://tether.io
+2） Bootstrap v4.0.0-alpha.6 https//v4-alpha.getbootstrap.com
+3) jQuery 3.1.1: http://jquery.com/download
+
+其他常用前端框架与Spring Boot集成
+1）字体图标库： Font Awesome4.7.0 http://fontawesome.io
+2) 进度条处理： NProgress 0.2.0 http：//ricostacruz.com/nprogress/
+3）markdown插件： Thinker-md： http://git.oschina.net/benhail/thinker-md
+4）tag插件： jQuery Tags Input 1.3.6 http://xoxco.com/projects/code/tagsinput
+5) boostrap下拉插件： Bootstrap Chosen 1.0.3 http://github.com/haubek/bootstrap4c-chosen
+6) 信息提示： toastr 2.1.1 http://www.toastrjs.com
+7) 集成方式为将css， fonts， images， js 下载后放入static目录中，再通过html模板引用
+8) 一般CSS放头部HEAD，JS放BODY底部， 先加载样式，后加载JS
+
+# Bootstrap coding
+1）先编写html结构
+2）再添加样式， 即CSS类
+3）参考Bootstrap官网的样例，理解不同css类的效果
+
+# Spring Security
+1）核心领域概念
+1.1）authentication： 建立主体（principal）的过程。 princical通常是可以在您的应用程序中执行操作的用户、设备或其他系统
+1.1.1) 例如服务A调用服务B，B需要对A进行认证
+1.2）Authorization： 或称为“访问控制（access-control）， authorization是指决定主体是否允许在应用程序中执行操作
+1.2）Spring security支持的身份验证技术
+HTTP BASIC, HTTP Digest, HTTP X.509, LDAP, Form, OpenId, SSO, Remember-Me, 匿名身份认证，Run as，JAAS, JEE 容器认证
+1.3） 模块：
+Core - spring-security-core.jar （Authentication, Authorization)
+Remoting - spring-security-remoting.jar  (与Spring remoting 整合)
+Web spring-security-web.jar (web security)
+Config - spring-security-config.jar (配置功能)
+LDAP spring-security-ldap.jar (ldap autentication)
+ACL - spring-security-acl.jar (访问控制列表)
+CAS - spring-security-cas.jar (SSO支持)
+OpenID - spring-security-openid.jar (social authentication)
+test - spring-security-test.jar (测试)
+
+2) Spring Security 与 Spring Boot集成
+2.1） 配置环境
+2.1.1) Spring Security 4.2.2.RELEASE
+2.1.2) Thymeleaf Spring Security 3.0.2.RELEASE (Thymeleaf对Spring Security的支持)
+2.2） build.gradle中增加依赖
+// Spring Security
+compile('org.springframework.boot:spring-boot-starter-security')
+// Thymeleaf对Spring Security的支持
+compile('org.thymeleaf.extras:thymeleaf-extras-springsecurity4:3.0.2.RELEASE')
+2.3) 此时启动后， 访问会出现登录框。
+2.4） 安全配置
+2.4.1) create new package for config: ***.***.config
+2.4.2) create SecurityConfig class
+2.4.3) 配置httpRequest拦截规则： override configure(HttpSecurity) 
+2.4.4）配置认证规则： override configure(AuthenticationBuilder)
+
+2.5） Controller
+2.6） 前端编码
+2.6.1) add sec namespace：xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+header.html
+login.html
+
+3) 用户及角色， 权限管理
+3.1）User类： 
+3.1.1）包括业务逻辑和认证相关字段，用户名，姓名，邮箱， 电话，密码问题/答案， Avatar， 密码。。。； 
+3.1.2）用于注册，登录， 主页的名称和头像显示
+3.1.3）注册时通过Bean Validator进行校验
+3.1.4）如果不用Spring Security，采用自定义安全录，登录时可以使用此User对象存放前端输入的登录信息，再从数据库中根据用户名取回用户记录，比对password。
+通过则放到session中，不通过返回错误json或者返回登录错误url。用户下次请求则先检查session是否有用户，有的话，则允许执行业务逻辑， 否则返回错误json或者登录url，要求用户登录或者注册；用户注册时，手工向数据库插入一条记录，应同时对密码进行加密， 然后返回创建成功json或者转到登录页。
+3.1.5）自定义安全的账号异常，可以在User对象中添加自定义账号的过期日期，账号锁定状态等等，登录过程中检查密码的同时对账号异常进行检查。
+3.1.6）自定义安全的权限，可以通过在用户类中增加权限标识，或者另外设置权限表的形式，User对象自身存放权限标识， 在Controller 方法中检查User的权限标识，以确定是否可以执行特定业务代码， 不行的话返回错误json或者转到登录业务。 登录验证时，同时取出权限表对应的权限，加入到用户对象。
+
+
+3.2）Spring Security 安全实现
+3.2.1）改造User类，实现UserDetials接口和getAuthorities(), isAccountNonExpired()，isAccountNonLocked()， isCredentialsNonExpired()。。。
+根据用户字段值判断并返回此4方法的值，例如如果用户有一个expiry date, 则比对new Date()与Expiry Date， 如果new Date()>expiry date 则 isAccountNotExpired 返回false。
+public class User implements UserDetails {
+	@Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+	
+
+}
+3.2.1) 权限类： Authority
+@Entity
+public class Authority implements GrantedAuthority {
+	@Override
+    public String getAuthority() {
+        return name;
+    }
+    ...
+}
+3.2.2）建立用户与权限的关系
+
+	@ManyToMany(cascade = CascadeType.DETACH, fetch = FetchType.EAGER)
+    @JoinTable(name = "user_authority", joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "authority_id", referencedColumnName = "id"))
+    private List<Authority> authorities;
+
+
+	@Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // 需将List<Authority>转成List<SimpleGrantedAuthority>, 否则前端拿不到角色列表名称，为什么？
+        List<SimpleGrantedAuthority> simpleGrantedAuthorities = new ArrayList<>();
+        for (GrantedAuthority authority : this.authorities) {
+            simpleGrantedAuthorities.add(new SimpleGrantedAuthority(authority.getAuthority()));
+        }
+        return simpleGrantedAuthorities;
+    }
+
+
+# 博客管理
+1) dependency
+// markdown parser插件，用于解析markdown文本 
+compile('es.nitaur.markdown:txtmark:0.16')
+
+
+
+总而言之
+1）Spring Boot
+1.1）后端业务代码（Controller->Service->Repository->H2/MySQL）与传统的Spring功能上没有区别，简化了配置，基本上通过添加依赖和少量的application.properties即可实现auto configuration
+1.2）对测试支持很好，可以通过@EnableMockMvc直接注入MockMvc
+1.3) Spring Boot的其他模块如Spring Boot CLI， Actuator在生产中应用多吗？
+
+2) Thymeleaf
+2.1）Thymeleaf特点是原型=实现效果，通过th namespace引入属性，没有自定义tag
+2.2）模板引擎功能如数据渲染，if/loop，form， layout，utility库都很齐全
+2.3）Thymeleaf在本课程中是作为后端模板引擎使用的，貌似也可以用做前端模板引擎？
+2.4）本课程后端还是采用传统的SpringMVC view技术，即后端渲染模板，返回html
+2.5）页面除了请求整个html页，也会通过jQuery AJAX请求局部页面刷新，通过async标识，后端返回局部的html，浏览器通过DOM刷新局部
+2.6）后端如何实现区分返回局部或者整页？
+2.6.1) localhost:8080/admins -> AdminController.listUser -> admins/index.html
+2.6.2) admins/index.html loads css in header and js in footer， 渲染页面，只显示左边菜单
+2.6.3）当 admins/index.html load js/admins/main.js时， main.js通过ajax访问/users，加载返回的页面到右侧工作区
+		$.ajax({
+			url: url,
+			success: function(data){
+				$("#rightContainer").html(data);
+			},
+			error : function() {
+				alert("error");
+			}
+		});
+2.6.4）get /users -> UserController.list(boolean async, int pageIndex, int pageSize, String name), return 渲染的users/list.html
+添加到rightContainer；同时加载users/list.html中的js/users/main.js
+2.6.5) 此时点击+号，显示模态框，同时XHR请求users/add.html, 添加到模态框中。
+2.6.6）填写数据后，点击提交, XHR post到/users，如果用户成功插入到数据库， 则返回成功响应。
+2.6.7） 如成功。 调用function getUersByName(pageIndex, pageSize)，get /users, async=true -> UserController.list(boolean async, int pageIndex, int pageSize, String name), return 渲染的users/list.html的user list部分; 刷新#mainContainer元素内容
+function getUersByName(pageIndex, pageSize) {
+		$.ajax({
+			url: "/users",
+			contentType : 'application/json',
+			data:{
+				"async":true,
+				"pageIndex":pageIndex,
+				"pageSize":pageSize,
+				"name":$("#searchName").val()
+			},
+			success: function(data){
+				$("#mainContainer").html(data);
+			},
+			error : function() {
+				toastr.error("error!");
+			}
+		});
+	}
+2.6.8)  UserController.list(boolean async, int pageIndex, int pageSize, String name), 如果请求是AJAX异步请求，则返回部分页面，同步则刷新整个页面,
+return new ModelAndView(async==true?"users/list :: #mainContainerRepleace":"users/list", "userModel", model);
+
+3）ES
+3.1）Spring-Data-ElasticSearch整合Spring和ElasticSearch
+3.2）提供ElasticsearchRepository<T, ID>，extends Spring Data Repository
+3.3) support SQL auto generation based on method name
+3.4) 在写入数据库的同时通过ElasticsearchRepository写入ES， 再查询出来
+
+
+
+
+
+
+# private static final long serialVersionUID = 1L;有什么用？
+简单来说，Java的序列化机制是通过在运行时判断类的serialVersionUID来验证版本一致性的。在进行反序列化时，JVM会把传来的字节流中的serialVersionUID与本地相应实体（类）的serialVersionUID进行比较，如果相同就认为是一致的，可以进行反序列化，否则就会出现序列化版本不一致的异常。(InvalidClassException)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
