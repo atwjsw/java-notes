@@ -1,0 +1,201 @@
+1) generics enable types (classes and interfaces) to be parameters when defining classes, interfaces and methods.
+2) Much like the more familiar formal parameters used in method declarations, type parameters provide a way for you to re-use the same code with different inputs. 
+3) The difference is that the inputs to formal parameters are values, while the inputs to type parameters are types.
+4) Stronger type checks at compile time.
+5) Elimination of casts.
+6) Enabling programmers to implement generic algorithms.
+6) A generic type is a generic class or interface that is parameterized over types. 	
+class name<T1, T2, ..., Tn> { /* ... */ }
+public class Box<T> {
+    // T stands for "Type"
+    private T t;
+
+    public void set(T t) { this.t = t; }
+    public T get() { return t; }
+}
+7) By convention, type parameter names are single, uppercase letters.
+8) The most commonly used type parameter names are:
+E - Element (used extensively by the Java Collections Framework)
+K - Key
+N - Number
+T - Type
+V - Value
+S,U,V etc. - 2nd, 3rd, 4th types
+9) the T in Foo<T> is a type parameter and the String in Foo<String> f is a type argument.
+10) An invocation of a generic type Box<T> is generally known as a parameterized type. Box<Integer>
+11）A raw type is the name of a generic class or interface without any type arguments. 
+Box<Integer> intBox = new Box<>();
+Box rawBox = new Box(); //raw type
+12) Box is the raw type of the generic type Box<T>. However, a non-generic class or interface type is not a raw type.
+13) Generic methods are methods that introduce their own type parameters. This is similar to declaring a generic type, but the type parameter's scope is limited to the method where it is declared. Static and non-static generic methods are allowed, as well as generic class constructors.
+14) The syntax for a generic method includes a list of type parameters, inside angle brackets, which appears before the method's return type. For static generic methods, the type parameter section must appear before the method's return type.
+public static <K, V> boolean compare(Pair<K, V> p1, Pair<K, V> p2) {...}
+
+Pair<Integer, String> p1 = new Pair<>(1, "apple");
+Pair<Integer, String> p2 = new Pair<>(2, "pear");
+boolean same = Util.<Integer, String>compare(p1, p2);
+
+15) Bounded Type Parameters: restrict the types that can be used as type arguments in a parameterized type.
+16) In addition to limiting the types you can use to instantiate a generic type, bounded type parameters allow you to invoke methods defined in the bounds:
+17) A type variable with multiple bounds is a subtype of all the types listed in the bound. 
+<T extends B1 & B2 & B3>
+18) If one of the bounds is a class, it must be specified first.
+Class A { /* ... */ }
+interface B { /* ... */ }
+interface C { /* ... */ }
+
+class D <T extends A & B & C> { /* ... */ }
+19) Box<Integer> is not a subtype of Box<Number> even though Integer is a subtype of Number.
+	public static void boxTest(Box<Number> n) {
+        System.out.println(n.get().getClass().getName());
+    }
+			Box<Integer> intBox = new Box<>();
+        	intBox.set(10);
+//        	boxTest(intBox); //compiler error
+20) Given two concrete types A and B (for example, Number and Integer), MyClass<A> has no relationship to MyClass<B>, regardless of whether or not A and B are related. The common parent of MyClass<A> and MyClass<B> is Object.
+21) use wildcard to create a subtype-like relationship between two generic classes when the type parameters are related
+	public static void boxTest(Box<? extends Number> n) {
+        System.out.println(n.get().getClass().getName());
+    }
+22) You can subtype a generic class or interface by extending or implementing it.
+23) Type inference is a Java compiler's ability to look at each method invocation and corresponding declaration to determine the type argument (or arguments) that make the invocation applicable. 
+24) The inference algorithm determines the types of the arguments and, if available, the type that the result is being assigned, or returned. 
+25) Finally, the inference algorithm tries to find the most specific type that works with all of the arguments.
+Map<String, List<String>> myMap = new HashMap<String, List<String>>();
+Map<String, List<String>> myMap = new HashMap<>();
+26) constructors can be generic (in other words, declare their own formal type parameters) in both generic and non-generic classes. 
+class MyClass<X> {
+  <T> MyClass(T t) {
+    // ...
+  }
+}
+new MyClass<Integer>("")
+MyClass<Integer> myObject = new MyClass<>("");
+
+# wildcard
+1) the question mark (?), called the wildcard, represents an unknown type. 
+2) The wildcard can be used in a variety of situations: as the type of a parameter, field, or local variable; sometimes as a return type (though it is better programming practice to be more specific).
+3) You can use an upper bounded wildcard to relax the restrictions on a variable. 
+4) you want to write a method that works on List<Integer>, List<Double>, and List<Number>
+List<? extends Number>
+5) The term List<Number> is more restrictive than List<? extends Number> because the former matches a list of type Number only, whereas the latter matches a list of type Number or any of its subclasses.
+
+public static void process(List<? extends Foo> list) {
+    for (Foo elem : list) {
+        // ...
+    }
+}
+
+6) The unbounded wildcard type is specified using the wildcard character (?), for example, List<?>. This is called a list of unknown type. 
+7) an upper bounded wildcard restricts the unknown type to be a specific type or a subtype of that type and is represented using the extends keyword.
+<? extends A> 
+8) In a similar way, a lower bounded wildcard restricts the unknown type to be a specific type or a super type of that type.
+<? super A>.
+9) You can specify an upper bound for a wildcard, or you can specify a lower bound, but you cannot specify both.
+10) Say you want to write a method that puts Integer objects into a list. To maximize flexibility, you would like the method to work on List<Integer>, List<Number>, and List<Object> — anything that can hold Integer values.
+List<? super Integer>
+11) The term List<Integer> is more restrictive than List<? super Integer> because the former matches a list of type Integer only, whereas the latter matches a list of any type that is a supertype of Integer.
+public static void addNumbers(List<? super Integer> list) {
+    for (int i = 1; i <= 10; i++) {
+        list.add(i);
+    }
+}
+12) generic classes or interfaces are not related merely because there is a relationship between their types. However, you can use wildcards to create a relationship between generic classes or interfaces.
+13) Although Integer is a subtype of Number, List<Integer> is not a subtype of List<Number> and, in fact, these two types are not related. The common parent of List<Number> and List<Integer> is List<?>.
+14) In order to create a relationship between these classes so that the code can access Number's methods through List<Integer>'s elements, use an upper bounded wildcard:
+List<? extends Integer> intList = new ArrayList<>();
+List<? extends Number>  numList = intList;  // OK. List<? extends Integer> is a subtype of List<? extends Number>
+
+13) Wildcard Guidelines: 
+An "in" variable is defined with an upper bounded wildcard, using the extends keyword.
+An "out" variable is defined with a lower bounded wildcard, using the super keyword.
+In the case where the "in" variable can be accessed using methods defined in the Object class, use an unbounded wildcard.
+In the case where the code needs to access the variable as both an "in" and an "out" variable, do not use a wildcard.
+
+14) During the type erasure process, the Java compiler erases all type parameters and replaces each with its first bound if the type parameter is bounded, or Object if the type parameter is unbounded.
+
+#Restrictions on Generics
+1) Cannot Instantiate Generic Types with Primitive Types
+2) Cannot Create Instances of Type Parameters
+public static <E> void append(List<E> list) {
+    E elem = new E();  // compile-time error
+    list.add(elem);
+}
+workaround
+public static <E> void append(List<E> list, Class<E> cls) throws Exception {
+    E elem = cls.newInstance();   // OK
+    list.add(elem);
+}
+
+3) Cannot Declare Static Fields Whose Types are Type Parameters
+public class MobileDevice<T> {
+    private static T os;
+    // ...
+}
+4) Cannot Use Casts or instanceof with Parameterized Types, Because the Java compiler erases all type parameters in generic code, you cannot verify which parameterized type for a generic type is being used at runtime:
+public static <E> void rtti(List<E> list) {
+    if (list instanceof ArrayList<Integer>) {  // compile-time error
+        // ...
+    }
+List<Integer> li = new ArrayList<>();
+List<Number>  ln = (List<Number>) li;  // compile-time error
+
+5) Cannot Create Arrays of Parameterized Types
+List<Integer>[] arrayOfLists = new List<Integer>[2];  // compile-time error
+6) Cannot Create, Catch, or Throw Objects of Parameterized Types
+// Extends Throwable indirectly
+class MathException<T> extends Exception { /* ... */ }    // compile-time error
+// Extends Throwable directly
+class QueueFullException<T> extends Throwable { /* ... */ // compile-time error
+7) Cannot Overload a Method Where the Formal Parameter Types of Each Overload Erase to the Same Raw Type
+public class Example {
+    public void print(Set<String> strSet) { }
+    public void print(Set<Integer> intSet) { }
+}
+
+
+
+1) Using wildcards is clearer and more concise than declaring explicit type parameters, and should therefore be preferred whenever possible.
+2) Wildcards also have the advantage that they can be used outside of method signatures, as the types of fields, local variables and arrays.
+static List<List<? extends Shape>> history = new ArrayList<List<? extends Shape>>();
+
+public void drawAll(List<? extends Shape> shapes) {
+    history.addLast(shapes);
+    for (Shape s: shapes) {
+        s.draw(this);
+    }
+}
+3） the static variables and methods of a class are also shared among all the instances. That is why it is illegal to refer to the type parameters of a type declaration in a static method or initializer, or in the declaration or initializer of a static variable.
+4) You can declare array types whose element type is a type variable or a parameterized type, but not array objects.
+
+
+# Nested Classes
+1) Nested classes are divided into two categories: static and non-static. Nested classes that are declared static are called static nested classes. Non-static nested classes are called inner classes.
+2) instantiate an inner class, you must first instantiate the outer class. Then, create the inner object within the outer object with this syntax:
+OuterClass.InnerClass innerObject = outerObject.new InnerClass();
+3) to create an object for the static nested class:
+OuterClass.StaticNestedClass nestedObject = new OuterClass.StaticNestedClass();
+4) There are two special kinds of inner classes: local classes and anonymous classes.
+5)  You can declare an inner class within the body of a method. These classes are known as local classes.
+6) You can also declare an inner class within the body of a method without naming the class. These classes are known as anonymous classes.
+7) A local class has access to the members of its enclosing class. In addition, a local class has access to local variables.
+8) However, starting in Java SE 8, a local class can access local variables and parameters of the enclosing block that are final or effectively final. 
+9) Starting in Java SE 8, if you declare the local class in a method, it can access the method's parameters.
+
+# Enum
+1) The enum class body can include methods and other fields. 
+2) The compiler automatically adds some special methods when it creates an enum. For example, they have a static values method that returns an array containing all of the values of the enum in the order they are declared. 
+
+# Interface
+1) The interface body can contain abstract methods, default methods, and static methods.
+public interface DoIt {
+   void doSomething(int i, double x);
+   int doSomethingElse(String s);
+   default boolean didItWork(int i, double x, String s) {
+       // Method body 
+   }
+   
+}
+2) Default methods are defined with the default modifier, and static methods with the static keyword. 
+3) All abstract, default, and static methods in an interface are implicitly public, so you can omit the public modifier.
+4) an interface can contain constant declarations. All constant values defined in an interface are implicitly public, static, and final. Once again, you can omit these modifiers.

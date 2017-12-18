@@ -411,6 +411,19 @@ Environment env, env.getProperty("disc.title").
 4) retrieve value from properties file using SpEL, In context xml: <util:properties id="s3Properties" location="classpath:s3.properties"/>
 @Value("#{s3Properties['webRootPath']}") <Test> <Test Failed>
 5) @PropertySource can be configured in WebConfig or RootConfig and there is no difference
+
+@ConfigurationProperties(prefix="imooc.security")
+public Class SecurityProperties() {
+
+}
+
+@Configuration
+@EnableConfigurationProperties(SecurityProperties.class) 
+public class SecurityCoreConfig
+{
+	
+}
+
 	
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 - The simplest way to resolve external values in Spring is to declare a property source and retrieve the properties via the Spring Environment.
@@ -691,16 +704,17 @@ public class Spittle {
 }
 
 - using Apache Commons Lang for easy implementation of the equals() and hashCode() methods. Aside from the general utility value of those methods, they’ll be valuable in writing a test for the controller handler method.
-
+- StringUtils
+- FileUtils
 
 @Test
   public void shouldShowRecentSpittles() throws Exception {
     List<Spittle> expectedSpittles = createSpittleList(20);									//create a list of 20 spittles
     SpittleRepository mockRepository = mock(SpittleRepository.class);					//creating a mock implementation of the SpittleRepository interface
-    when(mockRepository.findSpittles(Long.MAX_VALUE, 20))		//mock respository will return the list of 20 Spittle objects from its findSpittles() method
+    when(mockRepository.findSpittles(Long.MAX_VALUE, 20))//mock respository will return the list of 20 Spittle objects from its findSpittles() method
     	.thenReturn(expectedSpittles);		
 
-    SpittleController controller = new SpittleController(mockRepository);	 				//injects that repository into a new SpittleController instance	
+    SpittleController controller = new SpittleController(mockRepository);	 		//injects that repository into a new SpittleController instance	
     MockMvc mockMvc = standaloneSetup(controller)											//sets up MockMvc to use the controller.
         .setSingleView(new InternalResourceView("/WEB-INF/views/spittles.jsp"))		//calls setSingleView() on the MockMvc builder
         .build();
@@ -888,7 +902,7 @@ public class Spitter {
 6）Spring’s form-binding JSP tag library includes 14 tags, most of which render HTML. i.e. sf:form, sf:errors, sf:input, sf:password, sf:label..., modelAttribute
 7) <sf:errors path="username" cssClass="error" /> will display validation error and add a css class named error to the element. by predefining the 'error'
 class style, error can be highlighted. same way applied to 1)<sf:errors path="*" element="div" cssClass="errors" /> and 2)<sf:label path="firstName" cssErrorClass="error">
-8) message bundle and internalization: 1) annotation in domain object @Size(min=5, max=16, message="{username.size}"); 2) create a ValidationMessage.properites file at root context and ValiationMessage_xx.properties for other locale; 3) request Content-Language header will be used to match the resource bunder suffix to select the appropriate properties file.
+8) message bundle and internationalization: 1) annotation in domain object @Size(min=5, max=16, message="{username.size}"); 2) create a ValidationMessage.properites file at root context and ValiationMessage_xx.properties for other locale; 3) request Content-Language header will be used to match the resource bunder suffix to select the appropriate properties file.
 9) general "utility" taglib has XXX tag. 1)<s:url>: Creates context-relative URLs with support for URI template variables and 2)<s:message> retrieves the message with the given code and either renders it (default) or assigns to a variable with different scopes.
 10) <s:url> can use <s:param> tag to add reqest parameter or path parameter to the URL
 11) Displaying internationalized message: 1)create a MessageSource bean 2)create the default properties file named messages.properties:
@@ -3484,7 +3498,7 @@ Spring provides support for Hibernate, iBATIS, Java Data Objects (JDO), and the 
 
 #Integrating Hibernate with Spring
 总而言之
-1）declare HibernateSessionFactoryBean: set dataSource, hibernateProperties properties and packageToScan or mapper file locations
+1）declare HibernateSessionFactoryBean: set dataSource, hibernateProperties and packageToScan or mapper file locations
 2) @Inject Hibernate SessionFactory into Repository and configuration bean
 3) use that SessionFactory.getCurrentSession() to get the "current transaction’s session"
 4) use currentSession().save(), get()....
@@ -3764,8 +3778,7 @@ public class JpaSpitterRepository implements SpitterRepository {
 	...
 }
 
-- @PersistenceContext doesn’t inject an EntityManager—at least, not exactly. Instead of giving the repository a real EntityManager, it gives a proxy to a
-real EntityManager. That real EntityManager either is one associated with the current transaction or, if one doesn’t exist, creates a new one. Thus, you know that you’re always working with an entity manager in a thread-safe way.
+- @PersistenceContext doesn’t inject an EntityManager—at least, not exactly. Instead of giving the repository a real EntityManager, it gives a proxy to a real EntityManager. That real EntityManager either is one associated with the current transaction or, if one doesn’t exist, creates a new one. Thus, you know that you’re always working with an entity manager in a thread-safe way.
 - In order for Spring to understand @PersistenceContext/@PersistenceUnit and inject an EntityManagerFactory or EntityManager, Spring’s PersistenceAnnotationBeanPostProcessor must be configured. If you’re already using <context:annotation-config> or <context:component-scan>, then you’re good to go because those configuration elements automatically register a PersistenceAnnotationBeanPostProcessor bean.
 @Bean
 public PersistenceAnnotationBeanPostProcessor paPostProcessor() {
@@ -4320,8 +4333,7 @@ mongo.save(order, "order"); //The first parameter to save() is the newly created
 String orderId = ...;
 Order order = mongo.findById(orderId, Order.class); <Test> <Test Done>
 
-- More advanced queries require that you construct a Query object and pass it to the find() method. find all orders whose client field is equal to “Chuck
-Wagon”:
+- More advanced queries require that you construct a Query object and pass it to the find() method. find all orders whose client field is equal to “Chuck Wagon”:
 List<Order> chucksOrders = mongo.find(Query.query(Criteria.where("client").is("Chuck Wagon")), Order.class); <Test> <Test Done>
 
 - get all of Chuck’s orders that were placed over the web:
@@ -8009,7 +8021,7 @@ spring-expression, spring-web
 - many of the starters reference other starters. 
 - And most of the starters reference spring-boot-starter, which is essentially a base starter (although it references the logging starter).
 
-#Autoconfiguration
+#Autoconfiguration 1.4.2
 - Whereas Spring Boot starters cut down the size of your build’s dependency list
 - Spring Boot autoconfiguration cuts down on the amount of Spring configuration.
 - by considering other factors in your application and making assumptions about what Spring configuration you’ll need.

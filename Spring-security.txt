@@ -43,7 +43,7 @@ public interface UserDetailView extends UserSimpleView {};
 	public String getUsername() {
 		return username;
 	}
-1.12.3）在Controller方式上制定视图
+1.12.3）在Controller方式上指定视图
 	@JsonView(UserSimpleView.class)
 	public List<User> query(...)
 1.13) @GetMapping(value = "/user") === @RequestMapping(value = "/user", method=RequestMethod.GET)
@@ -59,7 +59,7 @@ public User create(@Valid @RequestBody User user, BindingResult errors) {
 1.17) Validation annotaion
 @NotNull, @Null, @Pattern(regex=), @Size(min=, max=), @CreditCardNumber(ignorNonDigitCharacter), @Email
 @Length(min=,max=), @NotBlank, @NotEmpty, @Range(min=,max=), @SafeHtml, @URL, @AssertFalse, @AssertTrue,
-@DecimalMax(value=,inclusive=), @DecimalMin(value=,inclusive=), @Digits(integer=,franction=), @Future, @Past
+@DecimalMax(value=,inclusive=), @DecimalMin(value=,inclusive=), @Digits(integer=,fraction=), @Future, @Past
 @Max(vlaue=), @Min(value=)
 1.18) custom validation message
 	@NotBlank(message = "密码不能为空")
@@ -67,10 +67,10 @@ public User create(@Valid @RequestBody User user, BindingResult errors) {
 	@Past(message = "生日必须是过去的时间")
 	private Date birthday;
 1.19) custom validation annotation
-1.19.1) define a Constraint
+1.19.1) define a Constraint annotation
 @Target({ElementType.METHOD, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = MyConstraintValidator.class)
+@Constraint(validatedBy = MyConstraintValidator.class) //use MyConstraintValidator to validate
 public @interface MyConstraint {	
 	String message();
 	Class<?>[] groups() default { };
@@ -115,8 +115,20 @@ public class ControllerExceptionHandler {
 }
 1.22) restful api的拦截（e.g. 为了记录服务时间）
 1.22.1）Filter
-- doesn't have any information of spring component such as controller 
-1.22.2) Interceptor
+- need to have @Component annotation
+- if 3rd party filter and @Component is not possible, you need to declare a FIlterRegistrationBean
+	@Bean
+    public FilterRegistrationBean timeFilter() {
+        FilterRegistrationBean registrationBean = new FilterRegistrationBean();
+        TimeFilter timeFilter = new TimeFilter();
+        registrationBean.setFilter(timeFilter);
+        List<String> urls = new ArrayList<>();
+        urls.add("/*");
+        registrationBean.setUrlPatterns(urls);
+        return registrationBean;
+    }
+- doesn't have any information of spring component such as controller, only have request, response info. because filter is not part of Spring
+1.22.2) Spring Interceptor
 - doesn't have value of args
 1.22.3) Aspect
 - doesn't have access to request, response
@@ -256,7 +268,7 @@ UserDetails UserDetailsService.loadUserByUsername(String username) throws Userna
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
-3.3) when creating/updating user repository, inject passwordEncoder and passwordEncoder.encode(rawPassword)
+3.3) when creating/updating user repository record, inject passwordEncoder and passwordEncoder.encode(rawPassword)
 3.4) During the login, Spring will use the passwordEncoder.match(rawPassword, encodedPassword) method to compare the login password and encodedPassword retrieved returned from UserDetailsService 
 
 # 个性化用户认证流程
@@ -295,7 +307,7 @@ UserDetails UserDetailsService.loadUserByUsername(String username) throws Userna
 
 # 自定义登录响应（页面或者json）
 2.2）场景：根据不同的请求返回不同的信息，如果请求URL是.html,则重定向到登录页面，如果是restful请求，则返回401状态码+错误信息的json string
-2.2.1）思路： 如需认证,跳转到自定义的Controller，而不是登录页面，在Controller中判断请求类型，并重定向到登录页面，或返回json信息。
+2.2.1）思路： 如需认证,跳转到自定义的Controller/endpoint，而不是登录页面，在Controller中判断请求类型，并重定向到登录页面，或返回json信息。
 2.2.2）define BrowserSecurityController
 @RequestMapping("/authentication/require")
 	@ResponseStatus(code = HttpStatus.UNAUTHORIZED)
@@ -312,7 +324,7 @@ UserDetails UserDetailsService.loadUserByUsername(String username) throws Userna
 		}		
 		return new SimpleResponse("访问的服务需要身份认证, 请引导用户到登录页");
 	}
-2.3.4) configure loginPage to point to rowserSecurityController
+2.3.4) configure loginPage to point to BrowserSecurityController
 	http.formLogin()
 			.loginPage("/authentication/require")
 
@@ -328,13 +340,13 @@ public class SecurityProperties {
 	private BrowserProperties browser = new BrowserProperties();	
 	...
 }
-2.3.4) in application.configuration
+2.3.4) in application.properties
 imooc.security.browser.loginPage = /demo-signin.html
 2.3.5) use the imooc.security.browser.loginPage as the redirect url:
 redirectStrategy.sendRedirect(request, response, securityProperties.getBrowser().getLoginPage());
 
 2） 自定义登录成功处理 
-2.1）默认是前往登录前请求URL， 但可能需要进行用户中心积分和签到记录等等，需要前往另一页面, 或者只是返回json格式的用户数据\
+2.1）默认是前往登录前请求URL， 但可能需要进行用户中心积分和签到记录等等，需要前往另一页面, 或者只是返回json格式的用户数据
 2.2）AuthenticationSuccessHandler
 @Component("imoocAuthenticationSuccessHandler")
 public class ImoocAuthenticationSuccessHandler implements AuthenticationSuccessHandler{
@@ -402,14 +414,14 @@ DaoAuthenticationProvider调用UserDetailsService.loadUserByUsername
 1.5） DefaultUserDetailsService 进行 preAuthorization, isEnabled, isNonExpired...
 1.6) passwordMatching
 1.7) postAuthentication
-1.8) UserDertails 信息拼装入Authentication， 认证状态未true
+1.8) UserDertails 信息拼装入Authentication， 认证状态设为true
 1.9）调用SuccesssHandler
 1.10) 如果中间出现异常，会执行FailureHandler
 
 2） 认证结果如何在多个请求间共享
-2.1） 把认证成功的Authentication Object放入SecurityContext, 再放入SecurityContextHolder
-2.2）SecurityContextHolder是ThreadLocal的封装，ThreadLocal线程级的全局变量
-2.3） SecurityContextPersistenceFilter是Spring Security过滤器链的首位，当请求到来时，检查session里面是否有SecurityContext， if yes, 拿出来放到线程里，没有就直接过去了，请求返回的时候，如果线程里面有SecurityContext， 就拿出来放到session里面。
+2.1） SecurityContext is a wrapper of Authentication; 把认证成功的Authentication Object放入SecurityContext, 再放入SecurityContextHolder
+2.2）SecurityContextHolder是ThreadLocal的封装，ThreadLocal线程级的全局变量， 在同一线程中各方法可以共享，
+2.3） SecurityContextPersistenceFilter是Spring Security过滤器链的首位，当请求到来时，检查session里面是否有SecurityContext， if yes, 拿出来放到线程里，没有就直接过去了；请求返回的时候，如果线程里面有SecurityContext， 就拿出来放到session里面。 Therefore， different requests/thread can get the same authentication from session
 
 3） 获取认证用户信息
 3.1）@GetMapping("/me")
@@ -491,13 +503,19 @@ application.properties中
 RememberMe功能 - 用户在登录成功后，系统记住用户，下次不需要重新登录就可以使用系统
 
 1）基本原理
-1.1) 认证成功后会调用RememberMeService
+1.1) UserPasswordAuthenticationFilter认证成功后会调用RememberMeService
 1.2) RememberMeService有一个TokenRepository
-1.3) RememberMeService把生成的Token写入Cookie， 同时通过TokenRepository将token写入数据库，用户名也同时写入数据库
+1.3) RememberMeService用TokenRepository把生成的Token（包含username)写入Cookie， 同时通过TokenRepository将token写入数据库，用户名也同时写入数据库
 1.4）服务请求会经过RememberMeAuthenticationFilter
 1.5）RememberMeAuthenticationFilter读取Cookie中的token，交给RememberMeService
 1.6) RememberMeService通过TokenRepository到数据库中查询，如果数据库中有记录，就把username取出来
 1.7) 调用UserDetailsService.loadUserByusername, 获取用户信息，放到SecurityContext里面， 完成登录
+1.8) Implementation: configure tokenRepsitory bean using JDBCTokenRepository (set datasource, create table on startup), enable rememberMe in WebSecurityConfigureAdapter
+.rememberMe()
+	.tokenRepository(persistenTokenRepository())
+	.tokenValiditySeconds(3600)
+	.userDetailsService(userDetailsService)
+
 
 # 短信验证码实现
 1) 短信验证码发送实现思路：
@@ -814,6 +832,22 @@ public class imoocResourceServerConfig {}
 3.2.2) http://localhost:8080/user/me
 Authorization: bearer c307e98c-de2f-449d-8bc6-ebd612a899bb  //token string
 3.2.3）resource server response with user info：
+
+Customize login process
+1) login processing url: loginProcessingUrl(authentication/form), default is post /login, loginProcessingUrl方法实际上是在设置UsernamePasswordAuthenticationFilter这个过滤器的处理路径。设好以后，当你发相应的请求时，过滤器就会拦下来做处理。
+2) loginPage to use a cutomized page: default is (get /login), loginPage("/imooc-login.html")
+3) loginPage to redirect to a login page or return 401: declare an controller/endpoint for loginPage .e.g. loginPage("/authentication/require"), display login page or return 401 response.
+- use HttpSessionRequestCache(); get SavedRequest.getRedirectUrl; StringUtils.endsIgnoreCase(target)
+4) above urls can be externalized into a configuration file:
+@ConfigurationProperties
+5) AuthenticationSuccessHandler
+- implements AuthenticationSuccessHandler. 
+- overwrite onAuthenticationSuccess(); use jackson object mapper to write a response object back or call parent method of SavedRequestAwareSuccessHandler, forward the page.
+6) AuthenticationFailureHandler
+- implements AuthenticationFailureHandler. 
+- overwrite onAuthenticationFailure(); use jackson object mapper to write a response object back or call parent method of SavedRequestAwareAuthenticationSuccessHandler, forward the page.
+
+
 
 
 

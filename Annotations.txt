@@ -1,0 +1,92 @@
+1)Annotations can be applied to declarations: declarations of classes, fields, methods, and other program elements. 
+2) As of the Java SE 8 release, annotations can also be applied to the use of types. Here are some examples:
+1,1) Class instance creation expression:
+    new @Interned MyObject();
+1.2) Type cast:
+    myString = (@NonNull String) str;
+1.3) implements clause:
+    class UnmodifiableList<T> implements
+        @Readonly List<@Readonly T> { ... }
+1.4) Thrown exception declaration:
+    void monitorTemperature() throws
+        @Critical TemperatureException { ... }
+3) This form of annotation is called a type annotation.
+4) Define annotation. Annotation types are a form of interface
+@interface ClassPreamble {
+   String author();
+   String date();
+   int currentRevision() default 1;
+   String lastModified() default "N/A";
+   String lastModifiedBy() default "N/A";
+   // Note use of array
+   String[] reviewers();
+}
+5) use annoation 
+@ClassPreamble (
+   author = "John Doe",
+   date = "3/17/2002",
+   currentRevision = 6,
+   lastModified = "4/12/2004",
+   lastModifiedBy = "Jane Doe",
+   // Note array notation
+   reviewers = {"Alice", "Bob", "Cindy"}
+)
+public class Generation3List extends Generation2List {
+	// class code goes here
+}
+6) To make the information in @ClassPreamble appear in Javadoc-generated documentation, you must annotate the @ClassPreamble definition with the @Documented annotation:
+@Documented
+@interface ClassPreamble {
+   // Annotation element definitions   
+}
+7) Predefined Annotation Types:
+7.1) The compiler generates a warning whenever a program uses a method, class, or field with the @Deprecated annotation.
+7.2)  When an element is deprecated, it should also be documented using the Javadoc @deprecated tag
+    /**
+     * @deprecated
+     * explanation of why it was deprecated
+     */
+    @Deprecated
+    static void deprecatedMethod() { }
+7.3) @Override @Override annotation informs the compiler that the element is meant to override an element declared in a superclass. 
+7.4) If a method marked with @Override fails to correctly override a method in one of its superclasses, the compiler generates an error.
+7.5) @SuppressWarnings annotation tells the compiler to suppress specific warnings that it would otherwise generate. 
+	@SuppressWarnings("deprecation")
+    void useDeprecatedMethod() {
+        // deprecation warning
+        // - suppressed
+        objectOne.deprecatedMethod();
+    }
+7.6) Every compiler warning belongs to a category. The Java Language Specification lists two categories: deprecation and unchecked. 
+7.7) The unchecked warning can occur when interfacing with legacy code written before the advent of generics. To suppress multiple categories of warnings, use the following syntax:
+@SuppressWarnings({"unchecked", "deprecation"})
+7.8) @SafeVarargs annotation, when applied to a method or constructor, asserts that the code does not perform potentially unsafe operations on its varargs parameter. When this annotation type is used, unchecked warnings relating to varargs usage are suppressed.
+7.9) @FunctionalInterface: introduced in Java SE 8, indicates that the type declaration is intended to be a functional interface, as defined by the Java Language Specification.
+
+8) Annotations that apply to other annotations are called meta-annotations. 
+8.1) @Retention annotation specifies how the marked annotation is stored:
+RetentionPolicy.SOURCE – The marked annotation is retained only in the source level and is ignored by the compiler.
+RetentionPolicy.CLASS – The marked annotation is retained by the compiler at compile time, but is ignored by the Java Virtual Machine (JVM).
+RetentionPolicy.RUNTIME – The marked annotation is retained by the JVM so it can be used by the runtime environment.
+8.2) @Documented: indicates whenever the specified annotation is used those elements should be documented using the Javadoc tool.
+8.3) @Target: marks another annotation to restrict what kind of Java elements the annotation can be applied to. A target annotation specifies one of the following element types as its value:
+ElementType.ANNOTATION_TYPE can be applied to an annotation type.
+ElementType.CONSTRUCTOR can be applied to a constructor.
+ElementType.FIELD can be applied to a field or property.
+ElementType.LOCAL_VARIABLE can be applied to a local variable.
+ElementType.METHOD can be applied to a method-level annotation.
+ElementType.PACKAGE can be applied to a package declaration.
+ElementType.PARAMETER can be applied to the parameters of a method.
+ElementType.TYPE can be applied to any element of a class.
+8.4) @Inherited: indicates that the annotation type can be inherited from the super class. (This is not true by default.) When the user queries the annotation type and the class has no annotation for this type, the class' superclass is queried for the annotation type. This annotation applies only to class declarations.
+8.5) @Repeatable: introduced in Java SE 8, indicates that the marked annotation can be applied more than once to the same declaration or type use. 
+
+# Type Annotations and Pluggable Type Systems
+1) Before the Java SE 8 release, annotations could only be applied to declarations. As of the Java SE 8 release, annotations can also be applied to any type use. This means that annotations can be used anywhere you use a type. 
+2) A few examples of where types are used are class instance creation expressions (new), casts, implements clauses, and throws clauses.
+3) Checker Framework created by the University of Washington. This framework includes a NonNull module, as well as a regular expression module, and a mutex lock module.
+
+#Repeatable Annotation
+1) adding the @Repeatable meta-annotation and defining a container annotation type:
+
+

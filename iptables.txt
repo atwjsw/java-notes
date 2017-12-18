@@ -1,0 +1,59 @@
+#什么是iptables? 
+- 常见于linux系统下应用层防火墙工具
+
+#users:
+系统管理人员、网络工程人员、安全人员等等
+
+#Netfilter
+Netfilter是Linux操作系统核心层内部的一个数据包处理模块
+
+#Hook point？
+数据包在Netfilter中的挂载点。 （PRE_ROUTING, INPUT, OUTPUT, FORWARD, POST_ROUTING)
+网卡处理数据的5个点， 可以对数据包进行操作
+
+#iptables规则组成
+1. 四张表 + 五条链（HOOK point） + 规则
+2. 四张表：filter nat mangle raw
+3. 五条链：input output forword pre_routing post_routing
+4. filter：访问控制，规则匹配
+5. nat： 地址转发
+6. 数据包访问控制：ACCEPT（通过），DROP（丢弃），REJECT（丢弃，有消息返回）
+7. 数据包改写：SNAT（修改源地址），DNAT（修改目标地址）
+8. 信息记录：LOG
+
+#iptables 命令语法
+命令：iptables -t 四张表中的任意一张 command 五条连 参数 -j 数据的处理
+			table			command			chain					Parameter & Xmatch			target
+iptables 	-t filter/nat  	-A -D -L -F  	INPUT, FORWARD			-p tcp						-j ACCEPT
+							-P -I -R -n  	OUTPUT, PREROUTING      -s -d  						DROP
+											POSTROUTING             --sport --dport 			REJECT
+																	--dports                    DNAT																-m tcp                      SNAT
+																	state multiport
+查看端口开放的服务： netstat -luntp
+
+#iptables command example
+1. 列出现有规则：iptables -nL #-n：以数字的方式显示ip，它会将ip直接显示出来，如果不加-n，则会将ip反向解析成主机名。
+2. 清除所有规则：iptables -F
+3. 开放80端口： iptables -I INPUT -p tcp --dport 80 -j ACCEPT #在最前面插入
+5. 开放22端口： iptables -I INPUT -p tcp --dport 22 -j ACCEPT
+6. 开放3306端口： iptables -I INPUT -p tcp --dport 3306 -j ACCEPT
+7. 开放10-21端口： iptables -I INPUT -p tcp --dport 10:21 -j ACCEPT
+8. 允许icmp协议访问（ping）：iptables -I INPUT -p icmp -j ACCEPT
+9. 拒绝其他协议访问：iptables -A INPUT -j REJECT #-A在最后添加
+10. 端口扫描： nmap -sS -p 0-4000 192.168.246.203
+11. 删除规则： iptables -D INPUT -p tcp --dport 3306 -j ACCEPT
+12. 拒绝3306端口访问： iptables -I INPUT -p tcp --dport 3306 -j ACCEPT
+13. iptables -INPUT -i lo -j ACCEPT  #允许本机访问所有端口， 否则本机无法访问本机
+14. iptables -I INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT   #允许本机访问外部服务， 否则无法访问外部
+15. curl -I http://www.imooc.com #只返回头信息
+16. 只允许某台主机访问： iptables -I INPUT -p tcp -s 10.10.188.233 --dport 80 -j ACCEPT #只允许10.10.188.233访问80端口
+
+#ftp场景
+1. 主动模式 （PORT 20） vs. 被动模式 （PORT21）
+2. 主动模式： 客户端发布随机端口，服务器向随机端口主动传输数据
+3. 被动模式： 服务器发布随机端口，服务器被动等待客户端向服务器随机端口拉取数据
+4. ftp连接的默认模式为被动模式
+5. 主动模式iptables需要开启21端口的访问权限
+iptables -I INPUT -p  tcp -dport 21 -j ACCEPT
+
+

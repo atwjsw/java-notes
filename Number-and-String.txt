@@ -1,0 +1,252 @@
+1) All of the numeric wrapper classes are subclasses of the abstract class Number: Double, Float, Integer, Long, Short, Byte
+2) BigDecimal and BigInteger are used for high-precision calculations. AtomicInteger and AtomicLong are used for multi-threaded applications.
+3) Methods Implemented by all Subclasses of Number:
+3.1) Converts the value of this Number object to the primitive data type returned.
+byte byteValue()
+short shortValue()
+int intValue()
+long longValue()
+float floatValue()
+double doubleValue()
+3.2) Compares this Number object to the argument.
+int compareTo(Byte anotherByte)
+int compareTo(Double anotherDouble)
+int compareTo(Float anotherFloat)
+int compareTo(Integer anotherInteger)
+int compareTo(Long anotherLong)
+int compareTo(Short anotherShort)
+3.3) The methods return true if the argument is not null and is an object of the same type and with the same numeric value.
+boolean equals(Object obj)
+3.4) Conversion Methods, Integer Class
+- static Integer decode(String s)	Decodes a string into an integer. Can accept string representations of decimal, octal, or hexadecimal numbers as input.
+- static int parseInt(String s)	Returns an integer (decimal only).
+- static int parseInt(String s, int radix)	Returns an integer, given a string representation of decimal, binary, octal, or hexadecimal (radix equals 10, 2, 8, or 16 respectively) numbers as input.
+- String toString()	Returns a String object representing the value of this Integer.
+- static String toString(int i)	Returns a String object representing the specified integer.
+- static Integer valueOf(int i)	Returns an Integer object holding the value of the specified primitive.
+- static Integer valueOf(String s)	Returns an Integer object holding the value of the specified string representation.
+- static Integer valueOf(String s, int radix)	Returns an Integer object holding the integer value of the specified string representation, parsed with the value of radix. For example, if s = "333" and radix = 8, the method returns the base-ten integer equivalent of the octal number 333.
+4) The java.io package includes a PrintStream class that has two formatting methods that you can use to replace print and println. 
+5) These methods, format and printf, are equivalent to one another. The familiar System.out that you have been using happens to be a PrintStream object, so you can invoke PrintStream methods on System.out. 
+- System.out.format(.....);
+- System.out.printf(.....);
+- public PrintStream format(String format, Object... args)
+- 	System.out.format("The value of " + "the float variable is " +
+     "%f, while the value of the " + "integer variable is %d, " +
+     "and the string is %s", floatVar, intVar, stringVar); 
+6)  use the java.text.DecimalFormat class to control the display of leading and trailing zeros, prefixes and suffixes, grouping (thousands) separators, and the decimal separator.
+7) The Math class in the java.lang package provides methods and constants for doing more advanced mathematical computation.
+8) Math.E, which is the base of natural logarithms, and Math.PI, which is the ratio of the circumference of a circle to its diameter.
+9) abs(), ceil(), floor(), rint(), round(), min(), max()
+10) Exponential and Logarithmic Methods
+double exp(double d)	Returns the base of the natural logarithms, e, to the power of the argument.
+double log(double d)	Returns the natural logarithm of the argument.
+double pow(double base, double exponent)	Returns the value of the first argument raised to the power of the second argument.
+double sqrt(double d)	Returns the square root of the argument.
+11) The Math class also provides a collection of trigonometric functions
+Method	Description
+double sin(double d)	Returns the sine of the specified double value.
+double cos(double d)	Returns the cosine of the specified double value.
+double tan(double d)	Returns the tangent of the specified double value.
+double asin(double d)	Returns the arcsine of the specified double value.
+double acos(double d)	Returns the arccosine of the specified double value.
+double atan(double d)	Returns the arctangent of the specified double value.
+double atan2(double y, double x)	Converts rectangular coordinates (x, y) to polar coordinate (r, theta) and returns theta.
+double toDegrees(double d)
+double toRadians(double d)	Converts the argument to degrees or radians.
+12) The random() method returns a pseudo-randomly selected number between 0.0 and 1.0. The range includes 0.0 but not 1.0.
+int number = (int)(Math.random() * 10);
+13) Using Math.random works well when you need to generate a single random number. If you need to generate a series of random numbers, you should create an instance of java.util.Random and invoke methods on that object to generate numbers.
+14) The MIN_VALUE and MAX_VALUE constants contain the smallest and largest values that can be contained by an object of that type.
+15) The byteValue, shortValue, and similar methods convert one numeric type to another. The valueOf method converts a string to a number, and the toString method converts a number to a string.
+
+# Character
+1) Character ch = new Character('a');
+2) Character class methods:
+boolean isLetter(char ch)
+boolean isDigit(char ch)	Determines whether the specified char value is a letter or a digit, respectively.
+boolean isWhitespace(char ch)	Determines whether the specified char value is white space.
+boolean isUpperCase(char ch)
+boolean isLowerCase(char ch)	Determines whether the specified char value is uppercase or lowercase, respectively.
+char toUpperCase(char ch)
+char toLowerCase(char ch)	Returns the uppercase or lowercase form of the specified char value.
+toString(char ch)	Returns a String object representing the specified character value — that is, a one-character string.
+3) Escape Sequences: A character preceded by a backslash (\) is an escape sequence and has special meaning to the compiler. The following table shows the Java escape sequences:
+\t	Insert a tab in the text at this point.
+\b	Insert a backspace in the text at this point.
+\n	Insert a newline in the text at this point.
+\r	Insert a carriage return in the text at this point.
+\f	Insert a formfeed in the text at this point.
+\'	Insert a single quote character in the text at this point.
+\"	Insert a double quote character in the text at this point.
+\\	Insert a backslash character in the text at this point.
+
+System.out.println("She said \"Hello!\" to me.");
+
+# String
+1) "Hello world!" is a string literal—a series of characters in your code that is enclosed in double quotes. Whenever it encounters a string literal in your code, the compiler creates a String object with its value—in this case, Hello world!.
+String greeting = "Hello world!";
+String greeting = new String("Hello world");
+String greeting = new String({'h','e','l','l','o'});
+2) String methods:
+tempCharArray[i] = palindrome.charAt(i);
+palindrome.getChars(0, len, tempCharArray, 0);
+string1.concat(string2); 
+int dot = s.indexOf('.');
+3) You have seen the use of the printf() and format() methods to print output with formatted numbers. The String class has an equivalent class method, format(), that returns a String object rather than a PrintStream object.
+System.out.printf("The value of the float " +
+                  "variable is %f, while " +
+                  "the value of the " + 
+                  "integer variable is %d, " +
+                  "and the string is %s", 
+                  floatVar, intVar, stringVar); 
+
+String fs;
+fs = String.format("The value of the float " +
+                   "variable is %f, while " +
+                   "the value of the " + 
+                   "integer variable is %d, " +
+                   " and the string is %s",
+                   floatVar, intVar, stringVar);
+System.out.println(fs);
+4) Converting Strings to Numbers
+Interger.valueOf("123");
+float a = Float.parseFloat("3.14");
+5) Converting Numbers to Strings
+String s1 = "" + i;
+String si = String.valueOf(123);
+String fi = String.valueOf(3.14);
+String s3 = Integer.toString(321);
+String s4 = Double.toString(4.99);
+6) Manipulating Characters in a String
+char aChar = anotherPalindrome.charAt(9);
+String substring(int beginIndex, int endIndex)
+String substring(int beginIndex)
+String[] split(String regex)
+String[] split(String regex, int limit)
+CharSequence subSequence(int beginIndex, int endIndex)
+7) Searching for Characters and Substrings in a String
+indexOf(int ch)			Returns the index of the first (last) occurrence of the specified character.
+lastIndexOf(int ch)
+int indexOf(int ch, int fromIndex)
+int lastIndexOf(int ch, int fromIndex)
+int indexOf(String str)
+int lastIndexOf(String str)
+int indexOf(String str, int fromIndex)
+int lastIndexOf(String str, int fromIndex)
+boolean contains(CharSequence s)
+8) Replacing Characters and Substrings into a String
+String replace(char oldChar, char newChar)
+String replace(CharSequence target, CharSequence replacement)
+String replaceAll(String regex, String replacement)
+String replaceFirst(String regex, String replacement)
+9) Comparing Strings and Portions of Strings
+boolean endsWith(String suffix)
+boolean startsWith(String prefix)
+boolean startsWith(String prefix, int offset)
+int compareTo(String anotherString)
+int compareToIgnoreCase(String str)
+boolean equals(Object anObject)
+boolean equalsIgnoreCase(String anotherString)
+boolean regionMatches(int toffset, String other, int ooffset, int len)
+boolean regionMatches(boolean ignoreCase, int toffset, String other, int ooffset, int len)
+boolean matches(String regex)
+10) StringBuilder objects are like String objects, except that they can be modified. Internally, these objects are treated like variable-length arrays that contain a sequence of characters.
+10.1) StringBuilder Constructors: StringBuilder(), StringBuilder(CharSequence cs)	, StringBuilder(int initCapacity) StringBuilder(String s)
+void setLength(int newLength)
+void ensureCapacity(int minCapacity)
+10.2) StringBuilder Operations:
+StringBuilder append(boolean b)
+StringBuilder append(char c)
+StringBuilder append(char[] str)
+StringBuilder append(char[] str, int offset, int len)
+StringBuilder append(double d)
+StringBuilder append(float f)
+StringBuilder append(int i)
+StringBuilder append(long lng)
+StringBuilder append(Object obj)
+StringBuilder append(String s)
+StringBuilder delete(int start, int end)
+StringBuilder deleteCharAt(int index)
+StringBuilder insert(int offset, boolean b)
+StringBuilder insert(int offset, char c)
+StringBuilder insert(int offset, char[] str)
+StringBuilder insert(int index, char[] str, int offset, int len)
+StringBuilder insert(int offset, double d)
+StringBuilder insert(int offset, float f)
+StringBuilder insert(int offset, int i)
+StringBuilder insert(int offset, long lng)
+StringBuilder insert(int offset, Object obj)
+StringBuilder insert(int offset, String s)
+StringBuilder replace(int start, int end, String s)
+void setCharAt(int index, char c)
+StringBuilder reverse()
+String toString()
+11)  There is also a StringBuffer class that is exactly the same as the StringBuilder class, except that it is thread-safe by virtue of having its methods synchronized. Threads will be discussed in the lesson on concurrency.
+12) Autoboxing and Unboxing
+Character ch = 'a';
+List<Integer> li = new ArrayList<>();
+for (int i = 1; i < 50; i += 2)
+    li.add(i);
+
+
+1. What is the initial capacity of the following string builder?
+
+StringBuilder sb = new StringBuilder("Able was I ere I saw Elba.");
+42
+
+2. Consider the following string:
+
+String hannah = "Did Hannah see bees? Hannah did.";
+What is the value displayed by the expression hannah.length()?
+32
+
+What is the value returned by the method call hannah.charAt(12)?
+'e'
+
+Write an expression that refers to the letter b in the string referred to by hannah.
+hannah.charAt(indexOf('b'));
+
+3. How long is the string returned by the following expression? What is the string?
+
+"Was it a car or a cat I saw?".substring(9, 12)
+3, car
+
+4. In the following program, called ComputeResult, what is the value of result after each numbered line executes?
+
+public class ComputeResult {
+    public static void main(String[] args) {
+        String original = "software";
+        StringBuilder result = new StringBuilder("hi");
+        int index = original.indexOf('a'); //5
+
+/*1*/   result.setCharAt(0, original.charAt(0));		//si
+/*2*/   result.setCharAt(1, original.charAt(original.length()-1)); //se
+/*3*/   result.insert(1, original.charAt(4)); //swe
+/*4*/   result.append(original.substring(1,4)); //sweoft
+/*5*/   result.insert(3, (original.substring(index, index+2) + " ")); // swear oft
+
+        System.out.println(result);
+    }
+}
+
+# Array
+1) public static void arraycopy(Object src, int srcPos, Object dest, int destPos, int length)
+		char[] copyFrom = { 'd', 'e', 'c', 'a', 'f', 'f', 'e', 'i', 'n', 'a', 't', 'e', 'd' };
+        char[] copyTo = new char[7];
+        System.arraycopy(copyFrom, 2, copyTo, 0, 7);
+2) Arrays
+		char[] copyFrom = {'d', 'e', 'c', 'a', 'f', 'f', 'e', 'i', 'n', 'a', 't', 'e', 'd'};            
+        char[] copyTo = java.util.Arrays.copyOfRange(copyFrom, 2, 9);
+2.1) Searching an array for a specific value to get the index at which it is placed (the binarySearch method).
+2.2) Comparing two arrays to determine if they are equal or not (the equals method).
+2.3) Filling an array to place a specific value at each index (the fill method).
+2.4) Sorting an array into ascending order. This can be done either sequentially, using the sort method, or concurrently, using the parallelSort method introduced in Java SE 8. Parallel sorting of large arrays on multiprocessor systems is faster than sequential array sorting.
+
+
+
+
+
+
+
+

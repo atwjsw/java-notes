@@ -40,8 +40,7 @@ $ spring run HelloController.groovy
 4.2.2.8)org.apache.tomcat.embed:tomcat-embed-logging-juli
 4.2.3) On the other hand, if you were to take advantage of Spring Boot starter dependencies, you could simply add the Spring Boot “web” starter (org.springframework .boot:spring-boot-starter-web) as a build dependency.
 4.2.4) you no longer need to think about what libraries you’ll need to
-support certain functionality; you simply ask for that functionality by way of the pertinent
-starter dependency.
+support certain functionality; you simply ask for that functionality by way of the pertinent starter dependency.
 
 4.3) The command-line interface—This optional feature of Spring Boot lets you write complete applications with just application code, but no need for a traditional project build.
 4.3.1) CLI detected that those types are being used, and it knows which starter dependencies to add to the classpath to make it work. 

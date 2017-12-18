@@ -1,0 +1,73 @@
+1) Internationalization is the process of designing an application so that it can be adapted to various languages and regions without engineering changes.
+2) Sometimes the term internationalization is abbreviated as i18n, because there are 18 letters between the first "i" and the last "n."
+3) Localization is the process of adapting software for a specific region or language by adding locale-specific components and translating text. 
+4) The term localization is often abbreviated as l10n, because there are 10 letters between the "l" and the "n."
+5) The primary task of localization is translating the user interface elements and documentation. 
+6) Localization involves not only changing the language interaction, but also other relevant changes such as display of numbers, dates, currency, and so on. 
+7) Other types of data, such as sounds and images, may require localization if they are culturally sensitive. 
+8) Locale and ResourceBundle objects work together and how to use properties files.
+Locale currentLocale = new Locale("fr", "FR");
+currentLocale = new Locale(language, country);
+ResourceBundle message = Resource.getBundle("MessageBundle", currentLocale);
+String msg1 = messages.getString("greetings");
+
+9) 1. Create the Properties Files: A properties file stores information about the characteristics of a program or environment.
+10) Locale objects are only identifiers. After defining a Locale, you pass it to other objects that perform useful tasks, such as formatting dates and numbers. 
+11) These objects are locale-sensitive because their behavior varies according to Locale. A ResourceBundle is an example of a locale-sensitive object.
+
+12) Checklist
+12.1) Identify Culturally Dependent Data
+Messages, Labels on GUI components, Online help, Sounds, Colors, Graphics, Icons, Dates, Times, Numbers, Currencies, Measurements, Phone numbers, Honorifics and personal titles, Postal addresses, Page layouts
+12.2) Isolate Translatable Text in Resource Bundles
+String buttonLabel = "OK";
+JButton okButton = new JButton(buttonLabel);
+12.3) Deal with Compound Messages, Compound messages contain variable data. 
+Integer fileCount;
+String diskStatus = "The disk contains " + fileCount.toString() + " files";
+12.4) Format Numbers and Currencies
+Double amount;
+TextField amountField;
+String displayAmount = amount.toString();
+amountField.setText(displayAmount);
+12.5) Format Dates and Times, Date and time formats differ with region and language. 
+Date currentDate = new Date();
+TextField dateField;
+String dateString = currentDate.toString();
+dateField.setText(dateString);
+12.6) Use Unicode Character Properties
+char ch;
+// This code is incorrect
+if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'))
+12.7) Compare Strings Properly
+String target;
+String candidate;
+if (target.equals(candidate)) { ?
+if (target.compareTo(candidate) < 0) { }
+12.7.1) The String.equals and String.compareTo methods perform binary comparisons, which are ineffective when sorting in most languages. Instead you should use the Collator class
+12.8) Convert Non-Unicode Text: Characters in the Java programming language are encoded in Unicode. If your application handles non-Unicode text, you might need to translate it into Unicode. 
+
+13) Creating a Locale
+13.1) Locale.Builder Class
+- Locale aLocale = new Locale.Builder().setLanguage("fr").setRegion("CA").build();
+- Locale bLocale = new Locale.Builder().setLanguage("en").setRegion("US").build();
+- Locale cLocale = new Locale.Builder().setLanguage("en").setRegion("GB").build();
+- Locale dLocale = new Locale.Builder().setLanguage("ru").setScript("Cyrl").build();
+
+13.2) Locale Constructors
+- Locale(String language)
+- Locale(String language, String country)
+- Locale(String language, String country, String variant)
+aLocale = new Locale("fr", "CA");
+bLocale = new Locale("en", "US");
+cLocale = new Locale("en", "GB");
+dLocale = new Locale("ru");
+
+13.3) Locale.forLanguageTag Factory Method
+Locale aLocale = Locale.forLanguageTag("en-US");
+Locale bLocale = Locale.forLanguageTag("ja-JP-u-ca-japanese");
+
+13.4) Locale Constants
+cLocale = Locale.JAPAN;
+dLocale = Locale.CANADA_FRENCH;
+
+13.5) To determine the default Locale of your Java Virtual Machine, invoke the Locale.getDefault method.

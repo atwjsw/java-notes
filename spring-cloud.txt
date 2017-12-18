@@ -1,0 +1,16 @@
+spring cloud project website
+http://projects.spring.io/spring-cloud/#quick-start
+
+1) Spring Cloud builds on Spring Boot by providing a bunch of libraries that enhance the behaviour of an application when added to the classpath. 
+2) You can take advantage of the basic default behaviour to get started really quickly, and then when you need to, you can configure or extend to create a custom solution.
+
+# Features
+1) Distributed/versioned configuration
+2) Service registration and discovery
+3) Routing
+4) Service-to-service calls
+5) Load balancing
+6) Circuit Breakers
+7) Global locks
+8) Leadership election and cluster state
+9) Distributed messaging

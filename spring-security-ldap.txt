@@ -1,0 +1,36 @@
+1）@Override
+protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+	auth
+		.ldapAuthentication()
+			.userSearchBase("ou=people") //search people branch and find the user
+			.userSearchFilter("(uid={0})") //find entry of uid == loginName
+			.groupSearchBase("ou=groups") //search groups branch and find the group
+			.groupSearchFilter("member={0}"); //find group with member = loginName
+			.passwordCompare() //compare password
+			.passwordEncoder(new Md5PasswordEncoder()) //using password encoder
+			.passwordAttribute("passcode"); //password attribute 
+			.contextSource() //configure LDAP location
+				//.url("ldap://habuma.com:389/dc=habuma,dc=com");  //remote server
+			.root("dc=habuma,dc=com"); //local server root
+			.ldif("classpath:users.ldif"); //specify the ldif file
+}
+2)  
+
+1) LDIF conveys directory content as a set of records, one record for each object (or entry).
+2) Each content record is represented as a group of attributes, with records separated from one another by blank lines.
+3) The individual attributes of a record are represented as single logical lines (represented as one or more multiple physical lines via a line-folding mechanism), comprising "name: value" pairs. 
+4) dn: distinguished name, This refers to the name that uniquely identifies an entry in the directory.  DN (Distinguished Name) (a series of comma-separated key/value pairs used to identify entries uniquely in the directory hierarchy). The DN is actually the entry's fully qualified name.
+5) dc: domain component, This refers to each component of the domain. For example www.google.com would be written as DC=www,DC=google,DC=com
+6) ou: organizational unit, This refers to the organizational unit (or sometimes the user group) that the user is part of. If the user is part of more than one group, you may specify as such, e.g., OU= Lawyer,OU= Judge.
+7) cn: common name, This refers to the individual object (person's name; meeting room; recipe name; job title; etc.) for whom/which you are querying.
+8) You read it from right to left, the right-most component is the root of the tree, and the left most component is the node (or leaf) you want to reach. Each = pair is a search criteria.
+9) user-dn-pattern: 用户dn过滤规则，如user-dn-pattern="uid={0},ou=people"， uid={0}表示过滤uid属性
+10) user-search-base: 指定从哪个分支开始查找用户，如user-search-base="ou=people"，默认从root开始
+11) user-search-filter: 用户过滤规则，如user-search-filter="(uid={0})" ，与user-dn-pattern类似，使用一个即可
+12) group-search-base: 指定从哪个分支开始查找用户用户组，如group-search-base="ou=groups"
+13) group-search-filter: 用户组过滤规则，如group-search-filter="(uniqueMember={0})"表示使用uniqueMember属性过滤
+14) group-role-attribute: 用户组中Role映射属性，默认为cn，验证时会自动增加role前缀
+15) role-prefix : role前缀， 默认为"ROLE_"，即role-prefix="ROLE_"
+
+
+

@@ -1,0 +1,375 @@
+1) Collection — the root of the collection hierarchy. The Collection interface is the least common denominator that all collections implement and is used to pass collections around and to manipulate them when maximum generality is desired. 
+
+2) Set — a collection that cannot contain duplicate elements. 
+
+3) List — an ordered collection (sometimes called a sequence)
+
+4) Queue — a collection used to hold multiple elements prior to processing. Queues typically, but do not necessarily, order elements in a FIFO (first-in, first-out) manner.
+
+5) Among the exceptions are priority queues, which order elements according to a supplied comparator or the elements' natural ordering. 
+
+6) Whatever the ordering used, the head of the queue is the element that would be removed by a call to remove or poll. 
+
+7) Deques can be used both as FIFO (first-in, first-out) and LIFO (last-in, first-out). In a deque all new elements can be inserted, retrieved and removed at both ends.
+
+8) Map — an object that maps keys to values.
+
+9) SortedSet — a Set that maintains its elements in ascending order. Sorted sets are used for naturally ordered sets, such as word lists and membership rolls.
+
+10) SortedMap — a Map that maintains its mappings in ascending key order. Sorted maps are used for naturally ordered collections of key/value pairs, such as dictionaries and telephone directories. 
+
+11) Collection interface
+11.1) List<String> list = new ArrayList<String>(c); // by convention all general-purpose collection implementations have a constructor that takes a Collection argument. This constructor, known as a conversion constructor
+11.2) int size(), boolean isEmpty(), boolean contains(Object element), boolean add(E element), boolean remove(Object element), and Iterator<E> iterator().
+11.3) methods that operate on entire collections, such as boolean containsAll(Collection<?> c), boolean addAll(Collection<? extends E> c), boolean removeAll(Collection<?> c), boolean retainAll(Collection<?> c), and void clear().
+11.4) array operations (such as Object[] toArray() and <T> T[] toArray(T[] a) exist as well.
+11.5) In JDK 8 and later, the Collection interface also exposes methods Stream<E> stream() and Stream<E> parallelStream(), for obtaining sequential or parallel streams from the underlying collection.
+
+11.6) Traversing Collections: There are three ways to traverse collections: (1) using aggregate operations (2) with the for-each construct and (3) by using Iterators.
+11.6.1) Aggregate Operations
+myShapesCollection.stream()
+.filter(e -> e.getColor() == Color.RED)
+.forEach(e -> System.out.println(e.getName())
+11.6.2) you could easily request a parallel stream, which might make sense if the collection is large enough and your computer has enough cores:
+myShapesCollection.parallelStream()
+.filter(e -> e.getColor() == Color.RED)
+.forEach(e -> System.out.println(e.getName()));
+
+12) Collection Interface Bulk Operations
+
+13) The toArray methods are provided as a bridge between collections and older APIs that expect arrays on input. 
+c.removeAll(Collections.singleton(e));
+
+# Set Interface
+1) The Set interface contains only methods inherited from Collection and adds the restriction that duplicate elements are prohibited. 
+Set also adds a stronger contract on the behavior of the equals and hashCode operations, allowing Set instances to be compared meaningfully even if their implementation types differ.
+
+2) The Java platform contains three general-purpose Set implementations: HashSet, TreeSet, and LinkedHashSet.
+
+#The List Interface
+Positional access — manipulates elements based on their numerical position in the list. This includes methods such as get, set, add, addAll, and remove.
+Search — searches for a specified object in the list and returns its numerical position. Search methods include indexOf and lastIndexOf.
+Iteration — extends Iterator semantics to take advantage of the list's sequential nature. The listIterator methods provide this behavior.
+Range-view — The sublist method performs arbitrary range operations on the list.
+
+#The Queue Interface
+
+1) A Queue is a collection for holding elements prior to processing. Besides basic Collection operations, queues provide additional insertion, removal, and inspection operations. 
+public interface Queue<E> extends Collection<E> {
+    E element();
+    boolean offer(E e);
+    E peek();
+    E poll();
+    E remove();
+}
+2) priority queues order elements according to their values.
+3) The remove and poll methods both remove and return the head of the queue. Exactly which element gets removed is a function of the queue's ordering policy. 
+4) Queue implementations generally do not allow insertion of null elements. The LinkedList implementation, which was retrofitted to implement Queue, is an exception. For historical reasons, it permits null elements
+5) Queue implementations generally do not define element-based versions of the equals and hashCode methods but instead inherit the identity-based versions from Object.
+
+#Deque interface
+1) Usually pronounced as deck, a deque is a double-ended-queue. A double-ended-queue is a linear collection of elements that supports the insertion and removal of elements at both end points.
+2) The Deque interface is a richer abstract data type than both Stack and Queue because it implements both stacks and queues at the same time. 
+3) Predefined classes like ArrayDeque and LinkedList implement the Deque interface.
+- Insert: The addfirst and offerFirst methods insert elements at the beginning of the Deque instance. The methods addLast and offerLast insert elements at the end of the Deque instance.
+- Remove: The removeFirst and pollFirst methods remove elements from the beginning of the Deque instance. The removeLast and pollLast methods remove elements from the end. 
+
+#The Map Interface
+1) A Map is an object that maps keys to values. A map cannot contain duplicate keys: Each key can map to at most one value. It models the mathematical function abstraction. 
+2) The Map interface includes methods for basic operations (such as put, get, remove, containsKey, containsValue, size, and empty), bulk operations (such as putAll and clear), and collection views (such as keySet, entrySet, and values).
+3) The Java platform contains three general-purpose Map implementations: HashMap, TreeMap, and LinkedHashMap. 
+
+# Collection Views
+1) The Collection view methods allow a Map to be viewed as a Collection in these three ways:
+keySet — the Set of keys contained in the Map.
+values — The Collection of values contained in the Map. This Collection is not a Set, because multiple keys can map to the same value.
+entrySet — the Set of key-value pairs contained in the Map. The Map interface provides a small nested interface called Map.Entry, the type of the elements in this Set.
+
+#Multimaps
+1) A multimap is like a Map but it can map each key to multiple values.
+
+# Object Ordering
+1) If you try to sort a list, the elements of which do not implement Comparable, Collections.sort(list) will throw a ClassCastException. 
+2) Similarly, Collections.sort(list, comparator) will throw a ClassCastException if you try to sort a list whose elements cannot be compared to one another using the comparator. 
+3) Name objects are immutable. All other things being equal, immutable types are the way to go, especially for objects that will be used as elements in Sets or as keys in Maps. These collections will break if you modify their elements or keys while they're in the collection.
+4) The hashCode method is redefined. This is essential for any class that redefines the equals method. (Equal objects must have equal hash codes.)
+
+#The SortedSet Interface
+1) A SortedSet is a Set that maintains its elements in ascending order, sorted according to the elements' natural ordering or according to a Comparator provided at SortedSet creation time.
+
+#The SortedMap Interface
+1) A SortedMap is a Map that maintains its entries in ascending order, sorted according to the keys' natural ordering, or according to a Comparator provided at the time of the SortedMap creation.
+2) Range view — performs arbitrary range operations on the sorted map
+Endpoints — returns the first or the last key in the sorted map
+Comparator access — returns the Comparator, if any, used to sort the map
+
+# Lesson: Aggregate Operations
+1) Lambda expressions enable you to do this, to treat functionality as method argument, or code as data.
+2) A functional interface is any interface that contains only one abstract method. (A functional interface may contain one or more default methods or static methods.) 
+3) JDK defines several standard functional interfaces, which you can find in the package java.util.function.
+interface Predicate<T> {
+    boolean test(T t);
+}
+4）Aggregate operations process elements from a stream, not directly from a collection (which is the reason why the first method invoked in this example is stream). 
+5） A stream is a sequence of elements. Unlike a collection, it is not a data structure that stores elements. 
+6） Instead, a stream carries values from a source, such as collection, through a pipeline. A pipeline is a sequence of stream operations, which in this example is filter- map-forEach. 
+7） In addition, aggregate operations typically accept lambda expressions as parameters, enabling you to customize how they behave.
+8) A pipeline is a sequence of aggregate operations.
+9) A pipeline contains the following components:
+- A source: This could be a collection, an array, a generator function, or an I/O channel. In this example, the source is the collection roster.
+- Zero or more intermediate operations. An intermediate operation, such as filter, produces a new stream.
+- A terminal operation. A terminal operation, such as forEach, produces a non-stream result, such as a primitive value (like a double value), a collection, or in the case of forEach, no value at all. 
+
+# Reduction
+1) The JDK contains many terminal operations (such as average, sum, min, max, and count) that return one value by combining the contents of a stream. These operations are called reduction operations. 
+2) general-purpose reduction operations reduce and collect.
+
+1) If you frequently add elements to the beginning of the List or iterate over the List to delete elements from its interior, you should consider using LinkedList. 
+
+#Method References
+1） You use lambda expressions to create anonymous methods. 
+2) Sometimes, however, a lambda expression does nothing but call an existing method. In those cases, it's often clearer to refer to the existing method by name. 
+3) Method references enable you to do this; they are compact, easy-to-read lambda expressions for methods that already have a name.
+
+
+1) You plan to write a program that uses several basic collection interfaces: Set, List, Queue, and Map. You're not sure which implementations will work best, so you decide to use general-purpose implementations until you get a better idea how your program will work in the real world. Which implementations are these?
+- HashSet, ArrayList, LinkedList, HasgMap
+2) If you need a Set implementation that provides value-ordered iteration, which class should you use?
+- TreeSet
+3) Which class do you use to access wrapper implementations?
+- Collections
+
+
+# Algorithms
+1) The polymorphic algorithms described here are pieces of reusable functionality provided by the Java platform. All of them come from the Collections class, and all take the form of static methods whose first argument is the collection on which the operation is to be performed.
+2) The sort algorithm reorders a List so that its elements are in ascending order according to an ordering relationship. 
+3) The shuffle algorithm does the opposite of what sort does, destroying any trace of order that may have been present in a List.
+4) The Collections class provides five algorithms for doing routine data manipulation on List objects, 
+4.1) reverse — reverses the order of the elements in a List.
+4.2) fill — overwrites every element in a List with the specified value. This operation is useful for reinitializing a List.
+4.3) copy — takes two arguments, a destination List and a source List, and copies the elements of the source into the destination, overwriting its contents. The destination List must be at least as long as the source. If it is longer, the remaining elements in the destination List are unaffected.
+4.4) swap — swaps the elements at the specified positions in a List.
+4.5) addAll — adds all the specified elements to a Collection. The elements to be added may be specified individually or as an array.
+5) The binarySearch algorithm searches for a specified element in a sorted List. 
+6) frequency — counts the number of times the specified element occurs in the specified collection
+7) disjoint — determines whether two Collections are disjoint; that is, whether they contain no elements in common
+8) The min and the max algorithms return, respectively, the minimum and maximum element contained in a specified Collection.
+
+API Design
+1) If your API contains a method that requires a collection on input, it is of paramount importance that you declare the relevant parameter type to be one of the collection interface types.
+2) Further, you should always use the least-specific type that makes sense.
+3) You can afford to be much more flexible with return values than with input parameters. It's fine to return an object of any type that implements or extends one of the collection interfaces. 
+4)  It's best to return the most specific applicable collection interface rather than the most general.
+
+总而言之
+# Collection
+1) Collection:  maximum generality, least common dinominator
+1.1) add(E), remove(E), size(), contains(), isEmpty()
+1.2) addAll(Collection), removeAll(Collection), retainAll(Collection), containsAll(Collection), clear()
+- c.removeAll(Collections.singleton(e));
+- c.removeAll(Collections.singleton(null));
+1.3) iterator, iterator.hasNext(), iterator.next(), iterator.remove()
+1.4) conversion constructor: new Collection<T>(Collection)
+- List<String> list = new ArrayList<>(c);
+1.5) toArray: bridge between collections and older APIs that expect arrays on input.
+- Object[] a = c.toArray(); 
+- String[] a = c.toArray(new String[0]);
+1.6) Agregate Operation
+myShapesCollection.stream()
+.filter(e -> e.getColor() == Color.RED)
+.forEach(e -> System.out.println(e.getName()));
+
+2）Set： 
+2.1）A Set is a Collection that cannot contain duplicate elements. 
+- Collection<Type> noDups = new HashSet<Type>(c);
+- c.stream().collect(Collectors.toSet()); // no duplicates
+2.2）The Set interface contains only methods inherited from Collection and adds the restriction that duplicate elements are prohibited. （方法与Collection一致）
+2.3）Set also adds a stronger contract on the behavior of the equals and hashCode operations, allowing Set instances to be compared meaningfully even if their implementation types differ.
+2.4）HashSet： stores its elements in a hash table, is the best-performing implementation; fastest
+2.5）TreeSet： stores its elements in a red-black tree, values’ order； 
+2.6）LinkedHashSet： HashTable + LinkedList， insertion order
+
+3) List
+3.1) A List is an ordered Collection (sometimes called a sequence).
+3.2) get(int), set(int, E), add(int, E), remove(int), addAll(int, Collection), indexOf(E), lastIndexOf(E)
+3.3) ListInterator: hasPrevious(), previous()
+3.4) Range-View Operation: List subList(int fromIndex, int toIndex)
+3.3) Implementations are ArrayList and LinkedList
+3.4) Algorithm: Most polymorphic algorithms in the Collections class apply specifically to List.
+sort, shuffle, reverse, rotate, swap, replaceAll, fill, copy, binarySearch, indexOfSubList, LastIndexOfSubList
+
+4) Queue
+4.1) A Queue is a collection for holding elements prior to processing.
+4.2) additional methods:
+4.2.1) throw exception: element(), remove(), add(E) 
+4.2.2) return boolean: peek(), poll(), offer(E)
+4.3) Queues typically order elements in a FIFO (first-in-first-out) manner.
+4.4) priority queues order elements according to their values
+4.5) implementations are LinkedList or PriorityQueue
+
+5) Deque:
+5.1) double-ended-queue： queue方法在头尾都可以用
+5.2) addFirst()/offerFirst, removeFirst/pollFirst, addLast()/offerLast, removeLast()/pollLast, getFirst()/peekFirst, getLast()/peekLast
+
+6）Map
+6.1） put(K, V), get(K), remove(K), containsKey(K), containsValues(V), size(), empty()
+6.2) putAll(Map), clear
+6.3) Set<K> keySet, Map.Entry<K, V> entrySet, Set<V> values()
+6.4) implementations: HashMap, LinkedHashMap, TreeMap
+
+7) Object ordering:
+7.1) Comparable implementations provide a natural ordering for a class, which allows objects of that class to be sorted automatically.
+7.2) The Comparable interface consists of the following method.
+public interface Comparable<T> {
+    public int compareTo(T o);
+}
+public class Name implements Comparable<Name> {
+	...
+	public int compareTo(Name n) {
+        int lastCmp = lastName.compareTo(n.lastName);
+        return (lastCmp != 0 ? lastCmp : firstName.compareTo(n.firstName));
+    }
+    ...
+}
+7.3) Comparator — an object that encapsulates an ordering
+public interface Comparator<T> {
+    int compare(T o1, T o2);
+}
+
+8) SortSet
+8.1) Implementation is TreeSet
+8.2) maintains its elements in ascending order, sorted according to the elements' natural ordering or according to a Comparator provided at SortedSet creation time. 
+8.3) additional methods:
+8.4) Range view: subSet(E, E), headSet(E), tailSet(E)
+- int count = dictionary.subSet("doorbell", "pickle").size();
+- SortedSet<String> volume1 = dictionary.headSet("n");
+- SortedSet<String> volume2 = dictionary.tailSet("n");
+8.5) Endpoints: first(), last()
+- Object predecessor = ss.headSet(o).last();
+8.6) Comparator Accessor: Comparator<? super E> comparator();
+
+9) SortMap
+9.1) Implementation is TreeMap
+9.2) maintains its entries in ascending order, sorted according to the keys' natural ordering, or according to a Comparator provided at the time of the SortedMap creation.
+9.3) Range view: subMap<K, K>, headMap<K>, tailMap<K>
+9.4) Endpoints: lastKey(),  firstKey()
+9.5) Comparator access — returns the Comparator, if any, used to sort the map
+
+10) Aggregate Operations:
+10.1) aggregate operation forEach:
+roster
+    .stream()
+    .forEach(e -> System.out.println(e.getName());
+10.2) A pipeline is a sequence of aggregate operations.  a pipeline that consists of the aggregate operations filter and forEach:
+roster
+    .stream()
+    .filter(e -> e.getGender() == Person.Sex.MALE)
+    .forEach(e -> System.out.println(e.getName()));
+10.3) pipeline = source(steam) + intermediate operations(filter) + terminal operations (forEach)
+10.4) a pipeline that consists of the aggregate operations filter, mapToInt, and average:
+double average = roster
+    .stream()
+    .filter(p -> p.getGender() == Person.Sex.MALE)
+    .mapToInt(Person::getAge)
+    .average()
+    .getAsDouble();
+10.5) reduction: terminal operations that return one value by combining the contents of a stream. 
+- average, sum, min, max, and count
+10.6) Stream.sum reduction operation:
+Integer totalAge = roster
+    .stream()
+    .mapToInt(Person::getAge)
+    .sum();
+10.7) Stream.reduce operation to calculate the same value:
+Integer totalAgeReduce = roster
+   .stream()
+   .map(Person::getAge)
+   .reduce(
+       0,
+       (a, b) -> a + b);
+10.8) Collector example
+List<String> namesOfMaleMembersCollect = roster
+    .stream()
+    .filter(p -> p.getGender() == Person.Sex.MALE)
+    .map(p -> p.getName())
+    .collect(Collectors.toList());
+
+Map<Person.Sex, List<Person>> byGender =
+    roster
+        .stream()
+        .collect(
+            Collectors.groupingBy(Person::getGender));
+
+11) General implementation
+11.1) Collection: none
+11.2) Set: HashSet(constant-time access), TreeSet(log(n), value ordered), LinkedHashSet(insertation order)
+11.3）SortedSet: TreeSet
+11.4) List: ArrayList*, LinkedList; frequently add elements to the beginning of the List or iterate over the List to delete elements from its interior, you should consider using LinkedList. 
+11.5) Queue: LinkedList*, PriorityQueue(heap)
+11.6) Deque: ArrayDeque*, LinkedList
+11.5) Map: HashMap, TreeMap, LinkedHashMap
+11.6) SortedMap: TreeMap
+
+12)Wrapper Implementations: allow any collection to be transformed into a synchronized collection
+13) special implementation
+13.1) EnumSet: high-performance Set implementation for enum types
+for (Day d : EnumSet.range(Day.MONDAY, Day.FRIDAY))
+        System.out.println(d);
+13.2) Vector will be slightly faster than an ArrayList synchronized with Collections.synchronizedList. 
+13.3)  EnumMap, WeakHashMap and IdentityHashMap
+13.4) ConcurrentHashMap is a highly concurrent, high-performance implementation backed up by a hash table.
+13.5)  BlockingQueue extends Queue with operations that wait for the queue to become nonempty when retrieving an element and for space to become available in the queue when storing an element.
+
+14) Convenience Implementations
+14.1) List View of an Array: Arrays.asList(arr);
+14.2) Immutable Multiple-Copy List: List<Type> list = new ArrayList<Type>(Collections.nCopies(1000, (Type)null);
+14.3) Immutable Singleton Set: c.removeAll(Collections.singleton(e));
+14.4) Empty Set, List, and Map Constants: tourist.declarePurchases(Collections.emptySet());
+
+15) Algorithm
+15.1) Sorting： Collections.sort(List), Collections.sort(List, Comparator);; merge sort， stable
+15.2）Shuffling： Collections.shuffle(List), Collections.shuffle(List, Random)
+15.3）Routine Data Manipulation: Collections.reverse(), copy(), fill(), swap, addAll
+15.4）Searching: Collections.binarySearch(list, key); binary search in sorted list
+15.5）Composition: 
+frequency — counts the number of times the specified element occurs in the specified collection
+disjoint — determines whether two Collections are disjoint; that is, whether they contain no elements in common
+15.6）Finding Extreme Values: Collections.min(List); Collections.max(List); Collections.min(List, Comparator); Collections.max(List, Comparator);
+
+16) Compatibility
+16.1) use Arrays.asList to pass an array to any method requiring a Collection or a List
+Foo[] result = oldMethod(arg);
+newMethod(Arrays.asList(result));
+16.2) because Vector was retrofitted to implement the List interface, and Hashtable was retrofitted to implement Map. Therefore, a Vector may be passed directly to any method calling for a Collection or a List.
+Vector result = oldMethod(arg);
+newMethod(result);
+16.3) a Hashtable may be passed directly to any method calling for a Map.
+Hashtable result = oldMethod(arg);
+newMethod(result);
+16.4) The Collections.list method translates an Enumeration into a Collection.
+Enumeration e = oldMethod(arg);
+newMethod(Collections.list(e));
+16.5) new API returns a Collection, and the old API requires an array of Object.
+Collection c = newMethod();
+oldMethod(c.toArray());
+16.6) old API requires an array of String (or another type) instead of an array of Object
+Collection c = newMethod();
+oldMethod((String[]) c.toArray(new String[0]));
+16.7) old API requires a Vector
+Collection c = newMethod();
+oldMethod(new Vector(c));
+16.8) old API requires a Hashtable
+Map m = newMethod();
+oldMethod(new Hashtable(m));
+16.9) old API requires an Enumeration
+Collection c = newMethod();
+oldMethod(Collections.enumeration(c));
+
+17) API Design
+17.1) If your API contains a method that requires a collection on input, it is of paramount importance that you declare the relevant parameter type to be one of the collection interface types. 
+17.2) you should always use the least-specific type that makes sense.
+17.3) return values should have the opposite behavior of input parameters: It's best to return the most specific applicable collection interface rather than the most general. 
+17.4) For example, if you're sure that you'll always return a SortedMap, you should give the relevant method the return type of SortedMap rather than Map. 
+17.5) 
+
+16.2) 

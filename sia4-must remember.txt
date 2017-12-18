@@ -1,3 +1,4 @@
+*************************************************************************************
 1 总而言之 (ch1 and ch2 spring basics and configuration)
 1) 5 typles of application Context： AnnotationConfigApplicationContext/AnnotationConfigWebApplicationContext are for loading Java config class. ClassPathXmlApplicationContext/FileSystemXmlApplicationContext/XmlWebApplicationContext are for loading xml config files.
 2) 3 ways of wiring beans: perfer autodiscovery > java config > xml
@@ -33,6 +34,7 @@ public MagicBean magicBean() {
 }
 
 - MagicExistsCondition need to be implemented
+*********************************************************************************************************
 
 #Addressing ambiguity in autowiring
 - Spring tries byName first, if fails, tries byType
@@ -99,6 +101,7 @@ public void setDessert(Dessert dessert) {
 	this.dessert = dessert;
 }
 
+*********************************************************************************************************
 #Bean scoping
 - Singleton/Prototype/Session/Request
 
@@ -131,6 +134,7 @@ if ShoppingCart is a concrete class, there’s no way Spring can create an inter
 	<aop:scoped-proxy proxy-target-class="false" />
 </bean>
 
+*********************************************************************************************************
 #Runtime value injection
 - by property placeholders
 - by SpEL
@@ -147,7 +151,7 @@ Environment env, env.getProperty("disc.title").
 4) retrieve value from properties file using SpEL, In context xml: <util:properties id="s3Properties" location="classpath:s3.properties"/>
 @Value("#{s3Properties['webRootPath']}") <Test> <Test Failed>
 5) @PropertySource can be configured in WebConfig or RootConfig and there is no difference
-
+************************************************************************************************************
 #SpEL
 #{T(System).currentTimeMillis()}
 #{systemProperties['disc.title']}
@@ -162,6 +166,7 @@ Environment env, env.getProperty("disc.title").
 #{jukebox.songs.?[artist eq 'Aerosmith'].![title]}
 
 4. Chapter4 Aop
+************************************************************************************************************
 #@EnableAspectJAutoProxy
 - If you’re using JavaConfig, you can turn on auto-proxying by applying the @EnableAspectJAutoProxy annotation at the class level of the configuration class.
 @Configuration
@@ -178,7 +183,7 @@ in xml congfig
 <context:component-scan base-package="concert" />
 <aop:aspectj-autoproxy />
 <bean class="concert.Audience" />
-
+************************************************************************************************************
 5. Chapter5 Spring MVC mechanism
 #CONFIGURING DISPATCHERSERVLET
 - thanks to recent advances in the Servlet 3 specification and in Spring 3.1. Instead of a web.xml file, you can use Java to configure DispatcherServlet in the servlet container.
@@ -212,7 +217,6 @@ public class SpittrWebAppInitializer extends AbstractAnnotationConfigDispatcherS
 - RootConfig == root-context.xml
 6. WebConfig extends WebMvcConfigurerAdapter + configureDefaultServletHandling() == <mvc:resources mapping ="/resources/**" location="/resources/"/> //but use different approach
 7. @EnableWebMvc == <mvc:annotation-driven/>
-
 
 #Accepting request input
 - 总而言之，3 ways for accepting input
@@ -278,8 +282,7 @@ protected Filter[] getServletFilters() { return new Filter[] { new MyFilter() };
 总而言之，(spring MVC file upload)
 1）"configure multipart resolver", either a CommonsMultipartResolver from Jakarta Commons FileUpload or StandardServletMultipartResolver from Spring 3.1
 2) CommonsMultipartResolver is useful if using pre-Servlet 3.0 container and StandardServletMultipartResolver is prefer because it doesn't require Jakarta Commons FileUpload.
-3) if you use StandardServletMultipartResolver, you must configure multipart details as part of DispatcherServlet’s configuration in web.xml or in the servlet
-initializer class.
+3) if you use StandardServletMultipartResolver, you must configure multipart details as part of DispatcherServlet’s configuration in web.xml or in the servlet initializer class.
 3.1） If you’re configuring DispatcherServlet in a servlet initializer class that implements WebApplicationInitializer, within onStarup() method, registration.setMultipartConfig(...);
 3.2) If you’ve configured DispatcherServlet in a servlet initializer class that extends AbstractAnnotationConfigDispatcherServletInitializer or AbstractDispatcherServletInitializer, you can override the customizeRegistration() method(which is given a Dynamic as a parameter)
 3.3) If you’re configuring DispatcherServlet in a more traditional way in web.xml, you can specify multipart configuration using the <multipart-config> element in the <servlet> element

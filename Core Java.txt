@@ -113,3 +113,344 @@ Up to now, giving someone a block of code hasn’t been easy in Java. You couldn
 
 - lambda expressions in Java: parameters, the ->
 arrow, and an expression.
+
+# Method parameters
+1) pass by value means that the method gets just the value that the caller provides. 
+2) call by reference means that the method gets the location of the variable that the caller provides. 
+3) a method can modify the value stored in a variable passed by reference but not in one passed by value.
+4) Java always uses call by value. That means that the method gets a copy of all parameter values. 
+5) In particular, the method cannot modify the contents of any parameter variables passed to it.
+6) The reason is simple. The method gets a copy of the object reference, and both the original and the copy refer to the same object.
+7) Java programming language does not use call by reference for objects. Instead, object references are passed by value.
+
+# Classpath
+1) class path /home/user/classdir:.:/home/user/archives/archive.jar contains
+• The base directory /home/user/classdir or c:\classdir;
+• The current directory (.); and
+• The JAR file /home/user/archives/archive.jar or c:\archives\archive.jar.
+
+2) Starting with Java SE 6, you can specify a wildcard for a JAR file directory, like this:
+/home/user/classdir:.:/home/user/archives/'*'
+
+3) The runtime library files (rt.jar and the other JAR files in the jre/lib and jre/lib/ext
+directories) are always searched for classes; don’t include them explicitly in the class path.
+
+4) java -classpath /home/user/classdir:.:/home/user/archives/archive.jar MyProg or
+java -classpath c:\classdir;.;c:\archives\archive.jar MyProg
+
+5) export CLASSPATH=/home/user/classdir:.:/home/user/archives/archive.jar or
+set CLASSPATH=c:\classdir;.;c:\archives\archive.jar
+
+#7. Prefer immutable classes
+1) The LocalDate class, and other classes from the java.time package, are immutable—no method can modify the state of an object. Instead of mutating objects, methods such as plusDays return new objects with the modified state.
+2) The problem with mutation is that it can happen concurrently when multiple threads try to update an object at the same time. The results are unpredictable.
+3) When classes are immutable, it is safe to share their objects among multiple threads.
+4) Therefore, it is a good idea to make classes immutable when you can. This is particularly easy with classes that represent values, such as a string or a point in time. Computations can simply yield new values instead of updating
+existing ones.
+5) Of course, not all classes should be immutable. It would be strange to have the raiseSalary method return a new Employee object when an employee gets a raise.
+
+Chapter 5 Inheritence
+1) Some people think of super as being analogous to the this reference. However, that analogy is not quite accurate: super is not a reference to an object. For example, you cannot assign the value super to another object variable. Instead, super is a special keyword that directs the compiler to invoke the superclass method.
+2) If the subclass constructor does not call a superclass constructor explicitly, the no-argument constructor of the superclass is invoked.
+3) An ArrayList<Integer> is far less efficient than an int[] array because each value is separately wrapped inside an object.You would only want to use this construct for small collections when programmer convenience is more
+important than efficiency.
+
+#Reflection
+The reflection library gives you a very rich and elaborate toolset to write programs that manipulate Java code dynamically
+
+Chapter 6 Interface lambda expression
+1) A lambda expression is a block of code that you can pass around so it can be executed later, once or multiple times.
+Arrays.sort(planets, (first, second) -> first.length() - second.length());
+Timer t = new Timer(1000, System.out::println);
+
+Chapter 8 Generic Programming
+1) Generic programming means writing code that can be reused for objects of many different types.
+2) Generics offer a better solution: type parameters. The ArrayList class now has a type parameter that indicates the element type:
+ArrayList<String> files = new ArrayList<String>();
+3) Wildcard types allow a library builder to make methods as flexible as possible.
+4) A generic class is a class with one or more type variables. This class allows us to focus on generics without being distracted by data storage details.
+public class Pair<T>
+{
+	private T first;
+	private T second;
+}
+5) define a single method with type parameters. This method is defined inside an ordinary class, not inside a generic class.
+class ArrayAlg
+{
+public static <T> T getMiddle(T... a)
+	{
+		return a[a.length / 2];
+	}
+}
+6) giving a bound for the type variable T:
+public static <T extends Comparable> T min(T[] a) . . .
+expresses that T should be a subtype of the bounding type.
+
+7) In a wildcard type, a type parameter is allowed to vary. For example, the wildcard type
+Pair<? extends Employee>
+denotes any generic Pair type whose type parameter is a subclass of Employee, such as Pair<Manager>, but not Pair<String>.
+
+# Regular expression
+1) Regular expressions are a way to describe a set of strings based on common characteristics shared by each string in the set. They can be used to search, edit, or manipulate text and data.
+2) A Pattern object is a compiled representation of a regular expression.
+3) A Matcher object is the engine that interprets the pattern and performs match operations against an input string.
+4) A PatternSyntaxException object is an unchecked exception that indicates a syntax error in a regular expression pattern.
+
+5)  Pattern pattern = Pattern.compile("cat.");
+6)  Matcher matcher = pattern.matcher("cats");
+7)  boolean matcher.find(); 
+8) String = matcher.group(); //return the matched string
+9) int matcher.start(), int matcher.end())); //start and end index of matched string
+
+10) metacharacter: a character with special meaning interpreted by the matcher. e.g. . represents any character
+10.2) metacharacter: <([{\^-=$!|]})?*+.>
+10.3) two ways to force a metacharacter to be treated as an ordinary character:
+- precede the metacharacter with a backslash e.g. cat\.
+- enclose it within \Q (which starts the quote) and \E (which ends it). e.g. cat\Q...\E
+
+11) Character Classes: a character class is a set of characters "enclosed within square brackets". It specifies the characters that will successfully match a single character from a given input string.
+[abc]	a, b, or c (simple class)
+[^abc]	Any character except a, b, or c (negation)
+[a-zA-Z]	a through z or A through Z, inclusive (range)
+[a-d[m-p]]	a through d, or m through p: [a-dm-p] (union)
+[a-z&&[def]]	d, e, or f (intersection)
+[a-z&&[^bc]]	a through z, except for b and c: [ad-z] (subtraction)
+[a-z&&[^m-p]]	a through z, and not m through p: [a-lq-z](subtraction)
+
+11.1) [bcr]at // will match the words "bat", "cat", or "rat" 
+11.2) negation: [^bcr]at // match all characters except those listed, hat, mat will match
+11.3) Ranges: [1-5], [a-h], [a-zA-Z], foo[1-5]
+11.4) Unions: [0-4[6-8]] //matches 0, 1, 2, 3, 4, 6, 7, and 8.
+11.5) Intersections: [0-9&&[345]] // matches 3,4,5; [2-8&&[4-6]] //macthes 4, 5, 6
+11.6) subtraction: [a-z&&[^bc]]; [a-z&&[^m-p]]	
+
+12) Predefined character classes: offer convenient shorthands for commonly used regular expressions:
+.	Any character (may or may not match line terminators)
+\d	A digit: [0-9]
+\D	A non-digit: [^0-9]
+\s	A whitespace character: [ \t\n\x0B\f\r]
+\S	A non-whitespace character: [^\s]
+\w	A word character: [a-zA-Z_0-9]
+\W	A non-word character: [^\w]
+
+13) Constructs beginning with a backslash are called escaped constructs. If you are using an escaped construct within a string literal, you must precede the backslash with another backslash for the string to compile.
+private final String REGEX = "\\d"; // a single digit
+
+14) Quantifiers: specify the number of occurrences to match against. greedy, reluctant, and possessive quantifiers
+14.1) Greedy
+X?		once or not at all [0, 1]   a?
+X*		zero or more times [0...)	a*
+X+		one or more times [1...)	a+
+X{n}	exactly n times [n])		a{3}
+X{n,}	at least n times [n...)		a{n,}
+X{n,m}	at least n but not more than m times [n...m] a{3,6}
+
+14.2) Zero-length matches are easily identifiable because they always start and end at the same index position.
+
+14.3) a?, matches any character, but return either a or ""
+a* matches any character, but return either a or ""
+a+, matches any "a", "aa", "aaa"
+a{3} macthes aaaaaaaaa three times
+a{3,} macthes any aaa... at least 3 a in a row
+a{3,6} // find at least 3 (but no more than 6) a's in a row
+
+15) Capturing Groups and Character Classes with Quantifiers
+15.1) quantifiers can attach to Character Classes  such as [abc]+ (a or b or c, one or more times) 
+15.2) and to Capturing Groups, (abc)+ (the group "abc", one or more times).
+(dog){3} // matches dogdogdogd
+dog{3} //matches doggggg
+[dog]{3} //macthes ddd, ooo, ggg, dog, god, ogg
+
+16) Differences Among Greedy, Reluctant, and Possessive Quantifiers
+16.1) Greedy quantifiers are considered "greedy" because they force the matcher to read in, or eat, the entire input string prior to attempting the first match. 
+16.2) If the first match attempt (the entire input string) fails, the matcher backs off the input string by one character and tries again, repeating the process until a match is found or there are no more characters left to back off from. 
+16.3) The reluctant quantifiers, however, take the opposite approach: They start at the beginning of the input string, then reluctantly eat one character at a time looking for a match. The last thing they try is the entire input string.
+16.4) Finally, the possessive quantifiers always eat the entire input string, trying once (and only once) for a match. Unlike the greedy quantifiers, possessive quantifiers never back off, even if doing so would allow the overall match to succeed.
+
+17) Capturing Groups
+- quantifiers can attach to one character, character class, or capturing group at a time.
+- Capturing groups are a way to treat multiple characters as a single unit. 
+17.1) Numbering
+- capturing groups are numbered by counting their opening parentheses from left to right. In the expression ((A)(B(C))), for example, there are four such groups
+- Groups beginning with (? are pure, non-capturing groups that do not capture text and do not count towards the group total.
+
+18) Backreferences
+The section of the input string matching the capturing group(s) is saved in memory for later recall via backreference. A backreference is specified in the regular expression as a backslash (\) followed by a digit indicating the number of the group to be recalled.
+(\d\d)\1 //matches 1212, 3434, 3333
+
+19) Boundary Matchers: For example, maybe you're interested in finding a particular word, but only if it appears at the beginning or end of a line. 
+19.1) Boundary Construct	Description
+^	The beginning of a line
+$	The end of a line
+\b	A word boundary
+\B	A non-word boundary
+\A	The beginning of the input
+\G	The end of the previous match
+\Z	The end of the input but for the final terminator, if any
+\z	The end of the input
+
+19.2) examples
+^dog$ //matches dog only
+^dog\w* //macthes dog123, dogabcd, dogxxx, dog@@@
+
+19.3) To check if a pattern begins and ends on a word boundary (as opposed to a substring within a longer string), just use \b on either side; 
+\bdog\b //The dog plays in the yard.
+\bdog\B //The doggie plays in the yard.
+
+19.4) To require the match to occur only at the end of the previous match, use \G:
+\Gdog //dog dog find one //dogdog find two 
+
+20) Methods of the Pattern Class
+20.1) Creating a Pattern with Flags
+- Pattern.CASE_INSENSITIVE Enables case-insensitive matching. 
+- Pattern.COMMENTS Permits whitespace and comments in the pattern.
+- Pattern.DOTALL Enables dotall mode. In dotall mode, the expression . matches any character, including a line terminator. 
+- Pattern.LITERAL Enables literal parsing of the pattern. When this flag is specified then the input string that specifies the pattern is treated as a sequence of literal characters. Metacharacters or escape sequences in the input sequence will be given no special meaning. 
+- Pattern.MULTILINE Enables multiline mode. In multiline mode the expressions ^ and $ match just after or just before, respectively, a line terminator or the end of the input sequence.
+- Pattern.UNICODE_CASE Enables Unicode-aware case folding. When this flag is specified then case-insensitive matching, when enabled by the CASE_INSENSITIVE flag, is done in a manner consistent with the Unicode Standard.
+- Pattern.UNIX_LINES Enables UNIX lines mode. In this mode, only the '\n' line terminator is recognized in the behavior of ., ^, and $. UNIX lines mode can also be enabled via the embedded flag expression (?d).
+
+e.g.
+Pattern pattern = Pattern.compile(console.readLine("%nEnter your regex: "),
+Pattern.CASE_INSENSITIVE);
+pattern = Pattern.compile("[az]$", Pattern.MULTILINE | Pattern.UNIX_LINES);
+
+20.2) matches(String,CharSequence) Method
+Pattern.matches("\\d","1")
+
+20.3) split(String) Method
+Pattern p = Pattern.compile(":");
+String[] items = p.split("one:two:three:four:five"); // "one two three four five"
+Pattern p = Pattern.compile("\\d");
+String[] items = p.split("one9two4three7four1five"); // "one two three four five"
+
+20.4) quote(String s) Returns a literal pattern String for the specified String.
+20.5) public String toString() Returns the String representation of this pattern. This is the regular expression from which this pattern was compiled.
+
+
+# Pattern Method Equivalents in java.lang.String
+1) public boolean matches(String regex)
+2) public String[] split(String regex, int limit):
+3) public String[] split(String regex):
+4) public String replace(CharSequence target,CharSequence replacement): Replaces each substring of this string that matches the literal target sequence with the specified literal replacement sequence. 
+
+# Date time API
+1) complexity: leap year, time zone, DST
+2) The Date-Time API uses the calendar system defined in ISO-8601 as the default calendar. This calendar is based on the Gregorian calendar system and is used globally as the defacto standard for representing date and time.
+3) LocalDateTime, ZonedDateTime, and OffsetDateTime, all of these use the ISO calendar system.
+4)  java.time.chrono package allows you to use one of the predefined alternative calendar system, such as Hijrah or Thai Buddhist
+5) The Date-Time API uses the Unicode Common Locale Data Repository (CLDR). This repository supports the world's languages and contains the world's largest collection of locale data available.
+6) The Date-Time API also uses the Time-Zone Database (TZDB). This database provides information about every time zone change globally since 1970, with history for primary time zones since the concept was introduced.
+
+7) fluency
+LocalDate today = LocalDate.now();
+LocalDate payday = today.with(TemporalAdjusters.lastDayOfMonth()).minusDays(2);
+
+8）Immutable
+LocalDate dateOfBirth = LocalDate.of(2012, Month.MAY, 14);
+LocalDate firstBirthday = dateOfBirth.plusYears(1);
+
+9) java.time The core of the API for representing date and time. It includes classes for date, time, date and time combined, time zones, instants, duration, and clocks.
+10) java.time.format Classes for formatting and parsing dates and times.
+11) java.time.zone Classes that support time zones, offsets from time zones, and time zone rules.
+
+10) Method Naming Conventions
+of	static factory	Creates an instance where the factory is primarily validating the input parameters, not converting them.
+from	static factory	Converts the input parameters to an instance of the target class, which may involve losing information from the input.
+parse	static factory	Parses the input string to produce an instance of the target class.
+format	instance	Uses the specified formatter to format the values in the temporal object to produce a string.
+get	instance	Returns a part of the state of the target object.
+is	instance	Queries the state of the target object.
+with	instance	Returns a copy of the target object with one element changed; this is the immutable equivalent to a set method on a JavaBean.
+plus	instance	Returns a copy of the target object with an amount of time added.
+minus	instance	Returns a copy of the target object with an amount of time subtracted.
+to	instance	Converts this object to another type.
+at	instance	Combines this object with another.
+
+11) legacy Date, Ttime class: java.util.Date and java.util.Calendar 
+
+#Standard Calendar
+1) human time, such as year, month, day, hour, minute and second. 
+2) machine time, measures time continuously along a timeline from an origin, called the epoch, in nanosecond resolution. 
+3) The classes in the Date-Time API that capture and work with date or time values, such as Instant, LocalDateTime, and ZonedDateTime, are referred to as temporal-based classes (or types)
+4) Supporting types, such as the TemporalAdjuster interface or the DayOfWeek enum, are not included in this definition.
+
+5) DayOfWeek Enums:  provides enums for specifying days of the week 
+
+6) Month Enum: months of the year.
+- System.out.printf("%s%n", DayOfWeek.MONDAY.plus(3));
+
+7) The Date-Time API provides four classes that deal exclusively with date information, without respect to time or time zone. 
+7.1) LocalDate: A LocalDate represents a year-month-day in the ISO calendar and is useful for representing a date without a time.
+		LocalDate date = LocalDate.of(2017, Month.OCTOBER, 13);
+        LocalDate nextWed = date.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+        DayOfWeek dotw = LocalDate.of(2017, Month.OCTOBER, 13).getDayOfWeek();
+
+7.2) YearMonth: represents the month of a specific year.
+
+7.3) MonthDay: represents the day of a particular month, such as New Year's Day on January 1.
+
+7.4) Year: represents a year
+
+7.5) LocalTime
+
+7.6) LocalDateTime: The class that handles both date and time, without a time zone
+
+8) A time zone is a region of the earth where the same standard time is used. Each time zone is described by an identifier and usually has the format region/city (Asia/Tokyo) and an offset from Greenwich/UTC time. For example, the offset for Tokyo is +09:00.
+8.1) ZoneId specifies a time zone identifier and provides rules for converting between an Instant and a LocalDateTime.
+8.2) ZoneOffset specifies a time zone offset from Greenwich/UTC time.
+
+9) The ZonedDateTime class, in effect, combines the LocalDateTime class with the ZoneId class. It is used to represent a full date (year, month, day) and time (hour, minute, second, nanosecond) with a time zone (region/city, such as Europe/Paris).
+
+10) The OffsetDateTime class, in effect, combines the LocalDateTime class with the ZoneOffset class. It is used to represent a full date (year, month, day) and time (hour, minute, second, nanosecond) with an offset from Greenwich/UTC time (+/-hours:minutes, such as +06:00 or -08:00).
+
+11）The OffsetTime class, in effect, combines the LocalTime class with the ZoneOffset class. It is used to represent time (hour, minute, second, nanosecond) with an offset from Greenwich/UTC time (+/-hours:minutes, such as +06:00 or -08:00).
+
+12） Instant Class ： represents the start of a nanosecond on the timeline. This class is useful for generating a time stamp to represent machine time.
+12.1） A value returned from the Instant class counts time beginning from the first second of January 1, 1970 (1970-01-01T00:00:00Z) also called the EPOCH. An instant that occurs before the epoch has a negative value, and an instant that occurs after the epoch has a positive value.
+Instant timestamp = Instant.now();
+12.2) The Instant class does not work with human units of time, such as years, months, or days. If you want to perform calculations in those units, you can convert an Instant to another class, such as LocalDateTime or ZonedDateTime, by binding the Instant with a time zone. 
+LocalDateTime ldt = LocalDateTime.ofInstant(timestamp, ZoneId.systemDefault());
+
+12.3) Either a ZonedDateTime or an OffsetTimeZone object can be converted to an Instant object, as each maps to an exact moment on the timeline. However, the reverse is not true. To convert an Instant object to a ZonedDateTime or an OffsetDateTime object requires supplying time zone, or time zone offset, information.
+
+13) The DateTimeFormatter class provides numerous predefined formatters, or you can define your own.
+13.1) The one-argument parse(CharSequence) method in the LocalDate class uses the ISO_LOCAL_DATE formatter. 
+
+13.2) To specify a different formatter, you can use the two-argument parse(CharSequence, DateTimeFormatter) method. 
+	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d yyyy");
+    LocalDate date = LocalDate.parse(input, formatter);
+13.3) The format(DateTimeFormatter) method converts a temporal-based object to a string representation using the specified format. 
+	DateTimeFormatter format = DateTimeFormatter.ofPattern("MMM d yyyy  hh:mm a");
+    String out = departure.format(format);
+
+14) The java.time.temporal package provides a collection of interfaces, classes, and enums that support date and time code and, in particular, date and time calculations.
+
+15) The Temporal interface provides a framework for accessing temporal-based objects, and is implemented by the temporal-based classes, such as Instant, LocalDateTime, and ZonedDateTime. This interface provides methods to add or subtract units of time, making time-based arithmetic easy and consistent across the various date and time classes.
+16) Temporal to Instant, LocalDateTime, and ZonedDateTime is like CharSequence 
+16.1) The units for these fields are specified by the TemporalUnit interface
+16.2) The ChronoField enum, which implements the TemporalField interface, provides a rich set of constants for accessing date and time values. 
+16.3) provides methods that take a Temporal value and return an adjusted value.
+16.4) The TemporalAdjusters class (note the plural) provides a set of predefined adjusters for finding the first or last day of the month, the first or last day of the year, the last Wednesday of the month, or the first Tuesday after a specific date, to name a few examples.
+- The predefined adjusters are defined as static methods and are designed to be used with the static import statement.
+
+16.5) Custom Adjusters:  create a class that implements the TemporalAdjuster interface with a adjustInto(Temporal) method.
+LocalDate nextPayday = date.with(new PaydayAdjuster());
+
+16.6) A TemporalQuery can be used to retrieve information from a temporal-based object.
+
+17) A Duration is most suitable in situations that measure machine-based time, such as code that uses an Instant object. 
+18) The ChronoUnit enum, discussed in the The Temporal Package, defines the units used to measure time.
+19) To define an amount of time with date-based values (years, months, days), use the Period class. The Period class provides various get methods, such as getMonths, getDays, and getYears, so that you can extract the amount of time from the period.
+
+20) Clock: Most temporal-based objects provide a no-argument now() method that provides the current date and time using the system clock and the default time zone. These temporal-based objects also provide a one-argument now(Clock) method that allows you to pass in an alternative Clock.
+
+21) You can convert an ISO-based date to a date in another chronology by using the from(TemporalAccessor) method, such as JapaneseDate.from(TemporalAccessor).
+
+22)summary
+22.1) The Instant class provides a machine view of the timeline.
+22.2) The LocalDate, LocalTime, and LocalDateTime classes provide a human view of date and time without any reference to time zone.
+22.3) The ZoneId, ZoneRules, and ZoneOffset classes describe time zones, time zone offsets, and time zone rules.
+22.4) The ZonedDateTime class represents date and time with a time zone. The OffsetDateTime and OffsetTime classes represent date and time, or time, respectively. These classes take a time zone offset into account.
+22.5) The Duration class measures an amount of time in seconds and nanoseconds.
+22.6) The Period class measures an amount of time using years, months, and days.

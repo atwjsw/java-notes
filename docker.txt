@@ -19,8 +19,8 @@ sudo docker run -p 80:80 --name my-custom-nginx-container -d custom-nginx
 sudo docker run -it -p 80:80  -v `pwd`/logs:/var/log/nginx -d nginx
 
 docker kill $(docker ps -q) ; 
-docker rm $(docker ps -a -q) ;
-docker rm $(docker images -q -a) 
+docker rm $(docker ps -a -q) //Delete all docker containers
+docker rmi $(docker images -q) //Delete all docker images
 
 菜鸟教程
 1） Docker 架构
@@ -69,7 +69,8 @@ What is a Container?
 1.1.9) docker container run --help to see a list of all flags it supports. 
 
 1.2) Terminology
-1.2.1) Images - The file system and configuration of our application which are used to create containers. 
+1.2.1) Images 
+- The file system and configuration of our application which are used to create containers. 
 - To find out more about a Docker image, run docker image inspect alpine. 
 - In the demo above, you used the docker image pull command to download the alpine image. 
 - When you executed the command docker container run hello-world, it also did a docker image pull behind the scenes to download the hello-world image.
@@ -461,7 +462,7 @@ END
 6) ***Bind-mounting is very usefull in development as it enables, for instance, to share source code on the host with the container.
 
 # Lab07 Swarm mode introduction
-1) his tutorial will show you how to setup a swarm and deploy your first services.
+1) this tutorial will show you how to setup a swarm and deploy your first services.
 2) docker swarm init --advertise-addr $(hostname -i) // Init your swarm
 - Swarm initialized: current node (x4rncinxcdcxlel55e16k8a49) is now a manager.
 2.1) Copy the join command (watch out for newlines) output and paste it in the other terminal.
@@ -567,11 +568,9 @@ Chapter 4 Persistent storage and shared state with volumes
 1）需求场景1：When programs connect to the database and enter data, where is that data stored? Is it in a file inside the container? What happens to that data when you stop the container or remove it?
 2) 需求场景2：Where would you write log files so that they will outlive the container? How would you get access to those logs to troubleshoot a problem?
 3） A volume is a mount point on the container’s directory tree where a portion of the host directory tree has been mounted.
-4） docker run -d --volume /var/lib/cassandra/data --name cass-shared alpine echo Data Container //creating a single container that defines a volume. This is called a volume
-container.
+4） docker run -d --volume /var/lib/cassandra/data --name cass-shared alpine echo Data Container //creating a single container that defines a volume. This is called a volume container.
 5）docker run -d --volumes-from cass-shared --name cass1 cassandra:2.2
-- After Docker pulls the cassandra:2.2 image from Docker Hub, it creates a new container
-and copies the volume definitions from the volume container.
+- After Docker pulls the cassandra:2.2 image from Docker Hub, it creates a new container and copies the volume definitions from the volume container.
 - After that, both containers have a volume mounted at /var/lib/cassandra/data that points to the same location on the host’s directory tree.
 6） docker run -it --rm --link cass1:cass cassandra:2.2 cqlsh cass //start a container from the cassandra:2.2 image, but run a Cassandra client tool and connect to your running server
 7） select * from system.schema_keyspaces where keyspace_name = 'docker_hello_world';
@@ -598,3 +597,594 @@ that location, the content provided by the image was overridden by the content o
 host. This behavior is the basis for the polymorphic container pattern discussed later
 in the chapter.
 18) docker run --name bmweb_ro --volume ~/example-docs:/usr/local/apache2/htdocs/:ro -p 80:80 httpd:latest //mount volumes as read-only by appending :ro to the volume map specification
+
+
+Introduction to Docker
+1. what is Docker?
+- Docker is a container for application, it is like a glass for water, a backpack for books. you can put application into docker, just like you can put water into a glass.
+- Docker is developed in Go language and is open sourced.
+- Docker supports multiple platforms, windows, MacOS, Linux, therefore, developer and package their application to a container and delpoy to different platforms.
+
+2. Simple example
+
+2. Docker vs. Cloud, Docker vs. Microservices
+
+2. Phylosophy:
+- Container: Without container, shipments may be misplaced or lost. Think about your deployment experiences, you want to deploy a Java Web App to a new environment. Very likey you may forget to setup some configuration, even forget to install a tool/infrastructure app.
+- Standardization: delivery: publish to the repository/download docker repository (not by war file, by ftp...), storage: install to certian directory vs. standard installation/storage; API: standard command, same command for different app. 
+- isolation: similar to virtual machine, based on Linux core restriction, LXC
+
+3. Problems Solved:
+3.1) Deployment issue: Ops: Man! your app doesn't work after we deploys it. Developer: No way, it ran smoothly in my environment.
+e.g.  java web = os + jdk + tomcat + sources codes + configuration. (jdk version, tomcat version, configuration depends on local environment)
+in docker, all of these are packaged into container. you can run the container everywhere. 
+therefore, docker solved the problem of environment inconsistency
+3.2) Protection of system resources available to certain applications: Application running slow because multiple application running in the same server, the problem in another applications such as memory leakage, poor algorithm slowing down other applications.  
+3.3) Scalability: Christmas promotion is coming, our server will not be able to support the traffic..., but it doesn't make sense to buy 10 more server just for the a few days of the year. By using docker, ops can increase the server from 10 to 100, 1000 by one click!
+Docker can be used to quicky scale an application. 
+
+4. Key concepts:
+- image = the package of the application
+- repository = the place store the application
+- container = the place to run the application
+- build image; pull image from repository, run image as container 
+- pull "mirror" from "repository", run "mirror" as "container"
+- what exactly is image? image are just a bunch of files, such as our applications and application's environments; files are stored by layers(linux kernel -> centos -> jdk -> tomcat -> app (all readonly) -> writable (log, configuration etc.))
+- what exactly is container? container is a process. you can think of container as a virtual machine, the image is like all of files in a virtual machine.
+- what exactly is repository? hub.docker.com
+- 5-2 第一个Docker容器
+
+Docker Engine
+Docker Image（镜像）
+Docker Container（容器）
+Docker Registry（仓库）
+
+3. Use cases
+
+4. Simple examples
+4.1 Hello World
+- docker pull
+- docker image
+- docker run IMAGENAME
+
+4.2 Nginx
+- search nginx in docker repository
+- docker pull nginx:latest
+- docker image
+- docker run -d nginx:latest (run in background)
+- docker ps (check running container) 
+- docker exec -it CONTAINERID bash (run a command in a running container interactively using a pseudo-TTY)
+- execute linux command: ls, which nginx, ps -ef
+
+- docker network
+- linux use namespace to isolate resources: PID namespace, file namespace, network namespace
+- Bridge (default), Host(shared ip, port with host), None (do not communicate with outside)
+- port mapping (from docker container <-> host)
+- docker run -d -p 8080:80 (host:container) nginx:latest
+- netstat -na | grep 8080
+- localhost:8080
+- docker stop ID
+- docker run -d -P nginx:latest
+
+4.3 Build and run a java web application
+- Dockerfile: step-by-step instruction for docker to build an image.
+- docker build: execute the steps in Dockerfile 
+- download jpress war file: 
+
+- Dockerfile:
+from tomcat //use tomcat base image as the starting of building my own image
+COPY jpress.war /usr/local/tomcat/webapps  // check tomcat image information: CATALINA_HOME
+
+- docker build -t jpress:latest
+- docker run -docker -p 8888:8080 jpress:latest
+- netstat -na | grep 8888
+- docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 MYSQL_DATABASE=jpress mysql:latest
+
+4. Applications:
+- Continious integration 
+- Scalability of services 
+- easy deployment to reduce efforts of operations.
+
+5. Some examples
+- Jingdong uses 150K docker instances to support their 618 promotion day.
+- Tencent uses more than 10K docker instances to support their business.
+- Alibaba uses docker to support their business.
+
+6. use cases:
+- multiple docker container log to centralized area
+
+- 在我们的平台上，一台 16 核 32G 内存的虚拟机上，需要跑 500+ 个用户的应用（每个应用的功能可以认为是一个网站 + 一系列的 RESTful API），有两个事情很重要： 资源隔离：比如限制应用最大内存使用量，或者资源加载隔离等。 低消耗：虚拟化本身带来的损耗需要尽量的低
+
+- Docker依赖Linux LXC技术，轻量容器概念，其上实际运行的程序是在宿主机上的，本身不是完整的程序系统，也正是其特别之处。
+
+- Operations perspective:
+- what are the cons?
+- in docker swarm mode?
+- how do we manage docker container centrally? 
+- how do we manage the docker log file centrally?
+- security?
+- stateless vs. stateful applications
+
+
+Docker vs. Micro-Services
+
+Docker vs. DevOps/Continious Integration
+
+
+Page 1 - Docker: 
+Docker is an open source project to pack, ship, run any application as a lightweight container.
+Docker allows us to package an application with all its dependecies into a standardized unit.
+You can think of docker as a lightweight VM roughly, but it is different from Docker diagram, but they used different machanisms to achieve virtualization.
+- Hypervisor to virtualized a layer of hardware and an indepedent guest OS is installed for each VM
+- In contrast, Docker do not have Hypervisor, it has a Docker engine layer, Docker engine use LXC, namespace, control groups mechaniusm to achieve isolation and virtulization
+- Since docker doesn't need a full Guest OS, it has a faster startup time and less resource consumptions.
+- However, the Docker engine introduces a new layer of technologies, may require new way to monitor and control them, also new way of state management and presistence management (what kind of concerns do the Ops people have?)
+- very useful in case of stateless multiple server instance; docker适合批量重复的实例化
+- 对比传统虚拟机总结
+特性			容器					虚拟机
+启动			秒级					分钟级
+硬盘使用		一般为 MB			一般为 GB
+性能			接近原生				弱于
+系统支持量	单机支持上千个容器	一般几十个
+
+Page 2 - Docker Architecture
+Architecture diagram
+three flows
+
+Page 3 - Key concepts
+- container
+- image
+- registry
+- 
+
+Page 3 - Demo #1 - docker basics
+- docker run ubuntu echo hello docker //we ran a unbuntu and echo a 'hello docker' message
+- docker run nginx - p 8080:80 -d nginx //run an nginx application
+- curl localhost:8080 //test nginx server
+- docker cp index.html CONTAINERID://usr/share/nginx/html //copy index.html from host into nginx
+- docker stop CONTAINERID	//stop a container
+- docker commit -m 'fun' CONTAINERID nginx-fun //create a new nginx server based on existing images
+- docker images //show all the images
+- docker rmi IMAGEID //remove an image
+- docker ps //display running container
+- docker ps -a //display all running container including not running ones
+- docker rm CONTAINERID1 CONTAINERID2...
+
+Page 4 - Demo #2 - building docker image using dockerfile
+- dockerfile //it is like a linux script providing step-by-step instructions of creating a docker
+
+#Case#1 - Hello World
+- FROM alpine:latest #build from base image, like a base class in Java
+- MAINTAINER dwen #author is dwen
+- CMD echo 'hello dockerfile' #run echo 'hello dockerfile' in alpine, alpine is a version of linux created by docker
+- touch Dockerfile
+FROM alpine:latest
+MAINTAINER dwen
+CMD echo "I am building a docker image using dockerfile"
+- docker build -t hello_docker . 	#build an image from Dockerfile from current directory
+- docker images
+- docker run hello_docker
+
+#Case#2 - Nginx server
+- touch Dockerfile
+- vim Dockerfile
+FROM ubuntu  		#build from base image of ubuntu
+MAINTAINER dwen     #authur is dwen
+RUN apt-get update  #update ubuntu using apt-get
+RUN apt-get install -y nginx   	#install nginx using apt-get
+COPY index.html /var/www/html   #copy html files to /var/www/html
+ENTRYPOINT ["/usr/sbin/nginx", "-g", "daemon off;"] 		#program entrypoint, run nginx
+EXPOSE 80			#expose a port as http server
+- touch index.html; vi index.html 
+- docker build -t sentaca/hello-nginx .
+- docker run -d -p 80:80 sentaca/hello-nginx 
+- curl http://localhost
+
+Page 5 - layered of mirrors
+- layered approach 
+- container layer can be RW
+- image layer are read-only
+- layered approach can improve reuse
+
+Page 6 - Volume
+- Volumn can be used to persist data outside and outlived the containers
+- e.g. actual data of a database, log file etc
+- can be used to shared data across container
+
+#1 mounting a local folder to container
+- mkdir html
+- cd html && touch index.html && echo "mouting a volumn into docker container" > index.html
+- docker run -d -p 80:80 --name sentaca-nginx -v $PWD/html:/usr/share/nginx/html nginx #mount a local folder to the container, $PWD always point to current local directory in host
+
+#2 create a container just for data and the container can be mounted by multiple continers so that data can be shared
+- docker create =v $PWD/data:/var/mydata --name data_container ubuntu #create a data container based on ubuntu
+- docker run -it --volumn-from data_container ubuntu /bin/bash
+- #mount
+- #cd /var/mydata
+- #touch whatever.txt
+- #exit
+- ls
+
+Page 7 - Registry
+- Host: our pc
+- image: package of files that be used to create container
+- container: an running instance of images
+- registry: repository of images
+- daemon: the process running in the background
+- client: the command line interface to enter commands
+
+- docker search mysql
+- docker pull mysql
+- docker tag mysql sentaca/whalesay
+- docker login (enter username, password)
+- docker push sentaca/mysql
+- go to docker hub to search for image and look for developer's guides
+
+Page 8 - Docker Compose 项目
+- Docker Compose 是 Docker 官方编排（Orchestration）项目之一, it is a tool of defining and running multi-container Docker applications. e.g. running nginx, java web app, mysql at the same time
+- work with one container host and run a container or two, which is great for testing or local development.
+- docker-compose --version
+- picture: user->nginx->web application->mysql
+- 3 containers for nginx, web app, mysql
+- create three folders: webapp, nginx, data
+- use Dockerfile to build images for webapp, nginx, data
+- create a compose file: docker-compose.yaml
+- docker-compose.yaml specify a network for the services of nginx, build each webapp and db specify the dependency between the containers in the group
+
+version: '3'
+networks:
+	ghost:
+
+	services:
+		ghost-app:
+		build: ghost   (build from ghost )
+		networks:
+			- ghost
+		depends_on:
+			- db
+		ports:
+			-"2368:2368"
+
+	nginx:
+		build: nginx
+		networks:
+			- ghost
+		depends_on:
+			- ghost-app
+		ports:
+			- "80:80"
+
+
+	db:
+		image: "mysql:5.7.15" (pull from repository)
+		networks:
+			- ghost
+		environment:
+			MYSQL_ROOT_PASSWORD: mysqlroot
+			MYSQL_USER: ghost
+			MYSQL_PASSWORD: ghost
+		volumns: 
+			- $PWD/data:/var/lib/mysql 	(mount data folder, so that db data can outlive the container)
+			- ports: "3306:3306"
+
+- docker-compose up -d
+- docker-compose stop
+- docker-compose rm
+- docker-compose build
+
+Page 9 - Docker Machine 是 Docker 官方编排（Orchestration）项目之一，负责在多种平台上快速安装 Docker 环境。
+- https://yeasy.gitbooks.io/docker_practice/content/machine/ picture
+
+Install and run Docker on Mac or Windows
+Provision and manage multiple remote Docker hosts
+Provision Swarm clusters
+
+Page 10 - Docker Swarm
+- Docker Swarm 是 Docker 官方三剑客项目之一，提供 Docker 容器集群服务，是 Docker 官方对容器云生态进行支持的核心方案。
+- 使用它，用户可以将多个 Docker 主机封装为单个大型的虚拟 Docker 主机，快速打造一套容器云平台。
+- Swarm 是使用 SwarmKit 构建的 Docker 引擎内置（原生）的集群管理和编排工具。
+- 包括Docker Swarm（译者注：Docker集群工具）、Docker Machine（译者注：Docker管理工具）以及Docker Compose（译者注：Docker编排工具）。
+
+
+Page 11 - Docker 
+- Swarm is docker's cluster management and orchestration features
+- With Docker Swarm we’re now going to turn that small test environment into a larger setup of clustered container hosts that can be used to scale your operations into something even more useful. This is a bit more advanced and will involve things like service discovery, clustering, and remote management.
+- A swarm consists of multiple Docker hosts which run in swarm mode and act as managers (to manage membership and delegation) and workers (which run swarm services).
+- When you create a service, you define its optimal state (number of replicas, network and storage resources available to it, ports the service exposes to the outside world, and more). Docker works to maintain that desired state. 
+-  A task is a running container which is part of a swarm service and managed by a swarm manager, as opposed to a standalone container.
+
+- use tools to set up container hosts (Machine), 
+Docker Machine is a tool that lets you install Docker Engine on virtual hosts, and manage the hosts with docker-machine commands. You can use Machine to create Docker hosts on your local Mac or Windows box, on your company network, in your data center, or on cloud providers like Azure, AWS, or Digital Ocean.
+- manage multiple containers linked together (Compose), 
+- and treating your container hosts as a cluster (Swarm).
+
+Using docker-machine commands, you can start, inspect, stop, and restart a managed host, upgrade the Docker client and daemon, and configure a Docker client to talk to your host.
+
+Page 11 - Mesos、Kubernetes 
+
+If you work primarily on an older Mac or Windows laptop or desktop that doesn’t meet the requirements for the new Docker for Mac and Docker for Windows apps, then you need Docker Machine in order to “run Docker” (that is, Docker Engine) locally. Installing Docker Machine on a Mac or Windows box with the Docker Toolbox installer provisions a local virtual machine with Docker Engine, gives you the ability to connect it, and run docker commands.
+
+Docker Engine runs natively on Linux systems. If you have a Linux box as your primary system, and want to run docker commands, all you need to do is download and install Docker Engine. However, if you want an efficient way to provision multiple Docker hosts on a network, in the cloud or even locally, you need Docker Machine.
+
+
+- Managers and workers: A swarm consists of multiple Docker hosts which run in swarm mode and act as managers (to manage membership and delegation) and workers (which run swarm services).
+- Services: When you create a service, you define its optimal state (number of replicas, network and storage resources available to it, ports the service exposes to the outside world, and more). Docker works to maintain that desired state. 
+- Task: A task is a running container which is part of a swarm service and managed by a swarm manager, as opposed to a standalone container.
+
+- Node: A node is an instance of the Docker engine participating in the swarm. production swarm deployments typically include Docker nodes distributed across multiple physical and cloud machines.
+- Manager Node: Manager nodes can be used to deployed application and dispatch task to worker nodes. They also perform the orchestration and cluster management functions required to maintain the desired state of the swarm. 
+- Worker Node: Worker nodes receive and execute tasks dispatched from manager nodes. 
+- Services: A service is the definition of the tasks to execute on the manager or worker nodes.
+- replicated services: the swarm manager distributes a specific number of replica tasks among the nodes based upon the scale you set in the desired state.
+- global services: the swarm manager runs one task for the service on every available node in the cluster. 
+- Task: A task carries a Docker container and the commands to run inside the container. It is the atomic scheduling unit of swarm. 
+- Task: 
+
+docker swarm init --advertise-addr $(hostname -i)
+
+Creating services
+
+docker service create -p 80:80 --name web nginx:latest
+docker service ls
+
+inspect the service:
+
+docker service inspect web
+
+docker service scale web=15
+Docker has spread the 15 services evenly over all of the nodes
+
+docker service ps web
+
+docker node update --availability drain node2
+
+docker stack deploy --compose-file docker-compose.yml vossibility
+
+
+#Docker container networking
+- docker network ls
+- 
+http://training.play-with-docker.com/docker-networking-hol/#task1
+- The docker network command is the main command for configuring and managing container networks.
+- Default networks: When you install Docker, it creates three networks automatically. You can list these networks using the docker network ls command.
+- These three networks are built into Docker. When you run a container, you can use the --network flag to specify which networks your container should connect to.
+- The bridge network represents the docker0 network present in all Docker installations. Unless you specify otherwise with the docker run --network=<NETWORK> option, the Docker daemon connects containers to this network by default.
+
+- only one Linux kernel in Docker
+- Docker over virtual machine
+- Container from AWS
+- network: network namespace
+- dockerize applications
+- VAS team, people are mostly from operations
+- most of applications running on Docker
+- some VM
+- CI pipeline
+- plugin in Jenkins
+- registry, pull from staging
+- swarm, charging. Docker is used.
+
+- what are Docker being used for? for development/qa and/or production?
+they have 2 VMs, almost every applications are dockerized.
+- what kind of applications are currently supported by docker? web tier, application tier, database tier or any business areas specifically?
+same as above
+- what are the scale of the docker container deployment? 10s, 100s, or 1000s?
+2 instances of docker, one on each VM
+- what kind of orchestration tool do they use? Docker Swarm, Kubernetes, Meso...?
+Charging team uses Docker swarm
+- do they use private registry to host their own images?
+yes. they have a CI pipeline: pull from git repository, move into Jenkins, Jenkins will use docker plugin to create image and push the image into repository. Operations can pull the image from the server.
+- do they have any corporate standard on virtualization technology? what are the direction?
+they used both VM and docker.
+- do they have any specific concerns (security, maturity of the technology, complexity...)?
+not really.
+
+- what base image do we want to use?
+tomcat, jdk or linux (and add JDK and Tomcat)
+
+#Dockerfile
+- FROM 是必备的指令，并且必须是第一条指令。
+- 在 Docker Store 上有非常多的高质量的官方镜像
+- 有可以直接拿来使用的服务类的镜像，如 nginx、redis、mongo、mysql、httpd、php、tomcat 等；
+- 也有一些方便开发、构建、运行各种语言应用的镜像，如 node、openjdk、python、ruby、golang 等。
+- RUN 指令是用来执行命令行命令的。由于命令行的强大能力，RUN 指令在定制镜像时是最常用的指令之一。 有两种格式，一种类似于命令行，一种类似于函数调用。
+- RUN echo '<h1>Hello, Docker!</h1>' > /usr/share/nginx/html/index.html
+- RUN ["可执行文件", "参数1", "参数2"]
+- COPY package.json /usr/src/app/
+- COPY hom* /mydir/
+- COPY hom?.txt /mydir/
+- ADD 指令和 COPY 的格式和性质基本一致。但是在 COPY 基础上增加了一些功能
+- 比如 <源路径> 可以是一个 URL，这种情况下，Docker 引擎会试图去下载这个链接的文件放到 <目标路径> 去。
+- 所以不如直接使用 RUN 指令，然后使用 wget 或者 curl 工具下载，处理权限、解压缩、然后清理无用文件更合理。因此，这个功能其实并不实用，而且不推荐使用。
+- 在 Docker 官方的 Dockerfile 最佳实践文档 中要求，尽可能的使用 COPY，因为 COPY 的语义很明确
+- CMD 指令的格式和 RUN 相似，也是两种格式： shell 格式：CMD <命令>; exec 格式：CMD ["可执行文件", "参数1", "参数2"...]
+- CMD echo $HOME -> CMD [ "sh", "-c", "echo $HOME" ]
+- ENTRYPOINT 的目的和 CMD 一样，都是在指定容器启动程序及参数。ENTRYPOINT 在运行时也可以替代，不过比 CMD 要略显繁琐，需要通过 docker run 的参数 --entrypoint 来指定。
+
+
+1. solution we build before
+2. WBS
+3. rpm put into linux
+4. 
+
+Git lab (AWS)
+ci server (AWS)
+
+- Docker plugin
+
+
+2 VMs
+- VM#1: WBS(Spring MVC) + SMS Simulator 1 + SMS Simulator 2 
+- VM#2: MySQL database
+
+2.1 need to understand basic functionalities of WBS and SMS Simulator
+2.2 build a Spring MVC application image
+2.3 build a SMS Simulator image
+2.4 use docker compose to bring up a WBS and 2 sms simulator
+java -classpath simple-1.0-SNAPSHOT.jar org.atwjsw.javaapp.App
+https://codefresh.io/docker-guides/dockerize-java-application/
+2.5 integrate with Jenkins
+2.6 export import docker image without using registry
+http://blog.csdn.net/a906998248/article/details/46236687
+
+
+ENTRYPOINT ["java","-classpath","app.jar","org.atwjsw.javaapp.EchoServer", "5001"]
+
+ENTRYPOINT ["java","-classpath","app.jar","org.atwjsw.javaapp.EchoClient", "server", "5001"]
+
+docker network create client_server_network
+
+docker run --network-alias server --network client_server_network -it echo-server
+
+docker run --network client_server_network -it echo-client
+
+#Enter a container
+docker exec -it test-wordpress bash
+
+#if two container wants to talk to each other, they need to be on the same logical network. (overlay network??)
+#if docker compose, sepcify same network and --network-alias server
+# how to run build mysql image
+
+#MySQL in a container?
+- version?
+docker run --name=test-mysql --env="MYSQL_ROOT_PASSWORD=mypassword" mysql
+docker logs test-mysql
+docker inspect test-mysql  //"IPAddress": "172.17.0.2",
+docker rm -f test-mysql //stop and remove container
+docker run --detach --name=test-mysql --env="MYSQL_ROOT_PASSWORD=mypassword" --publish 6603:3306 mysql
+mysql -uroot -pmypassword -h 127.0.0.1 -P 6603
+
+CREATE DATABASE testDB;
+
+USE testDB;
+
+CREATE TABLE Persons (
+    PersonID int,
+    LastName varchar(255),
+    FirstName varchar(255),
+    Address varchar(255),
+    City varchar(255) 
+);
+
+INSERT INTO Persons (PersonID, LastName, FirstName, Address, City) VALUES (1, 'Daniel', 'Wen', '267 William Graham', 'Aurora');
+INSERT INTO Persons (PersonID, LastName, FirstName, Address, City) VALUES (2, 'Andrew', 'Wen', '267 William Graham', 'Aurora');
+INSERT INTO Persons (PersonID, LastName, FirstName, Address, City) VALUES (3, 'Jonathan', 'Wen', '267 William Graham', 'Aurora');
+INSERT INTO Persons (PersonID, LastName, FirstName, Address, City) VALUES (4, 'Michelle', 'Wen', '267 William Graham', 'Aurora');
+
+INSERT INTO testtab (name) VALUES ('Daniel Wen');
+INSERT INTO testtab (name) VALUES ('Andrew Wen');
+INSERT INTO testtab (name) VALUES ('Jonathan Wen');
+
+records will only be available in the docker be ran, if the docker is removed, it will be gone;
+
+#MySQL Data storage??
+- create a new directory
+mkdir C:\Users\wenda\Documents\storage\docker\mysql-datadir
+
+- docker run -d --name=new-mysql --env="MYSQL_ROOT_PASSWORD=mypassword" -p 6603:3306 -v C:\Users\wenda\Documents\storage\docker\mysql-datadir:/var/lib/mysql mysql
+
+#MySQL schema built into image??
+FROM mysql
+COPY database.sql /...
+COPY conf /...conf
+CMD [database.sql]
+EXPOSE: 3306
+
+### MySQL approach
+1) mkdir docker/mysql
+
+2) copy schema.sql to vm
+#create database test;
+use test;
+CREATE TABLE testtab
+(
+id INTEGER AUTO_INCREMENT,
+name TEXT,
+PRIMARY KEY (id)
+) COMMENT='this is my test table';
+
+3) copy Dockerfile to vm
+FROM mysql:5.7.15
+MAINTAINER daniel.wen@sentaca.com
+ENV MYSQL_DATABASE=test MYSQL_ROOT_PASSWORD=123456
+VOLUME /var/lib/mysql
+ADD schema.sql /docker-entrypoint-initdb.d
+EXPOSE 3306
+
+4) docker volume create mysql_data_volume
+5) docker build -t wbs-mysql .
+[Warning] IPv4 forwarding is disabled. Networking will not work.
+5) docker run -d --name wbs-mysql -v mysql_data_volume:/var/lib/mysql -p 3306:3306 wbs-mysql
+
+6) yum install mysql
+
+7) mysql -uroot -ppassword -h 127.0.0.1 -P 3306
+mysql -uroot -ppassword -h 192.168.246.203 -P 3306
+mysql -h 127.0.0.1 -P 3306 -uroot -ppassword -e "show databases;"
+
+8) mysql allow remote access
+https://www.imooc.com/article/16606
+CentOS7开启MySQL远程访问
+http://blog.csdn.net/u014066037/article/details/55194802
+1、关闭防火墙：sudo systemctl stop firewalld.service
+2、关闭开机启动：sudo systemctl disable firewalld.service
+3、安装iptables防火墙
+执行以下命令安装iptables防火墙：sudo yum install iptables-services
+4、配置iptables防火墙，打开指定端口（CentOS6一样）
+5、设置iptables防火墙开机启动：sudo systemctl enable iptables
+6. 修改防火墙配置文件
+vi /etc/sysconfig/iptables 
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT	#允许本机访问
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 3306 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+7. 重新加载规则
+service iptables restart  
+
+9) test connection: mysql -h 192.168.246.203 -P 3306 -uroot -ppassword -e "show databases;"
+
+TO DO: 
+1. test on local virtual machine
+2. test on AWS VM
+
+mysql container + data container
+
+#先检查是否安装了iptables 
+service iptables status 
+#安装iptables 
+yum install -y iptables 
+#升级iptables 
+yum update iptables 
+#安装iptables-services 
+yum install iptables-services
+
+1.开放mysql访问端口3306
+
+
+
+
+
+
+# Add VOLUMEs to allow backup of config, logs and databases
+VOLUME  ["/etc/postgresql", "/var/log/postgresql", "/var/lib/postgresql"]
+
+
+systemctl start docker.service
+
+tee /etc/yum.repos.d/docker.repo <<-'EOF' 
+[dockerrepo] name=Docker Repository 
+baseurl=https://yum.dockerproject.org/repo/main/centos/$releasever/ 
+enabled=1 
+gpgcheck=1 
+gpgkey=https://yum.dockerproject.org/gpg 
+EOF
+
+
+ 
