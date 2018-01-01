@@ -14,12 +14,141 @@ IDEA configuration:
 10. Deployment->artifact->select mmall.war
 11. verify by http://localhost:8080
 
-Git initilization:
-- create repository
-- 
+#imooc IDEA course
+1) view -> tool buttons
 
-https://www.facebook.com/v2.5/dialog/oauth?
-client_id=865281030289794
-&response_type=code
-&redirect_uri=http%3A%2F%2Fatwjsw.s1.natapp.cc%2Fconnect%2Ffacebook&
-scope=user_posts&state=787b0f23-f420-47f7-b842-c91ac1f58285
+2) Window: 0:Make Messages 1:Project 2:Favorites 3: Find 4:Run 5: Debug 6: ToDo 7: Structure 8: hierachy window 9: version control
+*- alt+2 -> favorites (bookmarks, breakpoints...)
+*- esc -> main code window
+*- ctrl+z undo
+*- ctrl+shift+z redo
+*- run a new class: ctrl+shift+f10
+*- rerun a class: shift+f10
+*- debug a a new class: ctrl+shift+f9
+*- re-debug a class: shift+f9
+
+4) Navigate: 
+- between project: ctrl+alt+[]
+- betweeb file: ctrl+e -> recent files; shift+ctrl+e -> recent edited changed files
+- last edited position: ctrl+shift+backspace
+- last browse position: ctrl+alt+->; ctrl+alt+<-
+*- between bookmark: f11 (useful for source reading and understanding), ctrl+f11 memonic bookmark, ctrl+1, ctrl+2, ctrl+3
+- add to favourites: alt+F, put cursor on method name: alt+F to add method to favorites
+
+5) install plugins
+Help->find actions->plugins+enter->browse->emacsIDEA
+
+6) search:
+*6.1) search class: ctrl+N; ctrl+N+N search dependency jar as well
+*6.2) search file: ctrl+shift+N; ctrl+shift+N+N
+6.3) search symbol (method, field...): ctrl+alt+shift+N; ctrl+alt+shift+N+N
+*6.4) search string: ctrl+shift+F
+
+7) editing:
+*7.1) move caret to next/previous word: ctrl+->/<-
+*7.2) move caret to line start/end: Home/End
+*7.3) move caret to line start/end: ctrl+Home/End
+*7.4) highlight/select above contents: +shift
+e.g. hight from caret to line end: end + shift
+e.g. highlight next word: ctrl+shift+->
+7.5) shift a line up/down: ctrl + shift + UP/DOWN
+7.6) change to uppercase/lowercase: ctrl+shift+UP+UP
+7.6) multi-cursor: ctrl+shift+alt+J -> select all and then edit all
+*7.7) reformat code: ctrl+alt+L
+- can be applied only to highlighted area
+
+8) live template
+ctrl+shift+A中配置
+live templates 可自定义代码的简写
+- psvm
+- psfi
+- psfs
+
+9）postfix
+- 100.fori: value.fori + enter
+- sout: user.field + enter
+- field: user.field + enter
+- return: use.return enter
+- nn (not null): user.nn + enter
+
+10) alter + enter
+- create method
+- list replace: for -> foreach
+- string format: string1 + string2 -> String.format("...")
+- string build: string1 + string2 ->stringBuilder.append(str1).append(str2)
+- implements interface: highlight interface name + alt + enter
+- spelling: highlight word + alt+ enter -> change to
+- import package
+
+11) refector
+- refactor variable: shift + f6
+- refactor method signature: ctrl + f6
+- extract to local variable: ctrl + alt + v -> replace all x occurences
+- extract to static variable: ctrl+alt+c => replace all occurances
+- extract to field variable: ctrl+alt+field
+- extract to parameter: ctrl+alt+p
+- extract to function: ctrl+alt+m
+
+12) track change and find author
+- git integration
+- annotate: highlight code -> right click the side bar -> annotate - > view commit information
+*- view all changes from last commit:  ctrl+shift+alt+DOWN/UP
+*- cancel change: ctrl+alt+Z
+
+13) local history
+- find action-> local history -> show history
+- put label (without version control)
+
+14) 关联一切
+14.1）与spring关联
+- compile time association
+*- file -> project structure -> facet -> spring -> choose module -> mapped spring files -> 出现Spring标志 -> nagivate to context file -> navigate to spring bean
+
+14.2) 数据库关联
+*- database -> + -> enter database properties -> in myBatis can use database table name prompt
+
+15) debug
+*- add debug points: ctrl+f8
+*- run: shift + f10
+*- debug: shift + f9
+*- step over: f8
+*- resume: f9
+- view all break-points: ctrl+shift+f8
+*- mute breakpoints: click icon on sidebar of debug 
+*- set condition of breakpoint: cursor on breakpoint line + ctrl+shift+f8 (衹有儅條件滿足才觸發breakpoint）
+*- evaluate expression": shift+f9 begin debug + on breakpoint line + alt+ f8 -> enter expression （觀察每次循環中值的變化）
+- 运行到指定行：  run to cursor: alt+f9
+- setValue: shift+f9 begin debug + in debug/variables window + click variable + f2 + enter value （儅需要設置特定值以執行以下程序時使用）
+
+16) run anyway if you can
+- running in current context: ctrl+shift+f9
+- select running context: shift+alt+f9:  
+
+17) 文件操作： 
+- ctrl+A 全选，ctrl+c 复制， alt+insert 当前文件夹添加文件
+- copy current file to other location: f5
+- move current file to other location: f6
+
+18) 文本操作
+*- copy file name: ctrl+c
+*- copy path name: ctrl+shift+c
+- batch copy: ctrl+c on multipe file -》 ctrl+shift+v to get clipboard + 1, 2, 3, 4
+
+19) 结构图： 
+*- File structure： ctrl+f12 to see field and method or alt+7-> structure
+*- check maven dependency: go to pom.xml -> right click -> maven -> show dependencies (or ctrl+alt+shift+U)  
+*- right click on maven file -> add as maven project
+*- Type Hierachy: In class -> ctrl+shift+alt+U
+*- ctrl + f4 to close a open tab
+* - f4 open source file from hierachy window
+- Hierachy window: ctrl+H
+- method call hierachy: click method + ctrl+alt+H
+
+
+
+
+
+
+
+
+

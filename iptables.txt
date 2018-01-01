@@ -47,6 +47,13 @@ iptables 	-t filter/nat  	-A -D -L -F  	INPUT, FORWARD			-p tcp						-j ACCEPT
 14. iptables -I INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT   #允许本机访问外部服务， 否则无法访问外部
 15. curl -I http://www.imooc.com #只返回头信息
 16. 只允许某台主机访问： iptables -I INPUT -p tcp -s 10.10.188.233 --dport 80 -j ACCEPT #只允许10.10.188.233访问80端口
+17. 允许某网段主机访问： iptables -I INPUT -s 10.10.188.0/24 -j ACCEPT # 允许10.10.188.1-254访问所有服务
+表示网络ID是10.10.10.0,24表示子网掩码为255.255.255.0
+也就是网段可用IP位10.10.10.1-254
+0是网络ID，255是广播地址
+18. 对外网开放80（HTTP）和1723端口（VPN）： 
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp --dport 1723 -j ACCEPT
 
 #ftp场景
 1. 主动模式 （PORT 20） vs. 被动模式 （PORT21）
@@ -56,4 +63,7 @@ iptables 	-t filter/nat  	-A -D -L -F  	INPUT, FORWARD			-p tcp						-j ACCEPT
 5. 主动模式iptables需要开启21端口的访问权限
 iptables -I INPUT -p  tcp -dport 21 -j ACCEPT
 
-
+#保存iptables
+1. /etc/init.d/iptables save #save previous commands entered into /etc/sysconfig/iptables
+2. vi /etc/sysconfig/iptables
+3. chkconfig iptables on	#设置iptables开机启动
