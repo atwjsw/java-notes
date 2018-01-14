@@ -1,8 +1,8 @@
 1) 创建版本库，add/commit
-1.1) 初始化一个Git仓库，使用git init命令。
+*1.1) 初始化一个Git仓库，使用git init命令。
 1.2) 添加文件到Git仓库，分两步：
-1.2.1) git add <file>，注意，可反复多次使用，添加多个文件；
-1.2.2) git commit，完成。
+*1.2.1) git add <file>，注意，可反复多次使用，添加多个文件；
+*1.2.2) git commit，完成。
 1.2.3) 每当你觉得文件修改到一定程度的时候，就可以“保存一个快照”，这个快照在Git中被称为commit。一旦你把文件改乱了，或者误删了文件，还可以从最近的一个commit恢复，然后继续工作，而不是把几个月的工作成果全部丢失。
 
 2) Core concepts： Working Directory - stage - repository
@@ -11,41 +11,38 @@
 2.3) stage: Git的版本库里存了很多东西，其中最重要的就是称为stage（或者叫index）的暂存区
 2.4) master: repositary中Git为我们自动创建的第一个分支master，
 2.5) HEAD: repository以及指向master的一个指针叫HEAD。
-2.6) 把文件往Git版本库里添加是分两步执行的： (1)git add把文件修改添加到暂存区；(2)git commit把暂存区的所有内容提交到当前分支。
+2.6) 把文件往Git版本库里添加是分两步执行的： (1)git add把文件修改添加到stage暂存区；(2)git commit把暂存区的所有内容提交到repository当前分支。
 2.7) 一旦提交后，如果你又没有对工作区做任何修改，那么工作区就是“干净”的
 
 2) 查看状况
-2.1）git status: 要随时掌握工作区的状态
-2.2）git diff: 查看工作区和版本库里面最新版本的区别
-2.2.1) git diff readme.txt: the difference between working directory and stage
+*2.1）git log： 查看历史记录(以便确定要回退到哪个版本)
+一大串类似3628164...882e1e0的是commit id（版本号），和SVN不一样，Git的commit id不是1，2，3……递增的数字，而是一个SHA1计算出来的一个非常大的数字，用十六进制表示
+*2.2) git log --pretty=oneline --abbrev-commit: display each commit in one line and only 6 characters of commit id.
+*2.1）git status: 要随时掌握工作区的状态
+*2.2) git diff <filename>: working directory vs. stage (工作目录 vs 暂存区)
+*2.3) git diff --cached <filename>: stage vs repository(most recent commit) 暂存区 vs Git仓库
+*2.4) git diff <commit> readme.txt: difference between working directory and commit id
+*2.5) git diff <commit> <commit>: Git仓库 vs Git仓库
+*2.6) gitk &: visual display of commits and branches
+*2.7) git remote show origin: 查看remote repositoires url, branches tracking remote branches
+
 2.2.2) git diff HEAD -- readme.txt： difference between working directory and HEAD 
-2.2.3) git diff 0d7716a -- readme.txt: difference between working directory and commit id 0d7716a
-2.3）git log： 查看历史记录(以便确定要回退到哪个版本)
-2.3.1）一大串类似3628164...882e1e0的是commit id（版本号），和SVN不一样，Git的commit id不是1，2，3……递增的数字，而是一个SHA1计算出来的一个非常大的数字，用十六进制表示
 2.4) HEAD表示当前版本，也就是最新的提交3628164...882e1e0，上一个版本就是HEAD^，上上一个版本就是HEAD^^，当然往上100个版本写100个^比较容易数不过来，所以写成HEAD~100
 2.6) 要重返未来，用git reflog查看命令历史，以便确定要回到未来的哪个版本。
 2.7) Use git gui to visualize the timeline of commit history
 
 4) 管理修改
-4.1) Git比其他版本控制系统设计得优秀，因为Git跟踪并管理的是修改，而非文件。
-2.5) git reset: untstage
-2.5.1) git reset --hard commit_id: reset the <file> in stage and working directory with commit_id version. git reset --hard 3628164
-2.5.2) git reset HEAD <file>..." to unstage： reset the <file> in stage with the version in HEAD without updating the working directory
-2.5.3) --hard: reset working directory as well.
-4.2) 场景1：当你改乱了工作区某个文件的内容，想直接丢弃工作区的修改时，用命令git checkout -- file。
-use "git checkout -- <file>..." to discard changes in working directory: reset the working directory with the stage version or HEAD in repository
-4.2) 场景2：当你不但改乱了工作区某个文件的内容，还添加到了暂存区时，想丢弃修改，分两步，第一步用命令git reset HEAD file，就回到了场景1，第二步按场景1操作。
-git reset HEAD <file>
-git checkout -- <file>
-4.3) 场景3：已经提交了不合适的修改到版本库时，想要撤销本次提交，参考版本回退一节，不过前提是没有推送到远程库。
-git log
-git reflog
-git reset --hard 4551b71: HEAD is now at 4551b71 remove test.txt and working and stage replaced with 4551b71, all changes in working directory and stage are discarded.
+- Git比其他版本控制系统设计得优秀，因为Git跟踪并管理的是修改，而非文件。
+*4.1) git checkout -- file: 将working directory恢复到stage状态
+*4.2）git reset HEAD file:  reset the <file> in stage with the version in HEAD without updating the working directory
+*4.3) git reset HEAD file --hard: reset working directory as well.
+*4.4) git reset --hard 4551b71: HEAD is now at 4551b71 remove test.txt and working and stage replaced with 4551b71, all changes in working directory and stage are discarded.
+已经提交了不合适的修改到版本库时，想要撤销本次提交，参考版本回退一节，不过前提是没有推送到远程库。
 
 5) 删除文件
-5.1) rm test.txt: use rm delete file from file system, Git知道你删除了文件，因此，工作区和版本库就不一致了，git status命令会立刻告诉你哪些文件被删除了
+*5.1) rm test.txt: use rm delete file from file system, Git知道你删除了文件，因此，工作区和版本库就不一致了，git status命令会立刻告诉你哪些文件被删除了
 5.2) git rm test.txt
-5.3) git commit -m "remove test.txt"
+*5.3) git commit -m "remove test.txt"
  
 6) 远程仓库概念
 6.1） 以上操作可以在Git仓库里对一个文件进行时光穿梭，你再也不用担心文件备份或者丢失的问题了。
@@ -54,28 +51,29 @@ git reset --hard 4551b71: HEAD is now at 4551b71 remove test.txt and working and
 6.4） 一台电脑上也是可以克隆多个版本库的，只要不在同一个目录下。不过，现实生活中是不会有人这么傻的在一台电脑上搞几个远程库玩，因为一台电脑上搞几个远程库完全没有意义
 6.5） 实际情况往往是这样，找一台电脑充当服务器的角色，每天24小时开机，其他每个人都从这个“服务器”仓库克隆一份到自己的电脑上，并且各自把各自的提交推送到服务器仓库里，也从服务器仓库中拉取别人的提交。
 6.6） 完全可以自己搭建一台运行Git的服务器
-6.7) 创建SSH Key。 Windows下打开Git Bash）： ssh-keygen -t rsa -C "youremail@example.com"
-6.8) 登陆GitHub，打开“Account settings”，“SSH Keys”页面： 在Key文本框里粘贴id_rsa.pub文件的内容
+*6.7) 创建SSH Key。 Windows下打开Git Bash）： ssh-keygen -t rsa -C "youremail@example.com"
+*6.8) 登陆GitHub，打开“Account settings”，“SSH Keys”页面： 在Key文本框里粘贴id_rsa.pub文件的内容
 6.7）为什么GitHub需要SSHKey呢？因为GitHub需要识别出你推送的提交确实是你推送的，而不是别人冒充的，而Git支持SSH协议，所以，GitHub只要知道了你的公钥，就可以确认只有你自己才能推送
-6.8) GitHub允许你添加多个Key。假定你有若干电脑，你一会儿在公司提交，一会儿在家里提交，只要把每台电脑的Key都添加到GitHub，就可以在每台电脑上往GitHub推送了。
+*6.8) GitHub允许你添加多个Key。假定你有若干电脑，你一会儿在公司提交，一会儿在家里提交，只要把每台电脑的Key都添加到GitHub，就可以在每台电脑上往GitHub推送了。
 6.9) 在GitHub上免费托管的Git仓库，任何人都可以看到喔（但只有你自己才能改）。所以，不要把敏感信息放进去。
 6.10) 如果你不想让别人看到Git库，有两个办法，一个是交点保护费，让GitHub把公开的仓库变成私有的，这样别人就看不见了（不可读更不可写）。另一个办法是自己动手，搭一个Git服务器，公司内部开发必备。
 
 7）远程仓库操作
-7.1）git remote add origin git@github.com:atwjsw/learngit.git： 添加远程库， 
-7.1.1) 可以添加多个远程库： git remote add heroku https://git.heroku.com/sbia-readinglist-atwjsw.git
-7.1.2）这样便可以向多个远程库推送：git push heroku master
-7.2）本地Git仓库关联GitHub远程仓库，让这两个仓库进行远程同步，这样，GitHub上的仓库既可以作为备份，又可以让其他人通过该仓库来协作
-7.3）远程库的名字就是origin，这是Git默认的叫法，也可以改成别的，但是origin这个名字一看就知道是远程库。
-7.4）git push -u origin master： 把当前分支master推送到远程并关联本地的master分支和远程的master分支
-7.5）由于远程库是空的，我们第一次推送master分支时，加上了-u参数，把本地的master分支和远程的master分支关联起来，在以后的推送或者拉取时就可以简化命令。
-7.6) git push origin master： 推送最新修改
+*7.1）git remote add origin git@github.com:atwjsw/learngit.git： 添加远程库， 
+*7.2) 可以添加多个远程库： git remote add heroku https://git.heroku.com/sbia-readinglist-atwjsw.git
+*7.3）这样便可以向多个远程库推送：git push heroku master
+*7.4）git push -u origin master： 把当前分支master推送到远程并关联本地的master分支和远程的master分支
+- 由于远程库是空的，我们第一次推送master分支时，加上了-u参数，把本地的master分支和远程的master分支关联起来，在以后的推送或者拉取时就可以简化命令。
+*7.6) git push origin master： 推送最新修改
+
 7.7）分布式版本系统的最大好处之一是在本地工作完全不需要考虑远程库的存在，也就是有没有联网都可以正常工作，而SVN在没有联网的时候是拒绝干活的！当有网络的时候，再把本地提交推送一下就完成了同步，真是太方便了！
 7.8) 从远程库克隆: 以上是先有本地库，后有远程库的时候，如何关联远程库。 假设我们从零开发，那么最好的方式是先创建远程库，然后从远程库克隆。
 7.9）首先，登陆GitHub，创建一个新的仓库，名字叫gitskills； 
 7.10）git clone git@github.com:atwjsw/gitskills.git
 7.11) 如果有多个人协作开发，那么每个人各自从远程克隆一份就可以了。 GitHub给出的地址不止一个，还可以用https://github.com/atwjsw/gitskills.git这样的地址。 Git支持多种协议，默认的git://使用ssh，但也可以使用https等其他协议。
 7.12) 使用https除了速度慢以外，还有个最大的麻烦是每次推送都必须输入口令，但是在某些只开放http端口的公司内部就无法使用ssh协议而只能用https。
+7.2）本地Git仓库关联GitHub远程仓库，让这两个仓库进行远程同步，这样，GitHub上的仓库既可以作为备份，又可以让其他人通过该仓库来协作
+7.3）远程库的名字就是origin，这是Git默认的叫法，也可以改成别的，但是origin这个名字一看就知道是远程库。
 
 8) 分支管理场景
 8.1) 分支在实际中有什么用呢？假设你准备开发一个新功能，但是需要两周才能完成，第一周你写了50%的代码，如果立刻提交，由于代码还没写完，不完整的代码库会导致别人不能干活了。如果等代码全部写完再一次提交，又存在丢失每天进度的巨大风险。
@@ -95,15 +93,18 @@ git reset --hard 4551b71: HEAD is now at 4551b71 remove test.txt and working and
 9.9）合并完分支后，甚至可以删除dev分支。删除dev分支就是把dev指针给删掉，删掉后，我们就剩下了一条master分支
 
 10）创建与合并分支操作
-10.1) git checkout -b dev: 创建+切换分支 (== #2+#3)
-10.2) git branch dev: 创建分支
-10.3) git checkout dev: 切换分支
-10.4) git branch: 查看分支
+*10.1) git checkout -b dev: 创建+切换分支 (== #2+#3)
+*10.2) git branch dev: 创建分支
+*10.3) git checkout dev: 切换分支
+*10.4) git branch: 查看分支
+*10.5) git branch -r: view remote branches
+*10.6) git branch -a: view all branches 
 10.5) 在dev分支上正常提交，比如对readme.txt做个修改，并提交：git add readme.txt； git commit -m "branch test"
 10.6）dev分支的工作完成，我们就可以切换回master分支： git checkout master
-10.5) git merge dev: 把dev分支的工作成果合并到master分支上
-10.6) 注意到上面的Fast-forward信息，Git告诉我们，这次合并是“快进模式”，也就是直接把master指向dev的当前提交，所以合并速度非常快。
-10.6) git branch -d dev: 删除分支
+*10.5) git merge dev: 把dev分支的工作成果合并到master分支上
+- 注意到上面的Fast-forward信息，Git告诉我们，这次合并是“快进模式”，也就是直接把master指向dev的当前提交，所以合并速度非常快。
+*10.6）git merge --no-ff -m "merge with no-ff" dev： 合并dev分支，请注意--no-ff参数，表示禁用Fast forward：
+*10.7) git branch -d dev: 删除分支
 
 11) 手工解决冲突
 11.1) 准备新的feature1分支，继续我们的新分支开发： git checkout -b feature1
@@ -113,18 +114,18 @@ git reset --hard 4551b71: HEAD is now at 4551b71 remove test.txt and working and
 11.5）在master分支上修改readme.txt文件; git add readme.txt; git commit -m "& simple"
 11.6）git merge feature1: 这种情况下，Git无法执行“快速合并”，只能试图把各自的修改合并起来，但这种合并就可能会有冲突
 11.7）Git告诉我们，readme.txt文件存在冲突，必须手动解决冲突后再提交。git status也可以告诉我们冲突的文件
-11.8）git merge 同时会在working directory的readme.txt中添加冲突的内容，Git用<<<<<<<，=======，>>>>>>>标记出不同分支的内容
-11.9）在master分支上修改readme.txt文件; git add readme.txt; git commit -m "conflict fixed"
-11.10）git log --graph --pretty=oneline --abbrev-commit： 用带参数的git log也可以看到分支的合并情况
+*11.8）git merge 同时会在working directory的readme.txt中添加冲突的内容，Git用<<<<<<<，=======，>>>>>>>标记出不同分支的内容
+*11.9）在master分支上修改readme.txt文件; git add readme.txt; git commit -m "conflict fixed"; the feature1 branch is merged implicilty
+*11.10）git log --graph --pretty=oneline --abbrev-commit： 用带参数的git log也可以看到分支的合并情况
 11.11）git branch -d feature1： 删除feature1分支
 
 12) 禁用Fast forward
-12.1) 通常，合并分支时，如果可能，Git会用Fast forward模式，但这种模式下，删除分支后，会丢掉分支信息。
-12.2) 通过强制禁用Fast forward模式，在merge时生成一个新的commit，以便从分支历史上就可以看出分支信息。
+- 通常，合并分支时，如果可能，Git会用Fast forward模式，但这种模式下，删除分支后，会丢掉分支信息。
+- 通过强制禁用Fast forward模式，在merge时生成一个新的commit，以便从分支历史上就可以看出分支信息。
 12.3）git checkout -b dev
 12.4）修改readme.txt文件，并提交一个新的commit
 12.5）git checkout master
-12.6）git merge --no-ff -m "merge with no-ff" dev： 合并dev分支，请注意--no-ff参数，表示禁用Fast forward：
+*12.6）git merge --no-ff -m "merge with no-ff" dev： 合并dev分支，请注意--no-ff参数，表示禁用Fast forward：
 
 13) 分支策略: 在实际开发中，我们应该按照几个基本原则进行分支管理
 13.1) 首先，master分支应该是非常稳定的，也就是仅用来发布新版本，平时不能在上面干活；
@@ -136,7 +137,7 @@ git reset --hard 4551b71: HEAD is now at 4551b71 remove test.txt and working and
 14.1) 在Git中，由于分支是如此的强大，所以，每个bug都可以通过一个新的临时分支来修复，修复后，合并分支，然后将临时分支删除。
 14.2) 假设你接到一个修复一个代号101的bug的任务时，很自然地，你想创建一个分支issue-101来修复它，但是，等等，当前正在dev上进行的工作还没有提交：
 14.3）并不是你不想提交，而是工作只进行到一半，还没法提交，预计完成还需1天时间。但是，必须在两个小时内修复该bug，怎么办？ 
-14.4) git stash: 可以把当前工作现场“储藏”起来，等以后恢复现场后继续工作：
+*14.4) git stash: 可以把当前工作现场“储藏”起来，等以后恢复现场后继续工作：
 14.5) 现在，用git status查看工作区，就是干净的（除非有没有被Git管理的文件），因此可以放心地创建分支来修复bug。
 14.6) 假定需要在master分支上修复，就从master创建临时分支：
 git checkout master
@@ -149,10 +150,10 @@ $ git branch -d issue-101
 14.9) 回到dev分支继续干活了
 $ git checkout dev
 $ git status //工作区是干净的，刚才的工作现场存到哪去了？
-14.10）git stash list： 查看stash
+*14.10）git stash list： 查看stash
 stash@{0}: WIP on dev: 6224937 add merge
 14.11）restore working directory from stash:
-14.11.1) git stash apply; git stash drop
+*14.11.1) git stash apply; git stash drop
 14.11.2) git stash pop
 14.11.3) git stash apply stash@{0}: restore a specific stash.
 
@@ -166,17 +167,16 @@ stash@{0}: WIP on dev: 6224937 add merge
 $ git branch -d feature-vulcan#2
 error: The branch 'feature-vulcan#2' is not fully merged.
 If you are sure you want to delete it, run 'git branch -D feature-vulcan#2'.
-15.7）git branch -D feature-vulcan: 如果要丢弃一个没有被合并过的分支，可以通过git branch -D <name>强行删除
+*15.7）git branch -D feature-vulcan: 如果要丢弃一个没有被合并过的分支，可以通过git branch -D <name>强行删除
 
 16)多人协作
 16.1) 当你从远程仓库克隆时，实际上Git自动把本地的master分支和远程的master分支对应起来了，并且，远程仓库的默认名称是origin。
-16.2) git remote: 查看远程库的信息
-16.3) git remote -v: 显示更详细的信息
+*16.2) git remote: 查看远程库的信息
+*16.3) git remote -v: 显示了可以抓取和推送的origin的地址。如果没有推送权限，就看不到push的地址
 origin  git@github.com:michaelliao/learngit.git (fetch)
 origin  git@github.com:michaelliao/learngit.git (push)
-16.4) 上面显示了可以抓取和推送的origin的地址。如果没有推送权限，就看不到push的地址。
-16.5) git push origin master: 推送分支, 就是把该分支上的所有本地提交推送到远程库。推送时，要指定本地分支，这样，Git就会把该分支推送到远程库对应的远程分支上
-16.6) 如果要推送其他分支，比如dev，就改成：git push origin dev
+*16.4) git push origin master: push local branch master to origin/master 推送分支, 就是把该分支上的所有本地提交推送到远程库。推送时，要指定本地分支，这样，Git就会把该分支推送到远程库对应的远程分支上
+*16.6) git push origin dev: 推送其他分支，比如dev
 16.7) 但是，并不是一定要把本地分支往远程推送，那么，哪些分支需要推送，哪些不需要呢？
 16.7.1) master分支是主分支，因此要时刻与远程同步；
 16.7.2) dev分支是开发分支，团队所有成员都需要在上面工作，所以也需要与远程同步；
@@ -188,20 +188,20 @@ origin  git@github.com:michaelliao/learngit.git (push)
 17.1) 多人协作时，大家都会往master和dev分支上推送各自的修改。
 17.2) 现在，模拟一个你的小伙伴，可以在另一台电脑（注意要把SSH Key添加到GitHub）或者同一台电脑的另一个目录下克隆
 git clone git@github.com:atwjsw/learngit.git
-17.3) 当你的小伙伴从远程库clone时，默认情况下，你的小伙伴只能看到本地的master分支。不信可以用git branch命令看看
-17.4) 要在dev分支上开发，就必须创建远程origin的dev分支到本地，于是他用这个命令创建本地dev分支
-$ git checkout -b dev origin/dev
-17.5) 开发完毕后推送：
-git push origin dev
+*17.3) 当你的小伙伴从远程库clone时，默认情况下，你的小伙伴只能看到本地的master分支。不信可以用git branch命令看看
+*17.4) git checkout -b dev origin/dev: 要在dev分支上开发，就必须创建远程origin的dev分支到本地，于是他用这个命令创建本地dev分支, Branch dev set up to track remote branch dev from origin.
+*17.5) git push origin dev: 开发完毕后推送, push local dev to origin/dev
 17.6）你的小伙伴已经向origin/dev分支推送了他的提交，而碰巧你也对同样的文件作了修改，并试图推送：
 $ git push origin dev
 17.7) 推送失败，因为你的小伙伴的最新提交和你试图推送的提交有冲突，解决办法也很简单，Git已经提示我们，先用git pull把最新的提交从origin/dev抓下来，然后，在本地合并，解决冲突，再推送：
 git pull 
-17.8) git pull也失败了，原因是没有指定本地dev分支与远程origin/dev分支的链接，根据提示，设置dev和origin/dev的链接
-git branch --set-upstream dev origin/dev or...
-git branch --set-upstream-to=origin/dev dev
-17.9) 这回git pull成功，但是合并有冲突，需要手动解决，解决的方法和分支管理中的解决冲突完全一样。解决后，提交，再push：
-git push origin dev
+*17.8) git branch --set-upstream dev origin/dev: git pull也失败了，原因是没有指定本地dev分支与远程origin/dev分支的链接，根据提示，设置dev和origin/dev的链接
+ or git branch --set-upstream-to=origin/dev dev
+*17.9) git pull 这回git pull成功，但是合并有冲突，需要手动解决，解决的方法和分支管理中的解决冲突完全一样。
+*11.8）git merge 同时会在working directory的readme.txt中添加冲突的内容，Git用<<<<<<<，=======，>>>>>>>标记出不同分支的内容
+*11.9）在dev分支上修改readme.txt文件; git add readme.txt; git commit -m "conflict fixed"; the feature1 branch is merged implicilty
+*11.10）git log --graph --pretty=oneline --abbrev-commit： 用带参数的git log也可以看到分支的合并情况
+*17.10) git push origin dev: 解决后，提交，再push：
 
 18) 多人协作的工作模式
 18.1) 首先，可以试图用git push origin branch-name推送自己的修改；
@@ -218,23 +218,23 @@ git push origin dev
 20）创建标签
 20.1) 首先，切换到需要打标签的分支上： (没有不同分支下tag这个概念，也就是说tag不是属于某个分支的，而是全局的tag,是对于commit编号的一个别称)
 git checkout master
-20.2) git tag v1.0
-20.3) git tag: 查看所有标签
+*20.2) git tag v1.0
+*20.3) git tag: 查看所有标签
 20.4) 默认标签是打在最新提交的commit上的。有时候，如果忘了打标签，比如，现在已经是周五了，但应该在周一打的标签没有打，怎么办？
 20.5) 方法是找到历史提交的commit id，然后打上就可以了：
 git log --pretty=oneline --abbrev-commit
-git tag v0.9 8216b3a
+*git tag v0.9 8216b3a
 20.6) git show v1.0: 查看标签信息
 20.7) 还可以创建带有说明的标签，用-a指定标签名，-m指定说明文字：
-$ git tag -a v0.1 -m "version 0.1 released" 3628164
+* git tag -a v0.1 -m "version 0.1 released" 3628164
 
 21) 操作标签
-21.1) git tag -d v0.1: delete tag
-21.2) git push origin v1.0: push tag to remote 
-21.3) git push origin --tags: 一次性推送全部尚未推送到远程的本地标签：
+*21.1) git tag -d v0.1: delete tag
+*21.2) git push origin v1.0: push tag to remote 
+*21.3) git push origin --tags: 一次性推送全部尚未推送到远程的本地标签：
 21.4) 如果标签已经推送到远程，要删除远程标签就麻烦一点，先从本地删除, 然后，从远程删除：
-git tag -d v0.9
-git push origin :refs/tags/v0.9
+*git tag -d v0.9
+*git push origin :refs/tags/v0.9
 
 22)使用Github
 22.1） 如何参与一个开源项目呢？比如人气极高的bootstrap项目，这是一个非常强大的CSS框架，你可以访问它的项目主页https://github.com/twbs/bootstrap，点“Fork”就在自己的账号下克隆了一个bootstrap仓库，然后，从自己的账号下clone：
@@ -244,8 +244,11 @@ git clone git@github.com:atwjsw/bootstrap.git
 22.4）如果你希望bootstrap的官方库能接受你的修改，你就可以在GitHub上发起一个pull request。当然，对方是否接受你的pull request就不一定了。
 
 23）自定义Git
-23.1） 在安装Git一节中，我们已经配置了user.name和user.email，实际上，Git还有很多可配置项。
-23.1.1）git config --global color.ui true： 让Git显示颜色，会让命令输出看起来更醒目：
+- 在安装Git一节中，我们已经配置了user.name和user.email，实际上，Git还有很多可配置项。
+*23.1）git config --global color.ui true： 让Git显示颜色，会让命令输出看起来更醒目：
+*23.2) git config --global user.name DanielWen
+*23.3) git config --global user.email wendaniel@hotmail.com
+*23.4) git config --global alias.co checkout
 
 24) 忽略特殊文件
 24.1) 有些时候，你必须把某些文件放到Git工作目录中，但又不能提交它们，比如保存了数据库密码的配置文件啦，等等，每次git status都会显示Untracked files 
@@ -256,8 +259,8 @@ git clone git@github.com:atwjsw/bootstrap.git
 忽略编译生成的中间文件、可执行文件等，也就是如果一个文件是通过另一个文件自动生成的，那自动生成的文件就没必要放进版本库，比如Java编译产生的.class文件；
 忽略你自己的带有敏感信息的配置文件，比如存放口令的配置文件。
 24.5) 检验.gitignore的标准是git status命令是不是说working directory clean。
-24.6) 有些时候，你想添加一个文件到Git，但发现添加不了，原因是这个文件被.gitignore忽略了：git add -f App.class
-24.7) 或者你发现，可能是.gitignore写得有问题，需要找出来到底哪个规则写错了，可以用git check-ignore命令检查： git check-ignore -v App.class
+24.6) git add -f App.class: 有些时候，你想添加一个文件到Git，但发现添加不了，原因是这个文件被.gitignore忽略了, 可以强制添加
+24.7) git check-ignore -v App.class： 或者你发现，可能是.gitignore写得有问题，需要找出来到底哪个规则写错了，可以用git check-ignore命令检查： 
 
 25)搭建Git服务器 <Test> <Test Failed>
 25.0) 远程仓库实际上和本地仓库没啥不同，纯粹为了7x24小时开机并交换大家的修改
@@ -304,10 +307,121 @@ git clone git@server:/srv/sample.git
 [push]
 	default = simple
 
+#Pro Git
+##Git Basics - Undoing Things
+1) git commit --amend: overwrite the previous commit without creating a new commit id.
+$ git commit -m 'initial commit'
+$ git add forgotten_file
+$ git commit --amend
 
+2) git reset HEAD <file>...: to unstage: reset file add to the stage area with the last commit
 
+3) git checkout -- <file>...: to discard changes in working directory
 
+4) Remember, anything that is committed in Git can almost always be recovered. However, anything you lose that was never committed is likely never to be seen again.
 
+5) Remote repositories are versions of your project that are hosted on the Internet or network somewhere. You can have several of them, each of which generally is either read-only or read/write for you.
 
+6) Managing remote repositories includes knowing how to add remote repositories, remove remotes that are no longer valid, manage various remote branches and define them as being tracked or not, and more.
 
+7) Showing Your Remotes: git remote
 
+8) git remote -v: which shows you the URLs that Git has stored for the shortname to be used when reading and writing to that remote
+
+9) To add a new remote Git repository as a shortname you can reference easily, run git remote add <shortname> <url>:
+git remote add pb https://github.com/paulboone/ticgit
+
+10) fetch all the information that Paul has but that you don’t yet have in your repository
+git fetch pb
+
+11) If your current branch is set up to track a remote branch (see the next section and Git Branching for more information), you can use the git pull command to automatically fetch and then merge that remote branch into your current branch.
+
+12) by default, the git clone command automatically sets up your local master branch to track the remote master branch (or whatever the default branch is called) on the server you cloned from. 
+
+13) Running git pull generally fetches data from the server you originally cloned from and automatically tries to merge it into the code you’re currently working on.
+
+14) how do I check out a development branch and work on it?
+First, clone a remote Git repository and cd into it:
+
+$ git clone git://example.com/myproject
+$ cd myproject
+Next, look at the local branches in your repository:
+
+$ git branch
+* master
+But there are other branches hiding in your repository! You can see these using the -a flag:
+
+$ git branch -a
+* master
+  remotes/origin/HEAD
+  remotes/origin/master
+  remotes/origin/v1.0-stable
+  remotes/origin/experimental
+If you just want to take a quick peek at an upstream branch, you can check it out directly:
+$ git checkout origin/experimental
+
+But if you want to work on that branch, you'll need to create a local tracking branch which is done automatically by:
+$ git checkout experimental 
+(git checkout -b dev origin/dev)
+
+and you will see
+Branch experimental set up to track remote branch experimental from origin.
+Switched to a new branch 'experimental'
+That last line throws some people: "New branch" - huh? What it really means is that the branch is taken from the index and created locally for you. The previous line is actually more informative as it tells you that the branch is being set up to track the remote branch, which usually means the origin/branch_name branch
+
+Now, if you look at your local branches, this is what you'll see:
+$ git branch
+* experimental
+  master
+
+15) View branch and commit information in GUI: gitk --all &
+
+16) how do I create a new development branch and work on it?
+
+git checkout -b <branch-name> # Create a new branch and check it out
+git push <remote-name> <branch-name>
+git push <remote-name> <local-branch-name>:<remote-branch-name> #when you omit one, it assumes both branch names are the same. 
+
+17) Having said this, as a word of caution, do not make the critical mistake of specifying only :<remote-branch-name> (with the colon), or the remote branch will be deleted!
+git push <remote-name> :<remote-branch-name>
+
+18) So that a subsequent git pull will know what to do, you might instead want to use:
+git push --set-upstream <remote-name> <local-branch-name> 
+
+19) Pushing to Your Remotes: When you have your project at a point that you want to share, you have to push it upstream. The command for this is simple: git push <remote> <branch>. 
+
+20) If you and someone else clone at the same time and they push upstream and then you push upstream, your push will rightly be rejected. You’ll have to fetch their work first and incorporate it into yours before you’ll be allowed to push. 
+
+21) Inspecting a Remote
+If you want to see more information about a particular remote, you can use the git remote show <remote> command.
+It lists the URL for the remote repository as well as the tracking branch information. 
+
+22) Creating Tags: Git supports two types of tags: lightweight and annotated. 
+Creating an annotated tag in Git is simple. The easiest way is to specify -a when you run the tag command:
+git tag -a v1.4 -m "my version 1.4"
+
+23) Another way to tag commits is with a lightweight tag. This is basically the commit checksum stored in a file — no other information is kept. To create a lightweight tag, don’t supply any of the -a, -s, or -m options, just provide a tag name:
+git tag v1.4-lw
+
+24) Tagging Later: You can also tag commits after you’ve moved past them.
+To tag that commit, you specify the commit checksum (or part of it) at the end of the command:
+$ git tag -a v1.2 9fceb02
+
+25) Sharing Tags: By default, the git push command doesn’t transfer tags to remote servers. You will have to explicitly push tags to a shared server after you have created them. This process is just like sharing remote branches — you can run git push origin <tagname>.
+git push origin v1.5
+git push origin --tags # push up all the tags
+
+26) Git doesn’t automatically infer your command if you type it in partially. If you don’t want to type the entire text of each of the Git commands, you can easily set up an alias for each command using git config. 
+$ git config --global alias.co checkout
+$ git config --global alias.br branch
+$ git config --global alias.ci commit
+$ git config --global alias.st status
+
+##Git Branching
+1) A branch in Git is simply a lightweight movable pointer to one of these commits. The default branch name in Git is master. As you start making commits, you’re given a master branch that points to the last commit you made. Every time you commit, it moves forward automatically.
+
+2) How does Git know what branch you’re currently on? It keeps a special pointer called HEAD.
+git log --oneline --decorate
+
+3) It’s important to note that when you switch branches in Git, files in your working directory will change. If you switch to an older branch, your working directory will be reverted to look like it did the last time you committed on that branch. If Git cannot do it cleanly, it will not let you switch at all.
+git log --oneline --decorate --graph --all

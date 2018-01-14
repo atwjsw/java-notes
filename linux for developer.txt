@@ -4,39 +4,48 @@ imooc linux for developer
 1）Centos positioning large enterprise, packages in them are relative old.
 2) ubuntu poistioning small companies, packages are new.
 3) realease.ubuntu.com version 12.04 LTS stable
-4) man rm; /r #search; n # go to next find; N previous find； g to the end, G to the begging; upper arrow/lower arrow one line up/down; q exit 
+*4) man rm; 
+- /wordToSeach #search; 
+- n # go to next find; 
+- N previous find； 
+- ctrl+f scroll 1 page down, 
+- ctrl+b scroll 1 page up; 
+- g to the begining, 
+- G to the end; 
+- UP/DOWN: one line up/down; q exit 
 5) linux file tree: partition: sda1 == c:, partition: sda2 == d:, but only one file tree, not like windows, each dirve has a tree
 6) absolute path: /wbs-docker/wbs/docker-compose.yml
 7) relative path: starts with . or ..: . == CWD; .. = parent of CWD
-8) cd tab+tab: list options
+*8) cd tab+tab: list options
 9) 查看文件类型： file
-10）create hidden file and directory: touch .aa; touch .mkdir
-11) view hidden file and directory: ls -a
-12) less: g+g to begnning; up/down one line up/down; /foo to search for foo and use n to go to next find; N go to previous find; G to the end; w to the next word.
-13) man and vim: use less so all command can be used.
-14) 通配符： 最重要是* rm a*; 先用 echo a* 看看会删除哪些文件
+*10）create hidden file and directory: touch .aa; touch .mkdir
+*11) view hidden file and directory: ls -a
+12) less: g to begnning; up/down one line up/down; /foo to search for foo and use n to go to next find; N go to previous find; G to the end; w to the next word.
+*- / + esc + enter -》 remove all current highlighed words
+*13) man and vim: use less so all command can be used.
+14) 通配符： 最重要是* rm a*; 先用 echo a* or ls a* 看看会删除哪些文件
 15）打包压缩： 
 三种格式： zip, tar.gz, tar.bz2
 6个命令：
 - unzip xxx.zip
 - zip -r newfile.zip zip-directory/
-- tar zxvf xxx.tar.gz
-- tar zxvf xxx.tar.gz -C /anotherDirectory
-- tar zcvf newfile.tar.gz tar-directory/
+*- tar zxvf xxx.tar.gz
+*- tar zxvf xxx.tar.gz -C /anotherDirectory
+*- tar zcvf newfile.tar.gz tar-directory/
 - tar jxvf xxx.tar.bz2
 - tar jcvf newfile.tar.bz2 tar-directory/
 
 #用户权限
-1) home is writable
-2) ctrl+a go to beginning of command line
+*1) home is writable
+*2) ctrl+a go to beginning of command line
 3) 3 types of permission: r + w + x (execution)
 4) 3 types user to file: owner + group + world (or others)
 5) permission is about: does owner has r/w/x permission to file? does group has has r/w/x permission to file? does world has r/w/x permission to file?
-6) file permission is implemented via file mode: drwxrwxrwx, d/-/l : file type, rwx: owner permission, rwx: group permission, rwx: other permission 
-7) ls -l .; ls -ld test # ls directory with permission
-8) chmod: chmod u+w file; chomod +x file; chmod 666 file; chmod 755 file 
-9) directory permission: rwx, w means permission to creare/delete/edit file in directory, x means permission to cd into the directory, r means list directory content
-10) chown username directory/filename: chown root testfile; chown wbs:wbs testfile
+*6) file permission is implemented via file mode: drwxrwxrwx, d/-/l : file type, rwx: owner permission, rwx: group permission, rwx: other permission 
+*7) ls -l .; ls -ld test # ls directory with permission
+*8) chmod: chmod u+w file; chomod +x file; chmod 666 file; chmod 755 file 
+*9) directory permission: rwx, w means permission to creare/delete/edit file in directory, x means permission to cd into the directory, r means list directory content
+*10) chown username directory/filename: chown root testfile; chown wbs:wbs testfile
 
 #重定向
 1) everything is file: file, directory, device (mouse, hardisk, placed under /dev)
@@ -47,16 +56,17 @@ imooc linux for developer
 6) <: input redirect; cowsay < output.txt
 7) pipeline: cat file | uniq | grep txt | sort
 
-
 #搜索
 - locate, find. grep
 - locate aa.sh
 - locate --regexp xxx
 - locate search database, need to run updatedb first to find newly find data
-- find . | grep c.txt #find c.txt
-- find . -type f #find file only
-- find . -type d #find directory only
-- find . -type f -exec grep -n hello '{}' ';' -print #search for any files with hello in its content
+*- find -name dir-007 -exec ls -ld '{}' ';'
+*- find -type d -name dir-007 -exec ls -ld '{}' ';'
+*- find . | grep c.txt #find c.txt
+*- find . -type f #find file only
+*- find . -type d #find directory only
+*- find . -type f -exec grep -n hello '{}' ';' -print #search for any files with hello in its content, showing line number
 - ack grep: better search for developer
 
 #软件安装
@@ -80,10 +90,10 @@ imooc linux for developer
 
 ## Install from apt-get repository
 - 软件仓库: apt-get can download a debian package from repository and install it
-- sudo apt-get install git
-- sudo apt-get remove git # remove package
-- sudo apt-get purge git # remove package and configuration
-- apt-cahce search git | less
+*- sudo apt-get install git
+*- sudo apt-get remove git # remove package
+*- sudo apt-get purge git # remove package and configuration
+*- apt-cahce search git | less
 
 #进程
 - ps aux 
@@ -96,9 +106,9 @@ imooc linux for developer
 
 #网络操作
 - ssh
-1) on server: sudo apt-get install openssh-server
-2) in client: ssh-keygen; cd ~/.ssh; ls -> id_rsa, id_rsa.pub;
-3) ssh-copy-id daniel@192.168.246.204 #install public key to server
+*1) on server: sudo apt-get install openssh-server
+*2) in client: ssh-keygen; cd ~/.ssh; ls -> id_rsa, id_rsa.pub;
+*3) ssh-copy-id daniel@192.168.246.204 #install public key to server
 4) ssh daniel@192.168.246.204
 - rsync
 1) rsync -r mydir 192.168.246.204: #copy file from client's mydir to server's user home
@@ -111,6 +121,7 @@ imooc linux for developer
 1) 脚本8个重要的知识点
 2）指定解析器
 #!/user/bin/env bash
+#!/bin/bash
 3） 语句即命令
 - echo "hello"; touch aa.txt
 - OR use function:
@@ -147,9 +158,20 @@ do
   mv $file $file.txt
 done
 
-7）远程执行
-ssh -t daniel@192.168.246.204 'touch aka.txt'
+#!/bin/bash
+echo "starting..."
+for i in {1..5}
+    do
+    	if [ $((i%2)) -eq 0 ]; then
+    	    echo $i" is an even number"
+    	else
+    	    echo $i" is an odd number"
+    	fi
+done
 
+
+7）远程执行
+ssh -t daniel@192.168.246.204 'touch aka.txt' #  -t Force pseudo-tty allocation.  This can be used to execute arbitrary screen-based programs on a remote machine
 
 8） 执行确认
 9）其他语言写脚本
@@ -163,10 +185,10 @@ Linux command line book
 3) Plain ASCII text files contain only the characters themselves and a few rudimentary control codes like tabs, carriage returns and line feeds.
 4) a special kind of a file called a symbolic link (also known as a soft link or symlink.)
 5) Whenever you use wildcards with rm, test the wildcard first with ls.
-6) ln – Create Links: ln file link //create hard link; ln -s file link //create symbolic link
+*6) ln – Create Links: ln file link //create hard link; ln -s file link //create symbolic link
 7) Symbolic links work by creating a special type of file that contains a text pointer to the referenced file or directory. 
-8) if you write some something to the symbolic link, the referenced file is also written to. However when you delete a symbolic link, only the link is deleted, not the file itself. 
-9) If the file is deleted before the symbolic link, the link will continue to exist, but will point to nothing. In this case, the link is said to be broken.
+*8) if you write some something to the symbolic link, the referenced file is also written to. However when you delete a symbolic link, only the link is deleted, not the file itself. 
+*9) If the file is deleted before the symbolic link, the link will continue to exist, but will point to nothing. In this case, the link is said to be broken.
 10) ls -li: the first field is the inode number and, as we can see, both fun and fun-hard share the same inode number, which confirms they are the same file.
 11) when we create a symbolic link, we are creating a text description of where the target file is relative to the symbolic link.
 ln -s fun fun-sym
@@ -179,15 +201,15 @@ ln -s ../fun dir2/fun-sym
 - A command built into the shell itself. e.g. cd
 - A shell function. These are miniature shell scripts incorporated into the environment.
 - An alias.
-2) type: type less; type ls; type ll; type cd
-3) which – Display An Executable's Location: Sometimes there is more than one version of an executable program installed on a system. To determine the exact location of a given executable, the which command is used: which ls
+*2) type: type less; type ls; type ll; type cd
+*3) which – Display An Executable's Location: Sometimes there is more than one version of an executable program installed on a system. To determine the exact location of a given executable, the which command is used: which ls
 4) help – Get Help For Shell Builtins: help cd
 5) --help – Display Usage Information: mkdir --help: 
-6) man – Display A Program's Manual Page: man ls; man 5 passwd
+*6) man – Display A Program's Manual Page: man ls; man 5 passwd
 7) apropos – Display Appropriate Commands: apropos floppy
-8) whatis – Display A Very Brief Description Of A Command: whatis ls
-9) info – Display A Program's Info Entry: info coreutils
-10) Creating Your Own Commands With alias: alias foo='cd /usr; ls; cd -'
+*8) whatis – Display A Very Brief Description Of A Command: whatis ls
+*9) info – Display A Program's Info Entry: info coreutils
+*10) Creating Your Own Commands With alias: alias foo='cd /usr; ls; cd -'
 11) There is one tiny problem with defining aliases on the command line. They vanish when your shell session ends. In a later chapter, we will see how to add our own aliases to the files that establish the environment each time we log on
 
 #7 – Redirection
@@ -199,18 +221,18 @@ ln -s ../fun dir2/fun-sym
 6) ls -l /bin/usr 2> ls-error.txt
 7) Redirecting Standard Output And Standard Error To One File: ls -l /bin/usr &> ls-output.txt
 8) Disposing Of Unwanted Output: ls -l /bin/usr 2> /dev/null
-9) cat – Concatenate Files: cat is often used to display short text files. Since cat can accept more than one file as an argument, it can also be used to join files together. cat movie.mpeg.0* > movie.mpeg
+*9) cat – Concatenate Files: cat is often used to display short text files. Since cat can accept more than one file as an argument, it can also be used to join files together. cat movie.mpeg.0* > movie.mpeg
 10) cat < lazy_dog.txt: Using the “<” redirection operator, we change the source of standard input from the keyboard to the file lazy_dog.txt.
-11) pipelines: ls -l /usr/bin | less
-12) Filters: ls /bin /usr/bin | sort | less: 
+*11) pipelines: ls -l /usr/bin | less
+*12) Filters: ls /bin /usr/bin | sort | less: 
 13) uniq - Report Or Omit Repeated Lines: ls /bin /usr/bin | sort | uniq | less
-14) wc – Print Line, Word, And Byte Counts: prints out three numbers: ls /bin /usr/bin | sort | uniq | wc -l #lines, words, and bytes
-15) grep – Print Lines Matching A Pattern: ls /bin /usr/bin | sort | uniq | grep zip
-16) head / tail – Print First / Last Part Of Files: 
+*14) wc – Print Line, Word, And Byte Counts: prints out three numbers: ls /bin /usr/bin | sort | uniq | wc -l #lines, words, and bytes
+*15) grep – Print Lines Matching A Pattern: ls /bin /usr/bin | sort | uniq | grep zip
+*16) head / tail – Print First / Last Part Of Files: 
 - head -n 5 ls-output.txt
 - tail -n 5 ls-output.txt
 - ls /usr/bin | tail -n 5 #use in pipeline
-17) tail has an option which allows you to view files in real-time: tail -f /var/log/messages
+*17) tail has an option which allows you to view files in real-time: tail -f /var/log/messages
 18) Using the “-f” option, tail continues to monitor the file and when new lines are appended, they immediately appear on the display. This continues until you type Ctrl-c.
 19) tee – Read From Stdin And Output To Stdout And Files: ls /usr/bin | tee ls.txt | grep zip
 20) The tee program reads standard input and copies it to both standard output (allowing the data to continue down the pipeline) and to one or more files.
@@ -218,19 +240,19 @@ ln -s ../fun dir2/fun-sym
 #8 – Seeing The World As The Shell Sees It
 1) Expansion: with expansion, you type something and it is expanded into something else before the shell acts upon it.
 2) shell expands the “*” into something else (in this instance, the names of the files in the current working directory) before the echo command is executed: echo *
-3) Pathname Expansion: echo D*
-4) Tilde : echo ~; echo ~foo； When used at the beginning of a word, it expands into the name of the home directory of the named user
-5）Arithmetic Expansion： echo $((2 + 2)); echo $(((5**2) * 3))
+*3) Pathname Expansion: echo D*
+*4) Tilde : echo ~; echo ~foo； When used at the beginning of a word, it expands into the name of the home directory of the named user
+*5）Arithmetic Expansion： echo $((2 + 2)); echo $(((5**2) * 3))
 6) Arithmetic expansion uses the form: $((expression))
-7) Brace Expansion: echo Front-{A,B,C}-Back; echo Number_{1..5}; echo {Z..A}
-8) Parameter Expansion: echo $USER; 
+*7) Brace Expansion: echo Front-{A,B,C}-Back; echo Number_{1..5}; echo {Z..A}
+*8) Parameter Expansion: echo $USER; echo $HOME; echo $
 9) list all variables: printenv | less
-10) Command Substitution: allows us to use the output of a command as an expansion: 
+*10) Command Substitution: allows us to use the output of a command as an expansion: 
 ls -l $(which cp)
 file $(ls /usr/bin/* | grep zip)
 11) an alternate syntax for command substitution in older shell programs which is also supported in bash. It uses back-quotes instead of the dollar sign and parentheses: ls -l `which cp`
 12) Quoting: The shell provides a mechanism called quoting to selectively suppress unwanted expansions
-13) double quotes: If you place text inside double quotes, all the special characters used by the shell lose their special meaning and are treated as ordinary characters. The exceptions are “$”, “\” (backslash), and “`” (backquote). This means that word-splitting, pathname expansion, tilde expansion, and brace expansion are suppressed, but parameter expansion, arithmetic expansion, and command substitution are still carried out.
+*13) double quotes: If you place text inside double quotes, all the special characters used by the shell lose their special meaning and are treated as ordinary characters. The exceptions are “$”, “\” (backslash), and “`” (backquote). This means that word-splitting, pathname expansion, tilde expansion, and brace expansion are suppressed, but parameter expansion, arithmetic expansion, and command substitution are still carried out.
 ls -l "two words.txt"
 mv "two words.txt" two_words.txt
 14) By default, word-splitting looks for the presence of spaces, tabs, and newlines (linefeed characters) and treats them as delimiters between words. This means that unquoted spaces, tabs, and newlines are not considered to be part of the text. They only serve as separators.
@@ -240,8 +262,7 @@ mv "two words.txt" two_words.txt
  echo 'text ~/*.txt {a,b} $(echo foo) $((2+2)) $USER'
 16) Escaping Characters: Sometimes we only want to quote a single character. To do this, we can precede a character with a backslash, which in this context is called the escape character:
 echo "The balance for user $USER is: \$5.00"
-17) Backslash Escape Sequences: In addition to its role as the escape character, the backslash is also used as part of
-a notation to represent certain special characters called control codes. The first thirty-two characters in the ASCII coding scheme are used to transmit commands to teletype-like devices.
+*17) Backslash Escape Sequences: In addition to its role as the escape character, the backslash is also used as part of a notation to represent certain special characters called control codes. The first thirty-two characters in the ASCII coding scheme are used to transmit commands to teletype-like devices.
 18) Escape Sequence Meaning
 \a Bell (“Alert” - causes the computer to beep)
 \b Backspace
@@ -255,13 +276,13 @@ a notation to represent certain special characters called control codes. The fir
 Key 		Action
 *Ctrl-a 		Move cursor to the beginning of the line.
 *Ctrl-e 		Move cursor to the end of the line.
-*Alt-f 		Move cursor forward one word.
-*Alt-b 		Move cursor backward one word.
+*Alt-f/ctrl+RIGHT		Move cursor forward one word.
+*Alt-b/ctrl+LEFT	Move cursor backward one word.
 *Alt-d 			Kill text from the cursor location to the end of the current word.
 *Alt-Backspace	Kill text from the cursor location to the beginning of the current word. If the cursor is at the beginning 					of a word, kill the previous word.
 *Ctrl-l 		Clear the screen and move the cursor to the top left corner. The clear command does the same thing.
-*Ctrl-k 			Kill text from the cursor location to the end of line.
-*Ctrl-u 			Kill text from the cursor location to the beginning of the line.
+*Ctrl-k 		Kill text from the cursor location to the end of line.
+*Ctrl-u 		Kill text from the cursor location to the beginning of the line.
 
 Ctrl-f 		Move cursor forward one character; same as the right arrow key.
 Ctrl-b 		Move cursor backward one character; same as the left arrow key.
@@ -278,8 +299,7 @@ Alt-u 		Convert the characters from the cursor location to the end of the word t
 Key 			Action
 Ctrl-y 			Yank text from the kill-ring and insert it at the cursor location.
 
-4) Completion: occurs when you press the tab key while typing a command. While this example shows completion of pathnames, which is its most common use, completion will also work on variables (if the beginning of the word is a “$”), user names
-(if the word begins with “~”), commands (if the word is the first word on the line.) and host names (if the beginning of the word is “@”). Host name completion only works for host names listed in /etc/hosts.
+4) Completion: occurs when you press the tab key while typing a command. While this example shows completion of pathnames, which is its most common use, completion will also work on variables (if the beginning of the word is a “$”), user names (if the word begins with “~”), commands (if the word is the first word on the line.) and host names (if the beginning of the word is “@”). Host name completion only works for host names listed in /etc/hosts.
 
 5) Using History: bash maintains a history of commands that have been entered. This list of commands is kept in your home directory in a file called .bash_history.
 history | less
@@ -313,12 +333,12 @@ Sequence 	Action
 8) Permission Attributes
 Attribute 	Files 										Directories
 r 			Allows a file to be opened and read.  		Allows a directory's contents to
-														be listed if the execute attribute
-														is also set.
+														be listed (if the execute attribute
+														is also set).
 w 			Allows a file to be written to or 			Allows files within a directory
 			truncated, however this attribute 			to be created, deleted, and
-			does not allow files to be  				renamed if the execute attribute
-			renamed or deleted. The ability 			is also set.
+			does not allow files to be  				renamed (if the execute attribute
+			renamed or deleted. The ability 			is also set).
 			to delete or rename files is
 			determined by directory
 			attributes.								
@@ -342,8 +362,7 @@ a 	Short for “all.” The combination of “u”, “g”, and “o”.
 “=” only the specified permissions are to be applied and that all others are to be removed.
 13) Permissions are specified with the “r”, “w”, and “x” characters. Here are some examples of symbolic notation:
 14) A word of caution regarding the “--recursive” option: it acts on both files and directories, so it's not as useful as one would hope since, we rarely want files and directories to have the same permissions.
-15) umask – Set Default Permissions: The umask command controls the default permissions given to a file when it is created.
-It uses octal notation to express a mask of bits to be removed from a file's mode attributes.
+*15) umask – Set Default Permissions: The umask command controls the default permissions given to a file when it is created. It uses octal notation to express a mask of bits to be removed from a file's mode attributes.
 16) umask command without an argument to see the current value. It responded with the value 0002 (the value 0022 is another common default value), which is the octal representation of our mask.
 17) Most of the time you won't have to change the mask; the default provided by your distribution will be fine. In some high-security situations, however, you will want to control it.
 18) su – Run A Shell With Substitute User And Group IDs: 
@@ -352,10 +371,10 @@ su –
 - after the first use of sudo, janet was not prompted for her password? This is because sudo, in most configurations, “trusts” you for several minutes until its timer runs out.
 20) To see what privileges are granted by sudo, use the “-l” option to list them: 
 sudo -l
-21) chown – Change File Owner And Group: The chown command is used to change the owner and group owner of a file or directory. Superuser privileges are required to use this command.
+*21) chown – Change File Owner And Group: The chown command is used to change the owner and group owner of a file or directory. Superuser privileges are required to use this command.
 chown [owner][:[group]] file...
 sudo chown tony: ~tony/myfile.txt
-22) Changing Your Password: passwd [user]
+*22) Changing Your Password: passwd [user]
 
 #11 – Processes
 ● ps – Report a snapshot of current processes
@@ -394,7 +413,7 @@ START 		Time when the process started. For values over twenty four hours, a date
 4) Interrupting A Process: 
 - In a terminal, typing Ctrl-c, interrupts a program. This means that we politely asked the program to terminate.
 
-5) Putting A Process In The Background: xlogo &
+*5) Putting A Process In The Background: xlogo &
 
 6) Returning A Process To The Foreground: fg %1 #The command fg followed by a percent sign and the job number (called a jobspec)
 
@@ -435,11 +454,11 @@ alias
 
 6) Some Interesting Variables
 Variable 		Contents
-DISPLAY 		The name of your display if you are running a graphical environment. Usually this is “:0”, meaning the first 					display generated by the X server.
+DISPLAY 		The name of your display if you are running a graphical environment. Usually this is “:0”, meaning the first display generated by the X server.
 EDITOR 			Than name of the program to be used for text editing.
 SHELL 			The name of your shell program.
 HOME 			The pathname of your home directory.
-LANG 			Defines the character set and 	 of your language.
+LANG 			Defines the character set and of your language.
 OLD_PWD 		The previous working directory.
 PAGER 			The name of the program to be used for paging output. This is
 				often set to /usr/bin/less.
@@ -457,18 +476,17 @@ TZ 				Specifies your timezone. Most Unix-like systems maintain the
 				this variable.
 USER 			Your user name.
 
-7) How Is The Environment Established? When we log on to the system, the bash program starts, and reads a series of
-configuration scripts called startup files, which define the default environment shared by all users.
+*7) How Is The Environment Established? When we log on to the system, the bash program starts, and reads a series of configuration scripts called startup files, which define the default environment shared by all users.
 
-8) This is followed by more startup files in our home directory that define our personal environment.
+*8) This is followed by more startup files in our home directory that define our personal environment.
 
-9) The exact sequence depends on the type of shell session being started. There are two kinds: a login shell session and a non-login shell session.
+*9) The exact sequence depends on the type of shell session being started. There are two kinds: a login shell session and a non-login shell session.
 
 10) A login shell session is one in which we are prompted for our user name and password; when we start a virtual console session
 
 11) Login shells read one or more startup files:
 File 				Contents
-/etc/profile 		A global configuration script that applies to all users.
+*/etc/profile 		A global configuration script that applies to all users.
 ~/.bash_profile 	A user's personal startup file. Can be used to extend or
 					override settings in the global configuration script.
 ~/.bash_login 		If ~/.bash_profile is not found, bash attempts to
@@ -590,8 +608,7 @@ g 			This means “global” in the sense that the search and replace is
 			is replaced.
 c   		before each substitution, vi stops and asks us to confirm the substitution
 
-16) Editing Multiple Files It's often useful to edit more than one file at a time. You might need to make changes to
-multiple files or you may need to copy content from one file into another.
+16) Editing Multiple Files It's often useful to edit more than one file at a time. You might need to make changes to multiple files or you may need to copy content from one file into another.
 vi file1 file2 file3...
 
 17) Switching Between Files. To switch from one file to the next, use this ex command: :n
@@ -617,8 +634,7 @@ To move back to the previous file use: :N
 # 15 – Package Management
 1） Package management is a method of installing and maintaining software on the system.
 
-2） Packaging Systems： Different distributions use different packaging systems and as a general rule, a package
-intended for one distribution is not compatible with another distribution.
+2） Packaging Systems： Different distributions use different packaging systems and as a general rule, a package intended for one distribution is not compatible with another distribution.
 
 3）Most distributions fall into one of two camps of packaging technologies: the Debian “.deb” camp and the Red Hat “.rpm” camp.
 Packaging System 		Distributions (Partial Listing)
@@ -629,8 +645,7 @@ Red Hat Style (.rpm) 	Fedora, CentOS, Red Hat Enterprise Linux, OpenSUSE, Mandri
 
 5） A package may consist of numerous programs and data files that support the programs. In addition to the files to be installed, the package file also includes metadata about the package, such as a text description of the package and its contents. Additionally, many packages contain pre- and post-installation scripts that perform configuration tasks before and after the package installation.
 
-6）The package maintainer gets the software in source code form from the upstream provider (the author of the program),
-compiles it, and creates the package metadata and any necessary installation scripts.
+6）The package maintainer gets the software in source code form from the upstream provider (the author of the program), compiles it, and creates the package metadata and any necessary installation scripts.
 
 7）Repositories： Packages are made available to the users of a distribution in central repositories that may contain many thousands of packages, each specially built and maintained for the distribution. 
 
@@ -639,8 +654,8 @@ compiles it, and creates the package metadata and any necessary installation scr
 9）High And Low-level Package Tools： Package management systems usually consist of two types of tools: low-level tools which
 handle tasks such as installing and removing package files, and high-level tools that perform metadata searching and dependency resolution.
 Distributions 			Low-Level Tools 			High-Level Tools
-Debian-Style 			dpkg 						apt-get, aptitude
-Fedora, Red Hat			rpm 						yum
+*Debian-Style 			dpkg 						apt-get, aptitude
+*Fedora, Red Hat		rpm 						yum
 Enterprise Linux, CentOS
 
 10）Finding A Package In A Repository
@@ -730,11 +745,14 @@ Mounting And Unmounting Storage Devices
 5) Using the “-ie” option, we can examine the network interfaces in our system:
 netstat -ie
 - The first, called eth0, is the Ethernet interface and the second, called lo, is the loopback interface, a virtual interface that the system uses to “talk to itself.”
-- the important things to look for are the presence of the word “UP” at the beginning of the fourth line for each interface,
-indicating that the network interface is enabled, 
+- the important things to look for are the presence of the word “UP” at the beginning of the fourth line for each interface, indicating that the network interface is enabled 
 - and the presence of a valid IP address in the inet addr field on the second line.
 
-6) Using the “-r” option will display the kernel’s network routing table. This shows how the network is configured to send packets from network to network: netstat -r
+6) Using the “-r” option will display the kernel’s network routing table. This shows how the network is configured to send packets from network to network: 
+netstat -r
+
+Other useful netstat options
+netstat -lunt
 
 7) Most Linux distributions ship an implementation of SSH called OpenSSH from the BSD project.
 
@@ -783,7 +801,7 @@ f 				Regular file
 l 				Symbolic link
 
 4) We can also search by file size and filename by adding some additional tests:
-ls -l $(find ~ -type f -name "*.txt" -size +30k)
+*ls -l $(find ~ -type f -name "*.txt" -size +30k)
 
 5) find test:
 Test 		Description
@@ -844,7 +862,7 @@ find playground -type f -name 'file-A' | wc -l
 
 9) The touch command is usually used to set or update the access, change, and modify times of files. However, if a filename argument is that of a nonexistent file, an empty file is created.
 
-10) The stat command reveals all that the system understands about a file and its attributes: 
+*10) The stat command reveals all that the system understands about a file and its attributes: 
 stat playground/timestamp
 find playground -type f -name 'file-B' -exec touch '{}' ';'
 find playground/ -type f -newer playground/timestamp | wc -l
@@ -891,34 +909,34 @@ t 		List the contents of an archive.
 echo 'Hello World!'
 echo 'Hello World!' # This is a comment too
 
-3) The #! character sequence is, in fact, a special construct called a shebang. The shebang is used to tell the system the name of the interpreter that should be used to execute the script that follows. Every shell script should include this as its first line.
+*3) The #! character sequence is, in fact, a special construct called a shebang. The shebang is used to tell the system the name of the interpreter that should be used to execute the script that follows. Every shell script should include this as its first line.
 
-4) There are two common permission settings for scripts; 755 for scripts that everyone can execute, and 700 for scripts that only the owner can execute.
+*4) There are two common permission settings for scripts; 755 for scripts that everyone can execute, and 700 for scripts that only the owner can execute.
 
-5) In order for the script to run, we must precede the script name with an explicit path.
+*5) In order for the script to run, we must precede the script name with an explicit path.
 ./Hello_world
 
 6) The dot (.) command is a synonym for the source command, a shell builtin which reads a specified file of shell commands and treats it like input from the keyboard.
 . .bashrc
 
 7)Good Locations For Scripts
-7.1) The ~/bin directory is a good place to put scripts intended for personal use. 
-7.2) If we write a script that everyone on a system is allowed to use, the traditional location is /usr/local/bin. 
-7.3) Scripts intended for use by the system administrator are often located in /usr/local/sbin.
-7.4) locally supplied software, whether scripts or compiled programs, should be placed in the /usr/local hierarchy
-7.5) /bin or /usr/bin contain only files supplied and maintained by the Linux distributor.
+*7.1) The ~/bin directory is a good place to put scripts intended for personal use. 
+*7.2) If we write a script that everyone on a system is allowed to use, the traditional location is /usr/local/bin. 
+*7.3) Scripts intended for use by the system administrator are often located in /usr/local/sbin.
+*7.4) locally supplied software, whether scripts or compiled programs, should be placed in the /usr/local hierarchy
+*7.5) /bin or /usr/bin contain only files supplied and maintained by the Linux distributor.
 
-8) The vim text editor has many, many configuration settings. There are several common options that can facilitate script writing:
+*8) The vim text editor has many, many configuration settings. There are several common options that can facilitate script writing:
 :syntax on
 :set syntax=sh
 :set hlsearch
 :set tabstop=4
 :set autoindent
 
-9)These changes can be made permanent by adding these commands (without the leading colon characters) to your ~/.vimrc file.
+*9)These changes can be made permanent by adding these commands (without the leading colon characters) to your ~/.vimrc file.
 
 #26 – Starting A Project
-1) By creating a variable named title and assigning it the value “System Information Report,” we can take advantage of parameter expansion and place the string in multiple locations.
+*1) By creating a variable named title and assigning it the value “System Information Report,” we can take advantage of parameter expansion and place the string in multiple locations.
 title="System Information Report"
 <TITLE>$title</TITLE>
 <H1>$title</H1>
@@ -957,7 +975,7 @@ shell function terminates.
 
 #28 – Flow Control: Branching With if
 
-1) The if statement has the following syntax:
+*1) The if statement has the following syntax:
 if commands; then
 	commands
 [elif commands; then
@@ -992,9 +1010,9 @@ file1 -nt file2 	file1 is newer than file2.
 file1 -ot file2 	file1 is older than file2.
 -b file 			file exists and is a block special (device) file.
 -c file 			file exists and is a character special (device) file.
--d file 			file exists and is a directory.
--e file 			file exists.
--f file 			file exists and is a regular file.
+*-d file 			file exists and is a directory.
+*-e file 			file exists.
+*-f file 			file exists and is a regular file.
 -g file 			file exists and is set-group-ID.
 -G file 			file exists and is owned by the effective group ID.
 -k file 			file exists and has its “sticky bit” set.
@@ -1017,13 +1035,13 @@ file1 -ot file2 	file1 is older than file2.
 6) String Expressions: The following expressions are used to evaluate strings:
 Expression 				Is True If...
 string 					string is not null.
--n string 				The length of string is greater than zero.
+*-n string 				The length of string is greater than zero.
 -z string 				The length of string is zero.
-string1 = string2
+*string1 = string2
 string1 == string2		string1 and string2 are equal. Single or double
  						equal signs may be used, but the use of double
  						equal signs is greatly preferred.
-string1 != string2 		string1 and string2 are not equal.
+*string1 != string2 		string1 and string2 are not equal.
 string1 > string2 		string1 sorts after string2.
 string1 < string2 		string1 sorts before string2.
 
@@ -1039,12 +1057,12 @@ fi
 
 7) Integer Expressions: The following expressions are used with integers:
 Expression 				Is True If...
-integer1 -eq integer2 	integer1 is equal to integer2.
+*integer1 -eq integer2 	integer1 is equal to integer2.
 integer1 -ne integer2 	integer1 is not equal to integer2.
 integer1 -le integer2 	integer1 is less than or equal to integer2.
-integer1 -lt integer2 	integer1 is less than integer2.
+*integer1 -lt integer2 	integer1 is less than integer2.
 integer1 -ge integer2 	integer1 is greater than or equal to integer2.
-integer1 -gt integer2 	integer1 is greater than integer2.
+*integer1 -gt integer2 	integer1 is greater than integer2.
 
 8) A More Modern Version Of test: [[ expression ]]
 if [[ "$INT" =~ ^-?[0-9]+$ ]]; then
@@ -1074,7 +1092,7 @@ mkdir temp && cd temp
 [ -d temp ] || exit 1
 
 #29 – Reading Keyboard Input
-1) read – Read Values From Standard Input: The read builtin command is used to read a single line of standard input.
+*1) read – Read Values From Standard Input: The read builtin command is used to read a single line of standard input.
 echo -n "Please enter an integer -> "
 read int
 
@@ -1111,3 +1129,154 @@ done
 #31 troubleshooting
 1) defensive programming 
 [[ -d $dir_name ]] && cd $dir_name && rm *
+
+- Enable 'Extras' and 'Optional' yum repos
+yum install epel-release
+- Install Anisble
+- Playbook
+- selinux (SELinux policy)
+- putty export openssl key
+
+
+vi:
+vim怎麽批量縮進？
+:3, 231>
+第3行到231行縮進
+
+
+Linux command for java developer
+本文并不会对所有命令进行详细讲解，只给出常见用法和解释。具体用法可以使用--help查看帮助或者直接通过google搜索学习。
+
+1.查找文件
+find / -name filename.txt 根据名称查找/目录下的filename.txt文件。
+
+find . -name "*.xml" 递归查找所有的xml文件
+
+find . -name "*.xml" |xargs grep "hello world" 递归查找所有文件内容中包含hello world的xml文件
+
+grep -H 'spring' *.xml 查找所以有的包含spring的xml文件
+
+find ./ -size 0 | xargs rm -f & 删除文件大小为零的文件
+
+ls -l | grep '.jar' 查找当前目录中的所有jar文件
+
+grep 'test' d* 显示所有以d开头的文件中包含test的行。find.0
+
+grep 'test' aa bb cc 显示在aa，bb，cc文件中匹配test的行。
+
+grep '[a-z]\{5\}' aa 显示所有包含每个字符串至少有5个连续小写字符的字符串的行。
+
+2.查看一个程序是否运行
+ps –ef|grep tomcat 查看所有有关tomcat的进程
+
+3.终止线程
+kill -9 19979 终止线程号位19979的进程
+
+4.查看文件，包含隐藏文件
+ls -al
+
+5.当前工作目录
+pwd
+
+6.复制文件
+cp source dest 复制文件
+
+cp -r sourceFolder targetFolder 递归复制整个文件夹
+
+scp sourecFile romoteUserName@remoteIp:remoteAddr 远程拷贝
+
+7.创建目录
+mkdir newfolder
+
+8.删除目录
+rmdir deleteEmptyFolder删除空目录 rm -rf deleteFile 递归删除目录中所有内容
+
+9.移动文件
+mv /temp/movefile /targetFolder
+
+10.重命令
+mv oldNameFile newNameFile
+
+11.切换用户
+su -username
+
+12.修改文件权限
+chmod 777 file.java //file.java的权限-rwxrwxrwx，r表示读、w表示写、x表示可执行
+
+13.压缩文件
+tar -czf test.tar.gz /test1 /test2
+
+14.列出压缩文件列表
+tar -tzf test.tar.gz
+
+15.解压文件
+tar -xvzf test.tar.gz
+
+16.查看文件头10行
+head -n 10 example.txt
+
+17.查看文件尾10行
+tail -n 10 example.txt
+
+18.查看日志类型文件
+tail -f exmaple.log//这个命令会自动显示新增内容，屏幕只显示10行内容的（可设置）。
+
+19.使用超级管理员身份执行命令
+sudo rm a.txt 使用管理员身份删除文件
+
+20.查看端口占用情况
+netstat -tln | grep 8080 查看端口8080的使用情况
+
+21.查看端口属于哪个程序
+lsof -i :8080
+
+22.查看进程
+ps aux|grep java 查看java进程
+
+ps aux查看所有进程
+
+23.以树状图列出目录的内容
+tree a
+
+ps:Mac下使用tree命令
+
+24.文件下载
+wget http://file.tgz mac下安装wget命令
+
+curl http://file.tgz
+
+25.网络检测
+ping www.just-ping.com
+
+26.远程登录
+ssh userName@ip
+
+27.打印信息
+echo $JAVA_HOME 打印java home环境变量的值
+
+28.java 常用命令
+java javac jps ,jstat ,jmap, jstack
+
+29.其他命令
+svn git maven
+
+28.linux命令学习网站:
+http://explainshell.com/
+
+1) grep command: The grep command is used to search text or searches the given file for lines containing a match to the given strings or words.
+
+grep 'word' filename #find 'word' in the filename
+grep 'word' file1 file2 file3 #find 'word' in file1, file2, file3 
+grep 'string1 string2'  filename #find "string 1 string 2" in the filename
+cat otherfile | grep 'something' #cat 
+command | grep 'something'
+command option1 | grep 'data'
+grep --color 'data' fileName
+
+1) check user list: less /etc/passwd
+2) check linux distro:	cat /etc/*-release
+3) check linux kernel: uname -a
+2) add user: adduser wbs
+3) passwd username
+4) usermod -aG wheel username 
+- By default, on CentOS, members of the wheel group have sudo privileges.

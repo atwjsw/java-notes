@@ -34,6 +34,7 @@ IDEA configuration:
 - last browse position: ctrl+alt+->; ctrl+alt+<-
 *- between bookmark: f11 (useful for source reading and understanding), ctrl+f11 memonic bookmark, ctrl+1, ctrl+2, ctrl+3
 - add to favourites: alt+F, put cursor on method name: alt+F to add method to favorites
+*- In project window->congifure->Autoscroll to source/Autoscroll from source 
 
 5) install plugins
 Help->find actions->plugins+enter->browse->emacsIDEA
@@ -43,19 +44,21 @@ Help->find actions->plugins+enter->browse->emacsIDEA
 *6.2) search file: ctrl+shift+N; ctrl+shift+N+N
 6.3) search symbol (method, field...): ctrl+alt+shift+N; ctrl+alt+shift+N+N
 *6.4) search string: ctrl+shift+F
+*6.5）shift + shift: search anywhere
 
 7) editing:
 *7.1) move caret to next/previous word: ctrl+->/<-
 *7.2) move caret to line start/end: Home/End
-*7.3) move caret to line start/end: ctrl+Home/End
+*7.3) move caret to page start/end: ctrl+Home/End 
 *7.4) highlight/select above contents: +shift
-e.g. hight from caret to line end: end + shift
-e.g. highlight next word: ctrl+shift+->
-7.5) shift a line up/down: ctrl + shift + UP/DOWN
+*e.g. highlight from caret to line end: end + shift
+*e.g. highlight next word: ctrl+shift+->
+*7.5) shift a line up/down: ctrl + shift + UP/DOWN
 7.6) change to uppercase/lowercase: ctrl+shift+UP+UP
-7.6) multi-cursor: ctrl+shift+alt+J -> select all and then edit all
+*7.6) multi-cursor: ctrl+shift+alt+J -> select all and then edit all
 *7.7) reformat code: ctrl+alt+L
 - can be applied only to highlighted area
+*7.8) ctrl+shift+f12 to enlarge the editor window, again to return to the original status
 
 8) live template
 ctrl+shift+A中配置
@@ -120,7 +123,7 @@ live templates 可自定义代码的简写
 - 运行到指定行：  run to cursor: alt+f9
 - setValue: shift+f9 begin debug + in debug/variables window + click variable + f2 + enter value （儅需要設置特定值以執行以下程序時使用）
 
-16) run anyway if you can
+16) run anywhere if you can
 - running in current context: ctrl+shift+f9
 - select running context: shift+alt+f9:  
 
@@ -143,6 +146,18 @@ live templates 可自定义代码的简写
 * - f4 open source file from hierachy window
 - Hierachy window: ctrl+H
 - method call hierachy: click method + ctrl+alt+H
+
+#IDEA Video Tutorial
+1） language level means you can use certian language level features only. e.g. choose language level 6 but SDK use language 1.8
+2）IDEA can search dependency in Gradle 
+3）Ctrl-Shift-Inspection： inspect code for potential refactoring opportunities
+4) Intentions:
+5）alt+shift+mouse left click to highlight multiple places in editor and modify all at once
+6）In Project window, configure config icon and select "show members" to display class members
+
+
+
+
 
 
 

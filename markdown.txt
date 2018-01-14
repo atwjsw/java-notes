@@ -1,0 +1,62 @@
+markdown.txt
+1) Markdown is intended to be as easy-to-read and easy-to-write as is feasible.
+2) Readability, however, is emphasized above all else. A Markdown-formatted document should be publishable as-is, as plain text, without looking like it’s been marked up with tags or formatting instructions.
+3) Markdown’s syntax is comprised entirely of punctuation characters, which punctuation characters have been carefully chosen so as to look like what they mean.
+
+1) HEADERS
+This is an H1
+=============
+
+This is an H2
+-------------
+
+# This is an H1
+
+## This is an H2
+
+###### This is an H6
+
+2) BLOCKQUOTES
+Markdown uses email-style > characters for blockquoting.
+
+3) Blockquotes can be nested (i.e. a blockquote-in-a-blockquote) by adding additional levels of >:
+
+4) LISTS
+Markdown supports ordered (numbered) and unordered (bulleted) lists.
+*   Red
+*   Green
+*   Blue
+
+1.  Bird
+2.  McHale
+3.  Parish
+
+3. Bird
+1. McHale
+8. Parish
+
+5) To produce a code block in Markdown, simply indent every line of the block by at least 4 spaces or 1 tab. 
+This is a normal paragraph:
+
+    This is a code block.
+
+6) HORIZONTAL RULES
+You can produce a horizontal rule tag (<hr />) by placing three or more hyphens, asterisks, or underscores on a line by themselves. 
+
+This is [an example](http://example.com/ "Title") inline link.
+
+7) EMPHASIS: Markdown treats asterisks (*) and underscores (_) as indicators of emphasis. 
+*single asterisks*
+_single underscores_
+**double asterisks**
+__double underscores__
+
+8) CODE
+To indicate a span of code, wrap it with backtick quotes (`). Unlike a pre-formatted code block, a code span indicates code within a normal paragraph. For example:
+Use the `printf()` function.
+
+9) Inline image syntax looks like this:
+
+![Alt text](/path/to/img.jpg)
+
+![Alt text](/path/to/img.jpg "Optional title")
