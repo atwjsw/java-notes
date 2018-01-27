@@ -26,3 +26,5 @@ git remote rename origin old-origin
 git remote add origin http://192.168.246.203/danielwen/webmall.git
 git push -u origin --all
 git push -u origin --tags
+
+git clone gitlab01:atwjsw/project_01.git

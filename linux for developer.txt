@@ -18,7 +18,7 @@ imooc linux for developer
 7) relative path: starts with . or ..: . == CWD; .. = parent of CWD
 *8) cd tab+tab: list options
 9) 查看文件类型： file
-*10）create hidden file and directory: touch .aa; touch .mkdir
+*10）create hidden file and directory: touch .hiddenfile; mkdir .hiddendir
 *11) view hidden file and directory: ls -a
 12) less: g to begnning; up/down one line up/down; /foo to search for foo and use n to go to next find; N go to previous find; G to the end; w to the next word.
 *- / + esc + enter -》 remove all current highlighed words
