@@ -425,3 +425,11 @@ git log --oneline --decorate
 
 3) It’s important to note that when you switch branches in Git, files in your working directory will change. If you switch to an older branch, your working directory will be reverted to look like it did the last time you committed on that branch. If Git cannot do it cleanly, it will not let you switch at all.
 git log --oneline --decorate --graph --all
+
+4) compare difference between two branches
+git diff branch_1..branch_2
+
+That will produce the diff between the tips of the two branches. If you'd prefer to find the diff from their common ancestor to test, you can use three dots instead of two:
+
+git diff branch_1...branch_2
+
