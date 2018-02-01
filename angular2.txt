@@ -437,3 +437,5 @@ By default that variable is only visible in the template that it’s declared in
 15） ES6 is an agreement for how JavaScript should function in the future. Its up to each browser manufacturer to implement those features according to that agreement. Therefore all browsers don’t support all the features of ES6 yet. Chrome has the best support by far and so does Node. 
 
 16）Sometimes ES6 features are only switched on when we are in "use strict" mode, so to test our ES6 code my recommendation is to always add "use strict" to the top of your files.
+
+17)
