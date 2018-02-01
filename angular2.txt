@@ -438,4 +438,83 @@ By default that variable is only visible in the template that it’s declared in
 
 16）Sometimes ES6 features are only switched on when we are in "use strict" mode, so to test our ES6 code my recommendation is to always add "use strict" to the top of your files.
 
-17)
+17) A confusing point for developers coming from different languages is the way variable scope behaves in JavaScript. in ES5 JavaScript we only have two scopes, the global scope and function scope.
+
+18) The variable a, as we’ve declared it above, exists in global scope so this means it’s visible from everywhere in our application.
+{
+  var a = "block";
+}
+console.log(a);
+
+19) In ES5 apart from global scope, the only other scope is function scope, so if we wrote.
+function hello() {
+    var a = "function";
+}
+hello();
+console.log(a);
+If we ran the above we would get an error, like so: CopyUncaught ReferenceError: a is not defined(…)
+This is because the a variable is declared inside a function and is therefore only visible inside that function, trying to access it outside the function results in an error.
+
+20) This issue of no block level scope has plagued JavaScript developers since its inception. One common workaround in the past has been to use something called an Immediately Invoked Function Expression (IIFE) like so:
+function hello() {
+    var a = "function";
+
+    for (var i=0; i<5; i++) {
+        (function() {
+            var a = "block";
+        })();
+    }
+    console.log(a);
+}
+hello();
+This now prints out function.
+
+21) If this syntax looks a bit strange to you:
+(function() {
+    var a = "block";
+})();
+Know its just a shorter way of writing:
+function something() {
+  var a = "block";
+}
+something();
+It’s a function that we call immediately after defining it.
+
+22) Since functions have their own scope, using an IIFE has the same effect as if we had block level scope, the variable a inside the IIFE isn’t visible outside the IIFE. THIS IS COLSURE ALL ABOUT.
+
+23) IIFEs work but it’s a pretty long winded way of solving this problem. So with ES6 we now have the new let keyword, we use it in place of the var keyword and it creates a variable with block level scope, like so:
+
+function hello() {
+    var a = "function";
+    for (var i = 0; i < 5; i++) {
+        let a = "block";
+    }
+    console.log(a);
+}
+hello();
+- Now the a declared in the for loop body only exists between the { and }, and the code snippet above prints out function as expected.
+
+
+24) Even though let i = 0 is strictly declared outside of the for block { }, any variables declared in the for loop expression with let has block level scope in the for loop.
+var funcs = [];
+for (let i = 0; i < 5; i += 1) {
+    funcs.push(function () {
+        console.log(i);
+    })
+}
+funcs.forEach(function (func) {
+    func()
+});
+
+25) unless you have a specific reason to use var I would expect all variables you define from now on to use let.
+
+26) const lets us declare variables which don’t change over time, which are immutable.
+
+27) The important gotcha with const is that the variable is immutable, but not the value, the thing the variable points to.
+
+28) This means that if we declare an object as const, confusingly we can still change properties of the object later on.
+
+29) To solve this and make an object immutable we use the Object.freeze(…​) function which together with the "use strict"; param throws an error if we try to change the object.
+
+TBD
+ES6 JavaScript & TypeScript - Template Strings
