@@ -516,5 +516,30 @@ funcs.forEach(function (func) {
 
 29) To solve this and make an object immutable we use the Object.freeze(…​) function which together with the "use strict"; param throws an error if we try to change the object.
 
-TBD
 ES6 JavaScript & TypeScript - Template Strings
+30）With ES5 and ES6 we can specify a string with either the ' or " characters. In ES6 we have another way of defining strings, using the back-tick character `
+let multi = `
+hello
+world
+my
+name
+is
+asim`;
+console.log(multi);
+
+31） Another really interesting feature of declaring strings with ` is that they can now expand variables using the ${variable_name} syntax, like so:
+
+let name = "asim";
+let multi = `
+hello
+world
+my
+name
+is
+${name}
+`;
+console.log(multi);
+
+32） Template strings are a small change to JavaScript in ES6 but the convenience of multi-line strings and variable substitution is substantial.
+
+TBD (Fat Arrow Functions)
