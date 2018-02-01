@@ -1,0 +1,439 @@
+angular2
+
+1) 移除了controll+$scope设计，改用组件式开发
+2) 性能更好，渲染更快，变化检测效率更高
+3) 优先为移动应用设计angular mobile toolkit
+4) 更贴合标准化es6/7
+5) angular 2 的使用不向下兼容angular 1, 需要使用upgrade adapter. 可以包装angular1的指令
+6） Angular2 core concepts: Components, metadata, templates, data binding, services, directives, dependency injection, modules
+7) components: core of angular 2, others provide supports for components.
+8) component tree: app-> header, contactList, footer -> contactLists -> contact...
+9) key elements of components: js logic + html template + css style, each components indepenetly provide its functionalities
+10) communication between components: input and ouput attributes of components
+11) full-lifecycle hook on components: constructor -> onChanges -> onInit -> OnChanges -> onDestroy
+12) @Component annotation (metadata) + class
+13) attribute binding: <input [value]="myData" />
+14) event binding: <input (keyup)="handle($event)" />
+15) two-way binding: <input [(ngModel)]="myData" />
+16) Parent component communicate to subcomponent by using attribute binding: In son: @Input data: IContact; In parent <contact [data]="item"></contact> 
+7) subcomponent communicate to parent component by using event binding: @Output
+17) component inhereits directives, but has its own template.
+18) attribute directives: change template look and behavior, e.g. style
+19) structure directive: change DOM structure of component template, e.g. ngif
+20) service: component use DI to obtain service: providers: [LoggerService]
+21) hierarchical dependency injection: service injected from parent can be obtained in sub components
+22) source code modules: module feature provided by typescript, 
+- @angular/core, @angular/common, @angular/forms, @angular/http
+- import {Http} from "@angular/http"
+23) app function modules: 
+- @NgModule
+- bootstrap module (root module, 一般叫AppModule)
+- feature module1 + feature module2 + ...
+- support lazy loading
+- shared modules: module shared by feature1 and feature2...
+- core module: security, header, footer... (only imported into bootstrap)
+24) development environment: node + webpack + VsCode (free IDE from Microsoft)
+25) webpack: entry + loaders + webpack.config.js (entry, output, loaders)
+
+26) source structures
+- package.json (npm dependencies, webpack module, angular modules...)
+- tsconfig.json (typescript compiler configuration, required by typescript compiling)
+- webpack.config.js (webpack building configuration)
+
+
+#Angular CLI 
+1) 开发： 项目开发 + 组件开发
+2）Packaging:
+3) Test:
+4) 开发结构 vs. 运行结构
+5）angular2开发效率和效果更高
+6）angular CLI use Amber CLI + webpack
+
+#Heroes tutotrial
+7) npm install -g @angular/cli //install angular cli
+8) ng new my-app //Generate a new project and skeleton application
+9) cd my-app; ng serve --open //launches the server, watches your files, and rebuilds the app as you make changes to those files.
+10) Using the --open (or just -o) option will automatically open your browser on http://localhost:4200/.
+11) Your app lives in the src folder. All Angular components, templates, styles, images, and anything else your app needs go here. Any files outside of this folder are meant to support building your app.
+12) Components are the fundamental building blocks of Angular applications. They display data on the screen, listen for user input, and take action based on that input.
+13) The double curly braces are Angular's interpolation binding syntax. This interpolation binding presents the component's title property value inside the HTML header tag.
+14)  create a new component to display hero information and place that component in the application shell.
+ng generate component heroes
+15) You always import the Component symbol from the Angular core library and annotate the component class with @Component.
+@Component is a decorator function that specifies the Angular metadata for the component.
+16) The CSS element selector, 'app-heroes', matches the name of the HTML element that identifies this component within a parent component's template.
+17) The ngOnInit is a lifecycle hook Angular calls ngOnInit shortly after creating a component. It's a good place to put initialization logic.
+18) Always export the component class so you can import it elsewhere ... like in the AppModule.
+19) Format with the UppercasePipe: <h2>{{ hero.name | uppercase }} Details </h2>
+- The word uppercase in the interpolation binding, right after the pipe operator ( | ), activates the built-in UppercasePipe.
+20) Pipes are a good way to format strings, currency amounts, dates and other display data. Angular ships with several built-in pipes and you can create your own.
+21) Every component must be declared in exactly one NgModule.
+@NgModule({
+  declarations: [
+    AppComponent,
+    HeroesComponent
+  ],
+  imports: [
+    BrowserModule
+    FormsModule
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+
+22) The *ngFor is Angular's repeater directive. It repeats the host element for each element in a list.
+<li *ngFor="let hero of heroes">
+
+23) You could add more styles to styles.css and keep growing that stylesheet as you add components.
+
+24) You may prefer instead to define private styles for a specific component and keep everything a component needs— the code, the HTML, and the CSS —together in one place.
+
+25) You define private styles either inline in the @Component.styles array or as stylesheet file(s) identified in the @Component.styleUrls array.
+
+26) Styles and stylesheets identified in @Component metadata are scoped to that specific component. The heroes.component.css styles apply only to the HeroesComponent and don't affect the outer HTML or the HTML in any other component.
+
+27) <li *ngFor="let hero of heroes" (click)="onSelect(hero)"> //event binding syntax.
+- The parentheses around click tell Angular to listen for the <li> element's click event. When the user clicks in the <li>, Angular executes the onSelect(hero) expression.
+
+onSelect() is a HeroesComponent method that you're about to write. Angular calls it with the hero object displayed in the clicked <li>, the same hero defined previously in the *ngFor expression.
+
+28) Keeping all features in one component as the application grows will not be maintainable. You'll want to split up large components into smaller sub-components, each focused on a specific task or workflow.
+
+29) The hero property must be an Input property, annotated with the @Input() decorator, because the external HeroesComponent will bind to it like this.
+<app-hero-detail [hero]="selectedHero"></app-hero-detail>
+
+30) <app-hero-detail [hero]="selectedHero"></app-hero-detail>
+[hero]="selectedHero" is an Angular property binding.
+
+31) It's a one way data binding: HeroComponent.selectedHero property (parent) -> hero property of the target element, which maps to the hero property of the HeroDetailComponent.
+
+32) Why services? Components shouldn't fetch or save data directly and they certainly shouldn't knowingly present fake data. They should focus on presenting data and delegate data access to a service.
+
+33) ng generate service hero
+The command generates skeleton HeroService class in src/app/hero.service.ts
+
+34) The @Injectable() decorator tells Angular that this service might itself have injected dependencies.
+
+35) Reserve the constructor for simple initialization such as wiring constructor parameters to properties. The constructor shouldn't do anything. It certainly shouldn't call a function that makes HTTP requests to a remote server as a real data service would.
+
+36) ng generate module app-routing --flat --module=app
+--flat puts the file in src/app instead of its own folder.
+--module=app tells the CLI to register it in the imports array of the AppModule.
+
+37) Routes tell the router which view to display when a user clicks a link or pastes a URL into the browser address bar.
+
+38) A typical Angular Route has two properties: 
+- path: a string that matches the URL in the browser address bar. 
+- component: the component that the router should create when navigating to this route.
+
+39) The RouterOutlet is one of the router directives that became available to the AppComponent because AppModule imports AppRoutingModule which exported RouterModule.
+
+40) HttpClient is Angular's mechanism for communicating with a remote server over HTTP.
+
+#Architecture Overview
+1) Angular is a framework for building client applications in HTML and either JavaScript or a language like TypeScript that compiles to JavaScript.
+
+2) The framework consists of several libraries, some of them core and some optional.
+
+***3) You write Angular applications by composing HTML templates with Angularized markup, writing component classes to manage those templates, adding application logic in services, and boxing components and services in modules.
+
+4) Then you launch the app by bootstrapping the root module. Angular takes over, presenting your application content in a browser and responding to user interactions according to the instructions you've provided.
+
+5) Angular apps are modular and Angular has its own modularity system called NgModules. An NgModule, whether a root or feature, is a class with an @NgModule decorator.
+
+6) Every Angular app has at least one NgModule class, the root module, conventionally named AppModule.
+
+7) While the root module may be the only module in a small application, most apps have many more feature modules, each a cohesive block of code dedicated to an application domain, a workflow, or a closely related set of capabilities.
+
+8) Angular ships as a collection of JavaScript modules. You can think of them as library modules. Each Angular library name begins with the @angular prefix.
+
+9) You install them with the npm package manager and import parts of them with JavaScript import statements. import Angular's Component decorator from the @angular/core library like this:
+import { Component } from '@angular/core';
+
+10) A component controls a patch of screen called a view. For example, the following views are controlled by components:
+The app root with the navigation links.
+The list of heroes.
+The hero editor.
+
+11) Although this template uses typical HTML elements like <h2> and <p>, it also has some differences. Code like *ngFor, {{hero.name}}, (click), [hero], and <hero-detail> uses Angular's template syntax.
+
+12) Metadata tells Angular how to process a class. the @Component decorator, which identifies the class immediately below it as a component class.
+@Component({
+  selector:    'app-hero-list',
+  templateUrl: './hero-list.component.html',
+  providers:  [ HeroService ]
+})
+
+13) @Component configuration options:
+- providers: array of dependency injection providers for services that the component requires. This is one way to tell Angular that the component's constructor requires a HeroService so it can get the list of heroes to display.
+
+14) As the diagram shows, there are four forms of data binding syntax. Each form has a direction — to the DOM, from the DOM, or in both directions.
+
+15) The {{hero.name}} "interpolation" displays the component's hero.name property value within the <li> element.
+<li>{{hero.name}}</li>
+
+16) The [hero] property binding passes the value of selectedHero from the parent HeroListComponent to the hero property of the child HeroDetailComponent.
+<app-hero-detail [hero]="selectedHero"></app-hero-detail>
+
+17) The (click) event binding calls the component's selectHero method when the user clicks a hero's name.
+<li (click)="selectHero(hero)"></li>
+
+18) In two-way binding, a data property value flows to the input box from the component as with property binding. The user's changes also flow back to the component, resetting the property to the latest value, as with event binding.
+<input [(ngModel)]="hero.name">
+
+19) Data binding plays an important role in communication between a template and its component. Data binding is also important for communication between parent and child components.
+
+20) Angular templates are dynamic. When Angular renders them, it transforms the DOM according to the instructions given by directives.
+- A directive is a class with a @Directive decorator. A component is a directive-with-a-template; a @Component decorator is actually a @Directive decorator extended with template-oriented features.
+
+21) A directive is a class with a @Directive decorator. A component is a directive-with-a-template; a @Component decorator is actually a @Directive decorator extended with template-oriented features.
+
+22) Two other kinds of directives exist: structural and attribute directives. They tend to appear within an element tag as attributes do, sometimes by name but more often as the target of an assignment or a binding.
+
+23) Structural directives alter layout by adding, removing, and replacing elements in DOM.
+- <li *ngFor="let hero of heroes"></li>: *ngFor tells Angular to stamp out one <li> per hero in the heroes list.
+- <app-hero-detail *ngIf="selectedHero"></app-hero-detail>: *ngIf includes the HeroDetail component only if a selected hero exists.
+
+24) Attribute directives alter the appearance or behavior of an existing element. In templates they look like regular HTML attributes, hence the name.
+- The ngModel directive, which implements two-way data binding, is an example of an attribute directive. ngModel modifies the behavior of an existing element (typically an <input>) by setting its display value property and responding to change events.
+<input [(ngModel)]="hero.name">
+- Angular has a few more directives that either alter the layout structure (for example, ngSwitch) or modify aspects of DOM elements and components (for example, ngStyle and ngClass).
+
+25) Service is a broad category encompassing any value, function, or feature that your application needs.
+Examples include:
+logging service
+data service
+message bus
+tax calculator
+application configuration
+
+26) There is nothing specifically Angular about services. Angular has no definition of a service. There is no service base class, and no place to register a service.
+
+27) Component classes should be lean. They don't fetch data from the server, validate user input, or log directly to the console. They delegate such tasks to services. A component's job is to enable the user experience and nothing more. It mediates between the view (rendered by the template) and the application logic (which often includes some notion of a model). A good component presents properties and methods for data binding. It delegates everything nontrivial to services.
+
+28) Angular can tell which services a component needs by looking at the types of its constructor parameters. For example, the constructor of your HeroListComponent needs a HeroService:
+constructor(private service: HeroService) { }
+
+29) When Angular creates a component, it first asks an injector for the services that the component requires.
+- An injector maintains a container of service instances that it has previously created. 
+- If a requested service instance is not in the container, the injector makes one and adds it to the container before returning the service to Angular. 
+- When all requested services have been resolved and returned, Angular can call the component's constructor with those services as arguments. This is dependency injection.
+
+30) More precisely, the redisplay occurs after some kind of asynchronous event related to the view, such as a keystroke, a timer completion, or a response to an HTTP request.
+
+31) When you bootstrap with the AppComponent class (in main.ts), Angular looks for a <app-root> in the index.html, finds it, instantiates an instance of AppComponent, and renders it inside the <app-root> tag. 
+src/index.html
+<body>
+  <app-root></app-root>
+</body>
+
+32) The *ngFor in the <li> element is the Angular "repeater" directive. It marks that <li> element (and its children) as the "repeater template":
+<li *ngFor="let hero of heroes">
+  {{ hero }}
+</li>
+- Don't forget the leading asterisk (*) in *ngFor. It is an essential part of the syntax. 
+- In this case, ngFor is displaying an array, but ngFor can repeat items for any iterable object.
+
+33) Creating a class for the data
+ng generate class hero
+export class Hero {
+  constructor(
+    public id: number,
+    public name: string) { }
+}
+
+34) It might not look like the class has properties, but it does. The declaration of the constructor parameters takes advantage of a TypeScript shortcut.
+
+35) The Angular ngIf directive inserts or removes an element based on a truthy/falsy condition.
+<p *ngIf="heroes.length > 3">There are many heroes!</p>
+
+36) The template expression inside the double quotes, *ngIf="heroes.length > 3", looks and behaves much like TypeScript. When the component's list of heroes has more than three items, Angular adds the paragraph to the DOM and the message appears. If there are three or fewer items, Angular omits the paragraph, so no message appears.
+
+37) You use interpolation to weave calculated strings into the text between HTML element tags and within attribute assignments.
+
+38) Directive and component instances have a lifecycle as Angular creates, updates, and destroys them. Developers can tap into key moments in that lifecycle by implementing one or more of the lifecycle hook interfaces in the Angular core library.
+
+39) Interfaces are optional (technically); Angular instead inspects directive and component classes and calls the hook methods if they are defined. Angular finds and calls methods like ngOnInit(), with or without the interfaces.
+- Nonetheless, it's good practice to add interfaces to TypeScript directive classes in order to benefit from strong typing and editor tooling.
+
+40) They are not inherited by any components nested within the template nor by any content projected into the component.
+
+41) Class names and selectors are local to the component and don't collide with classes and selectors used elsewhere in the application.
+
+42) With HttpClient, @angular/common/http provides a simplified API for HTTP functionality for use with Angular applications, building on top of the XMLHttpRequest interface exposed by browsers. Additional benefits of HttpClient include testability support, strong typing of request and response objects, request and response interceptor support, and better error handling via apis based on Observables.
+
+43) Introducing Angular pipes, a way to write display-value transformations that you can declare in your HTML.
+
+#Internationalization (i18n)
+1) Application internationalization is a many-faceted area of development, focused on making applications available and user-friendly to a worldwide audience. 
+
+2) Angular simplifies the following aspects of internationalization:
+Displaying dates, number, percentages, and currencies in a local format.
+Translating text in component templates.
+Handling plural forms of words.
+Handling alternative text.
+
+3) A locale is an identifier (id) that refers to a set of user preferences that tend to be shared within a region of the world, such as country. This document refers to a locale identifier as a "locale" or "locale id".
+
+4) A Unicode locale identifier is composed of a Unicode language identifier and (optionally) the character - followed by a locale extension. (For historical reasons the character _ is supported as an alternative to -.) For example, in the locale id fr-CA the fr refers to the French language identifier, and the CA refers to the locale extension Canada.
+
+5) By default, Angular uses the locale en-US, which is English as spoken in the United States of America
+
+6) To set your app's locale to another value, use the CLI parameter --locale with the value of the locale id that you want to use:
+ng serve --aot --locale fr
+
+7) If you use JIT, you also need to define the LOCALE_ID provider in your main module:
+import { LOCALE_ID, NgModule } from '@angular/core';
+providers: [ { provide: LOCALE_ID, useValue: 'fr' } ],
+
+8) Angular pipes can help you with internationalization: the DatePipe, CurrencyPipe, DecimalPipe and PercentPipe use locale data to format data based on the LOCALE_ID.
+
+9) By default, Angular only contains locale data for en-US. If you set the value of LOCALE_ID to another locale, you must import locale data for that new locale. 
+
+#imooc angular
+1) component: 可以理解为一段带有业务逻辑和数据的html
+2）service: 封装可重用的业务逻辑
+3）module: 将应用中不同部分组织成一个Angular框架可以理解的单元 （用来打包元素的）
+4）directive: 允许你向html元素添加自定义行为
+
+#Environment setup
+1) install node
+2) install angular-cli: npm install -g @angular/cli; ng -v 
+3) create project structure: ng new auction
+- do not change the structure and file names
+4) Component
+@Component decorator + template, selector, style, provider
+5) component class:
+@Input
+@Output
+lifecycle hooks
+Aminiations
+6) module
+- @NgModule
+declarations：要用的元素，只能声明组件，指令和管道。 AppComponent....
+imports：要用的模块： BrowserModule(必选）, FormsModule, HttpModule， after importing the modules, you can access the elemnents in those modules.
+providers: 要用的服务， 只能声明服务
+bootstrap: 声明主组件是什么
+7） angular启动过程？
+- 启动时加载了那个页面？
+index.html
+
+- 启动时加载了哪些脚本？
+main.ts 
+package js (from main.ts -> all imports， including platformBrowserDynamic， AppModule, AppModule imports AppComponent)
+
+- 这些脚本做了什么事情？
+look for AppCompment's "selector(app-root)" in index.html, replace the selector 
+
+8) debug frontend in IDE
+in chrome://extensions, install jetbrains ide support
+settings->debuuger->built-in server
+
+9）install admin-lte template
+npm install --save admin-lte 
+
+10）copy and paste admin-lte starter page source
+
+11) install bootstrap
+npm install --save bootstrap
+
+12) 在.angular-cli中引入CSS，
+ 	"styles": [
+        "styles.css",
+        "../node_modules/bootstrap/dist/css/bootstrap.min.css",
+        "../node_modules/admin-lte/dist/css/AdminLTE.min.css",
+        "../node_modules/admin-lte/dist/css/skins/skin-blue.min.css"
+      ],
+
+13) ng g component header; 
+ng g component menu; 
+ng g component sidebar; 
+ng g component footer; 
+ng g component content
+ng g component stock/stockManage
+
+
+14) 路由
+
+15) SPA 不进行页面跳转，不重新加载整个页面，一直停留在index.html
+
+16) SPA 可以理解成一组视图状态的集合
+
+
+
+
+CodeCraft TV
+1) To the outside world the input property name is still joke and we could keep the JokeListComponent template the same as before:
+<joke *ngFor="let j of jokes" [joke]="j"></joke>
+
+class JokeComponent {
+  @Input('joke') data: Joke;
+}
+
+2) <joke-form (jokeCreated)="addJoke($event)"></joke-form>
+- The components tag, its selector, is going to be joke-form.
+- The component is going to emit an event called jokeCreated whenever a user clicks the Create button.
+- We treat the component as a black-box, we don’t care how the component is implemented or how the user interacts with it. The parent component just wants to know when the user has created a new joke.
+
+3) An EventEmitter is a helper class which we can use to emit events when something happens, other components can then bind and react to these events.
+import {Output, EventEmitter} from '@angular/core';
+.
+.
+.
+class JokeFormComponent {
+  @Output() jokeCreated = new EventEmitter<Joke>();
+}
+- When the jokeCreated event fires we are going to pass out an instance of a Joke.
+
+
+4) Lets now create a function called createJoke() and have it actually output an event, like so:
+Copyclass JokeFormComponent {
+  @Output() jokeCreated = new EventEmitter<Joke>();
+
+  createJoke() {
+    this.jokeCreated.emit(new Joke("A setup", "A punchline"));
+  }
+}
+
+5) We need to call the createJoke function when the user clicks the Create button, like so:
+<button type="button"
+      class="btn btn-primary"
+      (click)="createJoke()">Create
+</button>
+
+6) We also need to bind to the output event property on our parent JokeListComponent so we can add the joke that gets output to the list of jokes, like so:
+
+addJoke(joke) {
+    this.jokes.unshift(joke);
+  }
+
+7) $event is a special variable and holds whatever was emitted by the jokeCreated EventEmitter, in our case its an instance of a Joke.
+
+8) use something called a template reference variable. We add the string #setup to our setup input control, like so:
+<input type="text"
+       class="form-control"
+       placeholder="Enter the setup"
+       #setup>
+- setup now points to the DOM element that represents an <input> control, which is an instance of the type HTMLInputElement.
+
+9) 
+<button type="button"
+      class="btn btn-primary"
+      (click)="createJoke(setup.value, punchline.value)">Create
+</button>
+
+10) Finally we change the createJoke function so it accepts these new arguments and uses them to construct an instance of a Joke, like so:
+createJoke(setup: string, punchline: string) {
+  this.jokeCreated.emit(new Joke(setup, punchline));
+}
+
+11） Similar to input properties, we can also create output properties on our custom components using the "@Output annotation".
+12） "These output properties are always instances of the EventEmitter" class and we output events by calling the emit function. Whatever we pass in to the emit function is output as the "$event" template variable.
+13） We can create "local template variables" by adding variables starting with the # character on any element in our template.
+By default that variable is only visible in the template that it’s declared in and points to the DOM element it’s attached to.
+
+14）TypeScript is a super-set of ES6. That means whatever features we have in ES6 are also in TypeScript with some extra features on top, such as static typing and richer syntax.
+
+15） ES6 is an agreement for how JavaScript should function in the future. Its up to each browser manufacturer to implement those features according to that agreement. Therefore all browsers don’t support all the features of ES6 yet. Chrome has the best support by far and so does Node. 
+
+16）Sometimes ES6 features are only switched on when we are in "use strict" mode, so to test our ES6 code my recommendation is to always add "use strict" to the top of your files.
