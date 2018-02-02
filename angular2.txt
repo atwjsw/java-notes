@@ -560,4 +560,98 @@ setTimeout(() => console.log("setTimeout called!"), 1000);
 
 37) The new fat arrow function syntax in ES6 is far more than just a slightly shorter way of writing anonymous functions. It has finally solved the thorny issue of stabilising the value of this that has affected javascript since the start and caused so many work arounds to be discussed and applied in code.
 
-#TBD Destrucutring
+#Destrucutring
+38) Destructuring is a way of extracting values into variables from data stored in objects and arrays.
+
+39) Object Destructuring
+const obj = {first: 'Asim', last: 'Hussain', age: 39 };
+const {first: f, last: l} = obj;
+console.log(f); // Asim
+console.log(l); // Hussain
+
+40) Array Destructuring: Array destructuring works in a similar way except it extracts based of the index in the array, like so:
+const arr = ['a', 'b'];
+const [x, y] = arr;
+console.log(x); // a
+console.log(y); // b
+
+41) The for–in loop is for looping over object properties; The for–of loop is for looping over the values in an array; for–of is not just for arrays. It also works on most array-like objects including the new Set and Map types which we will cover in the next lecture.
+
+42) Map is a new data structure introduced in ES6 which lets you map keys to values without the drawbacks of using Objects.
+let map = new Map();
+map.set("A",1);
+map.set("B",2);
+map.set("C",3);
+
+The set method is also chainable, like so:
+
+let map = new Map()
+    .set("A",1)
+    .set("B",2)
+    .set("C",3);
+
+let map = new Map([
+    [ "A", 1 ],
+    [ "B", 2 ],
+    [ "C", 3 ]
+]);
+
+map.get("A"); // 1
+map.has("A"); // true
+map.delete("A"); // true
+map.size; // 2
+map.clear() 
+map.size; // 0
+
+for (let key of map.keys()) {
+    console.log(key);
+}
+
+for (let value of map.values()) {
+    console.log(value);
+}
+
+43) Sets are a bit like maps but they only store keys not key-value pairs. They are common in other programming languages but are a new addition to JavaScript in ES6.
+let set = new Set();
+set.add('APPLE');
+set.add('ORANGE');
+set.add('MANGO');
+let set = new Set(['APPLE', 'ORANGE', 'MANGO']);
+
+44) Map and Set are great additions to JavaScript in ES6. We no longer have to deal with Map and Sets poor cousin the Object and it’s many drawbacks.
+
+45) When you execute a task synchronously, you wait for it to finish before moving on to the next line of code. When you execute a task asynchronously, the program moves to the next line of code before the task finishes.
+
+46) A promise is a placeholder for a future value. It serves the same function as callbacks but has a nicer syntax and makes it easier to handle errors.
+
+47) We create an instance of a promise by calling new on the Promise class, like so:
+var promise = new Promise((resolve, reject) => {
+});
+
+48) JavaScript has a prototype-based, object-oriented programming model. It creates objects using other objects as blueprints and to implement inheritance it manipulates what’s called a prototype chain.
+
+49) We normally call the way object orientation is implemented in C++ or Java as the Classical OO Pattern and the way it’s implemented in JavaScript as the Prototype Pattern. Although the prototype pattern is a valid way to implement object orientation it can be confusing for newer javascript developers or developers used to the classical pattern.
+
+50) A class can inherit from another class. We can create a class blue-print that extends an existing class blue-print by adding other methods or properties.
+
+51) Everything we have learned so far about classes is pure ES6 JavaScript. However TypeScript adds some nice functionality on top of ES6 classes, namely function and property visibility via access modifiers.
+
+52) TypeScript has another feature called an interface. An interface can be used in a number of scenarios but by far the most common is when used with classes.
+Human in the example above is an interface. An interface lets you describe the minimum set of public facing properties or methods that a class has. Another way interfaces are explained is that they describe a set of rules the class has to follow, a contract it has to adhere to.
+interface Human {
+    firstName: string;
+    lastName: string;
+}
+
+53) If the Person class then doesn’t implement at least a firstName and a lastName then typescript throws an error like so:
+error TS2420: Class 'Person' incorrectly implements interface 'Human'. Property 'firstName' is missing in type 'Person'.
+
+54) Sometimes however we might want an interface to describe an optional contract. We can append ? to the name of the property or function to mark it as optional, like so:
+interface Human {
+    firstName: string;
+    lastName: string;
+    name?: Function;
+    isLate?(time: Date): Function;
+}
+
+55) in Angular we can decorate a class with extra info using the @ syntax. This is a new feature that will probably make it into the ES7 version of JavaScript, it’s not available right now however even in the ES6 version. It allows us to decorate classes and functions, similar to annotations in java and decorators in python. the functionality is available in TypeScript
