@@ -542,4 +542,22 @@ console.log(multi);
 
 32） Template strings are a small change to JavaScript in ES6 but the convenience of multi-line strings and variable substitution is substantial.
 
-TBD (Fat Arrow Functions)
+#Fat Arrow Functions
+33) JavaScript has first class functions. This means that in JavaScript functions can be themselves be passed around like any other value, even as arguments to other functions. E.g. we can pass to the setTimeout function, a function, like so:
+setTimeout(function() {
+	console.log("setTimeout called!");
+}, 1000);
+
+34) The function we pass as an argument to setTimeout is called an anonymous function because it doesn’t have a name.
+
+35) ES6 has introduced a slightly different syntax to define anonymous functions called the fat arrow syntax, with it we can re-write the above as:
+setTimeout(() => {
+    console.log("setTimeout called!")
+}, 1000);
+
+36) If the function only contains one expression we can drop the braces and shorten even further to:
+setTimeout(() => console.log("setTimeout called!"), 1000);
+
+37) The new fat arrow function syntax in ES6 is far more than just a slightly shorter way of writing anonymous functions. It has finally solved the thorny issue of stabilising the value of this that has affected javascript since the start and caused so many work arounds to be discussed and applied in code.
+
+#TBD Destrucutring
