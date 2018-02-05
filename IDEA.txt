@@ -42,7 +42,7 @@ Help->find actions->plugins+enter->browse->emacsIDEA
 6) search:
 *6.1) search class: ctrl+N; ctrl+N+N search dependency jar as well
 *6.2) search file: ctrl+shift+N; ctrl+shift+N+N
-6.3) search symbol (method, field...): ctrl+alt+shift+N; ctrl+alt+shift+N+N
+*6.3) search symbol (method, field...): ctrl+alt+shift+N; ctrl+alt+shift+N+N
 *6.4) search string: ctrl+shift+F
 *6.5）shift + shift: search anywhere
 
@@ -155,9 +155,35 @@ live templates 可自定义代码的简写
 5）alt+shift+mouse left click to highlight multiple places in editor and modify all at once
 6）In Project window, configure config icon and select "show members" to display class members
 
+#IDEA Version Control system
+1) To compare with a repository version to which you last synchronized
+From the main VCS menu, or on the context menu of a file, choose <VCS> | Compare with the same repository version.
 
+2）To integrate changes into your working copy, do the following:
+- Select the desired file and compare it with a version.
+- In the Differences Viewer, use the chevron buttons icon >> <<for any block of lines that existed in the read-only copy and were changed or deleted in your local copy. If you keep the Ctrl key pressed, the chevron buttons turn into arrowLeftDown  arrowRightDown. Click these buttons to apply changes to the current local version of the file.
 
+3) When you work in a team, you may come across a situation when somebody commits changes to a file you are currently working on. If these changes do not overlap (i.e. changes were made to different lines of code), the conflicting files are merged automatically. However, if the same lines were affected, your version control system cannot randomly pick one side over the other, and asks you to resolve the conflict.
 
+4) Conflicts may also arise when merging, rebasing or cherry-picking branches. Under distributed version control systems, such as Git and Mercurial, conflicts arise when a file you have committed locally has changes to the same lines of code as the latest upstream version and when you attempt to perform one of the following operations: pull, merge, rebase, cherry-pick, unstash, or apply patch.
+
+5) If there are conflicts, these operations will fail and you will be prompted to accept the upstream version, prefer your version, or merge the changes manually:
+
+6) IntelliJ IDEA provides a tool for resolving conflicts locally. This tool consists of three panes. 
+- The left pane shows the read-only local copy; 
+- the right pane shows the read-only version checked in to the repository. 
+- The central pane shows a fully-functional editor with the results of merging and conflict resolving are displayed. 
+- Initially, the contents of this pane is the same as the base revision of the file, that is, the revision from which both conflicting versions are derived.
+
+7) Click Merge in the Files Merged with Conflicts dialog, or select the conflicting file in the editor and choose VCS | <your_VCS> | Resolve Conflicts from the main menu.
+
+8) To automatically merge all non-conflicting changes, click applyNotConflicts (Apply All Non-Conflicting Changes) on the toolbar. You can also use the  applyNotConflictsLeft (Apply Non-Conflicting Changes from the Left Side) and  applyNotConflictsRight (Apply Non-Conflicting Changes from the Right Side) to merge non-conflicting changes from the left/right parts of the dialog respectively.
+
+9) To resolve a conflict, you need to select which action to apply (accept chevron button or ignore ignore button) to the left (local) and the right (repository) version, and check the resulting code in the central pane:
+
+10) It may also be useful to compare different versions to resolve a conflict. Use the conflicts compare options toolbar button to invoke the list of options. Note that Base refers to the file version that the local and the repository versions originated from (initially displayed in the middle pane), while Middle refers to the resulting version.
+
+11) Review merge results in the central pane and click Apply.
 
 
 

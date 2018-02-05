@@ -655,3 +655,467 @@ interface Human {
 }
 
 55) in Angular we can decorate a class with extra info using the @ syntax. This is a new feature that will probably make it into the ES7 version of JavaScript, it’s not available right now however even in the ES6 version. It allows us to decorate classes and functions, similar to annotations in java and decorators in python. the functionality is available in TypeScript
+
+56) Basic Types - We can support boolean, number and string.
+let decimal: number = 6;
+let done: boolean = false;
+let color: string = "blue";
+
+57) Arrays: We have two ways of describing the types of arrays.
+let list: number[] = [1, 2, 3];
+let list: Array<number> = [1, 2, 3];
+
+58) Functions: We can describe a variable as one that will only point to a function, like so:
+let fun: Function = () => console.log("Hello");
+
+59) With TypeScript we can also define the expected return type of a function, like so:
+function returnNumber(): number {
+  return 1;
+}
+
+60) An Enum is a datatype consisting of a set of named values. The names are usually identifiers that behave as constants. Enums were introduced in ES6.
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right
+}
+let go: Direction;
+go = Direction.Up;
+
+61) If we don’t know the type of something we can fall back to using any.
+let notsure: any = 1;
+notsure = "hello"; // This is fine since we don't do type checking with any
+
+62) void means no type, it’s typically used to indicate that a function will not return anything at all, like so:
+function returnNothing(): void {
+  console.log("Moo");
+}
+
+63) Sometimes we end up in a situation where we know more than TypeScript about the type of something. In those situations we can use type assertions as a hint to the transpiler about the type of something, like so:
+let value: any = "Asim Hussain";
+let length: number = (<string>value).length;
+
+64）With generics we can dynamically generate a new type by passing into the Post type a type variable, like so:
+class Post<T> {
+    content: T;
+}
+let videoPost: Post<Video>;
+
+65）By default we don’t have to add types when using TypeScript, we could just leave them out.
+let answer;
+answer = 42;
+
+66）What if you wanted to use code that wasn’t written in TypeScript or which you are not going to include as TypeScript and compile yourself. We can use something called an ambient type definition. This is a file that contains meta-data about the types in another library, a meta-type file.
+
+#Angular CLI
+1) Start an application with ng new: ng new codecraft
+2) Serve an application with ng serve: With the CLI we can also easily serve our application using a local web-server. This builds our application, bundles all our code using webpack and makes it all available through localhost:4200. ng serve also watches for any changes to files in our project and auto-reloads the browser for us. The command runs the application through a web-server that support HTML5 push-state routing.
+3) Each of the above types of things it can create is called a scaffold. We can run this command using ng generate <scaffold> <name>
+Component: ng g component My // Creates MyComponent
+Directive: ng g directive My // Creates MyDirective
+Pipe: ng g pipe My // Creates MyPipe
+Service: ng g service MyService // Creates MyService
+Class: ng g class MyClass // Creates MyClass
+Interface: ng g interface MyInterface // Creates MyInterface
+Enum: ng g enum MyEnum // Creates MyEnum
+
+4) The ng serve command does a great job of enabling development locally. However eventually we will want some code which we can host on another server somewhere. The Angular CLI again has us covered in this regard, if we want to create a development build we simply type
+ng build
+
+5) This bundles all our javascript, css, html into a smaller set of files which we can host on another site simply. It outputs these files into the dist folder:
+
+6) By default the ng build command creates a development build, no effort is made to optimise the code. To create a production build we just run: 
+ng build --prod
+
+7) Adding a third party module: The build system simplifies the process of serving and releasing your application considerably. It works only because Angular knows about all the files used by your application.
+
+8) If we want to include a module to use in our Angular javascript code, perhaps we want to to use the moment.js library, we just need to install it via npm like so:
+npm install moment --save
+
+9) If we also want to include the typescript type definition file for our module we can install it via:
+npm install @types/moment --save
+
+10) Global Library Installation: Some javascript libraries need to be added to the global scope, and loaded as if they were in a script tag. We can do this by editing the angular-cli.json file in our project root.
+
+11) First we install the bootstrap library via npm like so: npm install bootstrap@next. Then we add the required javascript files to the app.scripts section or the app.styles in angular-cli.json like so:
+"apps": [
+    {
+      .
+      .
+      .
+      "styles": [
+        "styles.css",
+        "../node_modules/bootstrap/dist/css/bootstrap.css"
+      ],
+      "scripts": [
+        "../node_modules/jquery/dist/jquery.js",
+        "../node_modules/tether/dist/js/tether.js",
+        "../node_modules/bootstrap/dist/js/bootstrap.js"
+      ],
+...
+
+
+12) The default mechanism for unit testing in Angular is via jasmine and karma. Whenever we generate code via scaffolds it also generates a .spec.ts. The code the CLI bootstraps inside this file depends on the scaffold type but essentially is a jasmine test spec which you can flesh out with more test cases.
+
+13) ng test: This builds our project and then runs all the tests, any errors are output to the terminal. This command also watches for any changes in our files and, if it detects any, re-runs the tests automatically.
+
+14) View Encapsulation: Even though we changed the background color of .card and we have multiple cards on the page only the form component card was rendered with a gray background. Normally if we change a css class the effect is seen throughout an application, something special is happening here and it’s called View Encapsulation.
+
+15) Angular is inspired from Web Components, a core feature of which is the shadow DOM. The shadow DOM lets us include styles into Web Components without letting them leak outside the component’s scope.
+
+16) Angular also provides this feature for Components and we can control it with the encapsulation property. The valid values for this config property are:
+ViewEncapsulation.Native
+ViewEncapsulation.Emulated
+ViewEncapsulation.None
+
+17) ViewEncapsulation.Native: With ViewEncapsulation.Native styles we set on a component do not leak outside of the components scope. However with ViewEncapsulation.Native our component is also isolated from the global styles we’ve defined for our application. 
+
+18) we can design our component with something called content projection to enable it to be customised by the component or developer who is using it.
+
+19) Using life-cycle hooks we can fine tune the behaviour of our components during creation, update and destruction.
+
+20) We use the ngOnInit hook most often, this is where we place any initialisation logic for our component. It’s preferred over initialising via the constructor since in the constructor we don’t yet have access to the input properties whereas by the time ngOnInit is called they have been bound to and are available to use.
+
+21) ngOnChanges is the second most common hook, this is where we can find out details about which input properties have changed and how they have changed.
+
+22) The third most common hook is ngOnDestroy which is where we place any cleanup logic for our component.
+
+
+23) An Angular application is composed from a number of components nested together. These components can nest in two ways, as view children, in the template for that component. Or they can nest as content children, via content projection from a host component.
+
+24) As developers of our components we can get access to these child components via the @ViewChild and @ContentChild (and @ViewChildren and @ContentChildren) decorators. View children of a component are the components and elements in this components view. Content children of a component are the components and elements that are projected into this components view by a host component.
+
+25) View children are only initialised by the time the AfterViewInit lifecycle phase has been run. Content children are only initialised by the time the AfterContentInit lifecycle phase has been run.
+
+# Directives
+1）Directives are components without a view. They are components without a template. Or to put it another way, components are directives with a view.
+
+2) We typically associate directives to existing elements by use attribute selectors, like so:
+<elemenent aDirective></element>
+
+3) NgFor is a structural directive, meaning that it changes the structure of the DOM.
+<ul> 
+  <li *ngFor="let person of people; let i = index"> 
+    {{ i + 1 }} - {{ person.name }} 
+  </li>
+</ul>
+
+4) With NgIf we can conditionally add or remove an element from the DOM.
+<ul *ngFor="let person of people">
+  <li *ngIf="person.age < 30"> 
+  {{ person.name }} ({{ person.age }})
+  </li>
+</ul>
+
+5) If we are faced with multiple conditions a cleaner alternative to multiple nested NgIf statements is the NgSwitch series of directives.
+<ul *ngFor="let person of people"
+    [ngSwitch]="person.country"> 
+  <li *ngSwitchCase="'UK'" 
+      class="text-success">{{ person.name }} ({{ person.country }})
+  </li>
+  <li *ngSwitchCase="'USA'"
+      class="text-primary">{{ person.name }} ({{ person.country }})
+  </li>
+  <li *ngSwitchCase="'HK'"
+      class="text-danger">{{ person.name }} ({{ person.country }})
+  </li>
+  <li *ngSwitchDefault 
+      class="text-warning">{{ person.name }} ({{ person.country }})
+  </li>
+</ul>`
+
+6) Both the NgStyle and NgClass directives can be used to conditionally set the look and feel of your application.
+
+7) NgStyle gives you fine grained control on individual properties. 
+<ul *ngFor="let person of people">
+  <li [ngStyle]="{'color':getColor(person.country)}"> {{ person.name }} ({{ person.country }}) 
+  </li>
+</ul>
+
+8) But if you want to make changes to multiple properties at once, creating a class which bundles those properties and adding the class with NgClass makes more sense.
+<ul *ngFor="let person of people">
+  <li [ngClass]="{
+    'text-success':person.country === 'UK',
+    'text-primary':person.country === 'USA',
+    'text-danger':person.country === 'HK'
+  }">{{ person.name }} ({{ person.country }})
+  </li>
+</ul>
+
+
+9) We use NgNonBindable when we want to tell Angular not to perform any binding for an element.
+<div>
+  To render the name variable we use this syntax <pre ngNonBindable>{{ name }}</pre>
+</div>
+
+#Http
+1) In JavaScript making HTTP requests is an asynchronous operation. It just sends the HTTP request to the API and doesn’t wait for a response before continuing with the next line of code.
+
+2) In Angular there are two ways of handling these asynchronous operations. We can use Promises which we covered in the lecture on TypeScript & ES6, or we can use Observables which we covered in the section on RxJS and Observables.
+
+#Routing
+1) Another way to think about the URL in your address bar is that it defines the current state of your application.
+
+2) State is a computer science terms and means "all the stored information, at a given instant in time, to which program has access". So the state of an application is the current value of all the variables in the application. An address in a URL can’t store that much information but it can store enough so that perhaps we can re-fetch some and re-calculate the rest to get to the same state as before.
+
+3) Giving the a URL to someone else should enable them to bring up the same state in their browser. In traditional applications built with Server Side Routing when you change the URL in your browser, the browser makes a request to the server to return some HTML which it will display.
+
+4) However we want to implement something called Client Side Routing. When the URL changes in the browser we want our local application that’s running in the browser (the client) to handle the change, we don’t want the request sent to the server.
+
+5) When we first navigate to a new site the server returns the html, javascript and css needed to render that page. All further changes to the URL are handled locally by the client application. Typically the client application will make one or more API requests to get the information it needs to show the new page.
+
+6) Angular has a couple of modules which let us implement our application as an SPA, the concept as a whole in Angular is called the Component Router.
+
+7) First we need to setup some imports, like so:
+import {Routes, RouterModule} from "@angular/router";
+
+8) The mapping of URLs to Components we want displayed on the page is done via something called a Route Configuration, at it’s core it’s just an array which we can define like so:
+const routes: Routes = [
+ { path: '', component: HomeComponent },
+ { path: 'search', component: SearchComponent }
+];
+
+9)We then install these routes into our application by importing RouterModule.forRoot(routes) into our NgModule, like so:
+@NgModule({
+	imports: [
+	  .
+	  .
+		RouterModule.forRoot(routes, {useHash: true})
+	]
+	.
+	.
+	.
+})
+class AppModule { }
+- {useHash: true} argument prepends /# to all of our urls, so our root url would be /#/ and our search url would be /#/search
+
+10) We need to add a directive called router-outlet somewhere in our template HTML. This directive tells Angular where it should insert each of those components in the route
+<div class="m-t-1">
+  <router-outlet></router-outlet> 
+</div>
+
+11) The redirectTo property describes the path we want to redirect this user to if they navigate to this URL. We can also add a catch all route by using the path **, if the URL doesn’t match any of the other routes it will match this route.
+const routes:Routes = [
+	{path: '', redirectTo: 'home', pathMatch: 'full'},
+	{path: 'find', redirectTo: 'search'},
+	{path: 'home', component: HomeComponent},
+	{path: 'search', component: SearchComponent},
+	{path: '**', component: HomeComponent} 
+];
+
+12) Navigating by hardcoded URLS: We could simply hardcode the URLs in the href anchor attributes on our navigation header, like so:
+We simply add a standard href with a value of /#/
+<ul class="nav navbar-nav">
+    <li class="nav-item active">
+      <a class="nav-link" href="/#/">Home</a> 
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/#/search">Search</a>
+    </li>
+ </ul>
+
+ 13) Navigating programmatically via the router: In Angular we can also programmatically navigate via a Router service we inject into our component, like so:
+ <ul class="nav navbar-nav">
+    <li class="nav-item">
+      <a class="nav-link" (click)="goHome()">Home</a> 
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" (click)="goSearch()">Search</a> 
+    </li>
+  </ul>
+
+  constructor(private router: Router) {} 
+
+  goHome() {
+    this.router.navigate(['']); 
+  }
+
+  goSearch() {
+    this.router.navigate(['search']); 
+  }
+
+14) Link params array: The value we pass into the navigate function might look a bit strange, we call it a link params array and it equivalent to the URL split by the / character into an array.
+
+15) Navigating via a link params array has one big advantage in that parts of the URL can be variables, like so:
+let part = "foo";
+this.router.navigate(['search', part, 'moo']);
+
+16) Navigating via a routerLink directive: We can also control navigation by using the routerLink directive in the template itself, like so:
+<li class="nav-item active">
+      <a class="nav-link"  [routerLink]="['home']">Home</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link"  [routerLink]="['search']">Search</a>
+    </li>
+- The routerLink directive takes as input the same link params array format that the router.navigate(…​) function takes.
+
+17) With the twitter bootstrap navigation styles we give this feedback by adding a class of active to the parent element to the anchor tag, like so: 
+<a class="nav-link"
+   [routerLink]="['home']"
+   [routerLinkActive]="['active']">
+   Home
+</a>
+- The above will add a class of active to the anchor tag if we are currently viewing the home route.
+
+18) parameterised route and we would implement it like so:
+const routes: Routes = [
+ { path: 'blog/:id', component: BlogComponent } 
+];
+The path has a variable called id, we know it’s a variable since it begins with a colon : A path can have any number of variables as long as they all start with : and have different names.
+
+19）So how do we pass into BlogComponent the value of the id variable? If we visited /blog/1 how does BlogComponent know the id is 1 and therefore to show the appropriate article. To do that we use something called an ActivatedRoute. We import it first and then inject it into the constructor of BlogComponent. It exposes an Observable which we can subscribe to, like so:
+import {ActivatedRoute} from "@angular/router";
+.
+.
+.
+constructor(private route: ActivatedRoute) {
+    this.route.params.subscribe( params => console.log(params) );
+}
+
+constructor(private itunes:SearchService,
+            private route: ActivatedRoute) {
+  this.route.params.subscribe( params => this.doSearch(params['term'])); 
+}
+
+20）When using routing if some part of the state of your application is in the URL then you need to update your application by navigating to the URL. That way the URL matches the state of your app and if you bookmarked or shared the URL then visiting it again would get you back to the same state.
+
+21） navigate to the appropriate search URL and then let the ActivatedRoute service notify the SearchComponent the route changed and let that perform the search. This way the URL changes every-time we do a search.
+<button type="button"
+        class="btn btn-primary"
+        (click)="onSearch(search.value)">
+        Search
+</button>
+onSearch(term:string) {
+  this.router.navigate(['search', term]); 
+}
+
+22）The concept of having two sets of menu items. A top level between Home, Search and Artist and a second level under Artist between Tracks and Albums is called Nested Routing and it’s the topic of this lecture.
+
+23）"Inside the ArtistComponent I want to conditionally show either the AritstAlbumsListComponent or the ArtistTrackListComponent depending on which menu item the user has selected".
+const routes: Routes = [
+  {path: '', redirectTo: 'home', pathMatch: 'full'},
+  {path: 'find', redirectTo: 'search'},
+  {path: 'home', component: HomeComponent},
+  {path: 'search', component: SearchComponent},
+  {
+    path: 'artist/:artistId',
+    component: ArtistComponent,
+    children: [
+      {path: '', redirectTo: 'tracks'}, 
+      {path: 'tracks', component: ArtistTrackListComponent}, 
+      {path: 'albums', component: ArtistAlbumListComponent}, 
+    ]
+  },
+  {path: '**', component: HomeComponent}
+];
+
+<h1>Artist</h1>
+<p>
+  <a [routerLink]="['./tracks']">Tracks</a> |
+  <a [routerLink]="['./albums']">Albums</a>
+</p>
+<router-outlet></router-outlet>
+
+#Route guard
+1) With guards we can add checks to restrict access to a user to certain pages on our site.
+
+2) Depending on the type of guard the guard function also has some arguments passed to it which we can take advantage of if we want, namely the future ActivatedRoute and the future RouterState and for CanDeactivate guards we also have the ability to get the component itself.
+
+3) Guards themselves are just classes and as such can have any other dependencies injected into their constructor so can work in conjunction with other services to figure out if the guard passes or fails.
+
+4) Guard functions can return either a boolean or an Observable<boolean> or Promise<boolean> which resolves to a boolean at some point in the future.
+
+5) A route can be configured with multiple guards and the guards are checked in the order they were added to the route.
+
+#Path Strategies.
+1) The default client side routing strategy used in Angular is the PathLocationStrategy.
+
+2) This changes the URL programmatically using the HTML5 History API in such a way that the browser doesn’t make a request to the server for the new URL.
+
+3) For this to work we do need to serve our Angular application from a server that supports requests on multiple different URLs, at a minimum all this server side needs to do is return the same page for all the different URLs that’s requested from it. It’s not a lot of work but does need some co-operation from the server side.
+
+4) PathLocationStrategy also sets us up for a future architecture where we can speed up loading time by pre-rendering the pages with Angular running on the server side and then once it’s downloaded to the browser the client can take over routing. This is called Angular Universal and it’s currently in development.
+
+5) HashLocationStrategy uses the hash fragment part of the URL to store state for the client, it easier to setup and doesn’t require any co-operation from the server side but has the downside that it won’t work with Angular Universal once that’s released.
+
+#Model Driven Forms
+1) Whether we are template driven or model driven we need some basic form HTML to begin with.
+<form novalidate>
+  <fieldset>
+    <div class="form-group">
+      <label>First Name</label>
+      <input type="text"
+             class="form-control">
+    </div>
+
+    <div class="form-group">
+      <label>Last Name</label>
+      <input type="text"
+             class="form-control">
+    </div>
+  </fieldset>
+
+  <div class="form-group">
+    <label>Email</label>
+    <input type="email"
+           class="form-control">
+  </div>
+
+  <div class="form-group">
+    <label>Password</label>
+    <input type="password"
+           class="form-control">
+  </div>
+
+  <div class="form-group">
+    <label>Language</label>
+    <select class="form-control">
+      <option value="">Please select a language</option>
+    </select>
+  </div>
+</form>
+
+2) We’ve added the novalidate attribute to the form element, by default browsers perform their own validation and show their own error popups. Since we want to handle the form validation ourselves we can switch off this behaviour by adding novalidate to the form element.
+
+3) We represent the form as a model composed of instances of FormGroups and FormControls.
+import { FormGroup, FormControl } from '@angular/forms';
+class ModelFormComponent implements OnInit {
+  myform: FormGroup; 
+
+  ngOnInit() {
+    myform = new FormGroup({
+        name: new FormGroup({ 
+            firstName: new FormControl(), 
+            lastName: new FormControl(),
+        }),
+        email: new FormControl(),
+        password: new FormControl(),
+        language: new FormControl()
+    });
+  }
+}
+
+3) myform is an instance of FormGroup and represents the form itself. FormGroups can nest inside other FormGroups. We create a FormControl for each template form control.
+
+4) Like the FormControl instance, FormGroup instances encapsulates the state of all of it’s inner controls, for example an instance of a FormGroup is valid only if all of it’s inner controls are also valid.
+
+5) Linking the form model to the form template: We do this using a number of directives which are found in the ReactiveFormsModule, so lets import that and add it to the imports on our NgModule.
+import { ReactiveFormsModule } from '@angular/forms';
+
+6) Firstly we bind the <form> element to our top level myform property using the formGroup directive, like so
+<form [formGroup]="myform"> ... </form>
+
+7) The value property of the myform model returns the values of all of the controls as an object. We can use that with the json pipe to output some useful debug information about our form, like so:
+<pre>{{myform.value | json}}</pre>
+
+8) link each form control in the model with each form control in the template, we need to do this explicitly with the formControlName and formGroupName directives.
+
+9) We use the formControlName directive to map each form control in the template with a named form control in the model, like so:
+<div class="form-group">
+  <label>Email</label>
+  <input type="email"
+         class="form-control"
+         formControlName="email" 
+         required>
+</div>
