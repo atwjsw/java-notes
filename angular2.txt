@@ -359,10 +359,134 @@ ng g component stock/stockManage
 
 16) SPA 可以理解成一组视图状态的集合
 
+17) route key components
+- Routes: 路由配置，保存着哪个URL对应展示那个组件，以及在哪个RouterOutlet中展示组件
+- RouterOutlet: 在Html中标记路由内容呈现位置的占位符指令
+- Router: 负责在运行时执行路由的对象，可以通过调用其navigate()和navigateByUrl()方法来导航到一个指定的路由
+- RouterLink: 在Html中声明路由导航用的指令
+- ActivatedRoute: 当前激活的路由对象，保存着当前路由的信息，如路由地址，路由参数等。
+
+18) ng g app-routing --routing
+- generate an additional module - AppRoutingModule(app-routing.module.ts)； in it, we can declare Routes object and apply the routes
+- the AppRouting module is also imported into the root module
+- In routing module:
+const routes: Routes = [
+  {path: '', component: HomeComponent},
+  {path: 'stock', component: StockComponent},
+  {path: '**', component: Code404Component}
+];
+
+- In html:
+<a [routerLink]="['/']">主页</a>
+<a [routerLink]="['stock']">股票详情</a>
+<input type="button" value="股票详情" (click)="toStockDetail()">
+<router-outlet></router-outlet>
+
+- In component(parent component displaying the routed components):
+  constructor(private router: Router) {
+  }
+  toStockDetail() {
+    this.router.navigate(['/stock']);
+  }
+
+
+ng g component home
+ng g component stock
+
+19) 通过路由的查询参数递数据：{path:/product?id=1&name=2 => ActivatedRoute.queryParams[id]
+- In html:
+<a [routerLink]="['stock']" [queryParams]="{id:1}">股票详情</a>
+- In child component(stock component) ts:
+constructor(private routeInfo: ActivatedRoute) {
+    this.stockId = routeInfo.snapshot.queryParams["id"]
+  }
+- In child component(stock component) html: 
+股票id: {{stockId}}
+
+20) 通过路由的路径传递参数： {path:/proudct/:id} =>/product/1 => ActivatedRoute.params[id]
+- In route module ts:
+const routes: Routes = [
+  {path: '', component: HomeComponent},
+  {path: 'stock/:id', component: StockComponent},
+  {path: '**', component: Code404Component}
+];
+
+- In parent html:
+<a [routerLink]="['stock', 1']" ">股票详情</a>
+
+- In parent ts:
+toStockDetail() {
+    this.router.navigate(['/stock', 2]);
+  }
+
+- In child component(stock component) html: 
+股票id: {{stockId}}
+
+- In child component(stock component) ts:
+constructor(private routeInfo: ActivatedRoute) {
+    this.stockId = routeInfo.snapshot.params["id"]
+  }
+
+21) 参数快照 vs 参数订阅
+ngOnInit() {
+    //this.stockId = routeInfo.snapshot.params["id"]; //only invoke when component is created.
+    this.routeInfo.params.subscribe((params: Params) => this.stockId = params["id"]); //execute everytime the route params changed. 
+  }
+
+22) 路由配置中传递参数： {path:/product, component: ProductComponent, data: [{isProd: true}]} => ActivatedRoute.data[0][isProd]
+- In child/stock component:
+private isProd: boolean;
+this.isProd = this.routeInfo.snapshot.data[0]["isProd"];
+
+- In route component: 
+{path: 'stock/:id', component: StockComponent, data: [{isProd: true}]},
+
+23) redirection
+{path: '', redirectTo: '/home', pathMatch: 'full'},
+{path: 'home', component: HomeComponent},
+
+23) nested routing
+- in route ts:
+ {path: 'stock/:id', component: StockComponent, data: [{isProd: true}], children :
+    [
+      {path: '', component: BuyerListComponent},
+      {path: 'seller/:id', component: SellerListComponent}
+    ]
+  },
+
+- In stock html:
+<a [routerLink]="['./']">买家列表</a>
+<a [routerLink]="['./seller',100]">卖家列表</a>
+<router-outlet></router-outlet>
+
+- In seller ts:
+	constructor(private routeInfo: ActivatedRoute) { }
+
+  ngOnInit() {
+    this.sellerId = this.routeInfo.snapshot.params['id'];
+  }
+
+24) 辅助路由: 可以控制一组路由的变化
+- In route moudle ts:
+{path: 'consult', component: ConsultComponent, outlet: 'aux'},
+
+- In app component: 
+<a [routerLink]="[{outlets: {primary： ‘home',aux: 'consult'}}]">开始咨询</a>  //同时变化primary和aux的路由组件
+<a [routerLink]="[{outlets: {aux: null}}]">结束咨询</a>
+
+<router-outlet></router-outlet>
+<router-outlet name="aux"></router-outlet>
+
+25) 路由守卫： CanActivate: 处理导航到某路由的情况
+
+26） CanDeactivate: 处理从当前路由离开的情况
+
+27）Resolve： 在路由激活之前获取路由数据
 
 
 
-CodeCraft TV
+***************************************************************************************************************************************
+# Asim CodeCraft TV
 1) To the outside world the input property name is still joke and we could keep the JokeListComponent template the same as before:
 <joke *ngFor="let j of jokes" [joke]="j"></joke>
 
@@ -1119,3 +1243,5 @@ import { ReactiveFormsModule } from '@angular/forms';
          formControlName="email" 
          required>
 </div>
+
+
