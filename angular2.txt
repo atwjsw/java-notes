@@ -11,7 +11,7 @@ angular2
 9) key elements of components: js logic + html template + css style, each components indepenetly provide its functionalities
 10) communication between components: input and ouput attributes of components
 11) full-lifecycle hook on components: constructor -> onChanges -> onInit -> OnChanges -> onDestroy
-12) @Component annotation (metadata) + class
+12) @Component: annotation (metadata) + class
 13) attribute binding: <input [value]="myData" />
 14) event binding: <input (keyup)="handle($event)" />
 15) two-way binding: <input [(ngModel)]="myData" />
@@ -116,7 +116,7 @@ The command generates skeleton HeroService class in src/app/hero.service.ts
 
 35) Reserve the constructor for simple initialization such as wiring constructor parameters to properties. The constructor shouldn't do anything. It certainly shouldn't call a function that makes HTTP requests to a remote server as a real data service would.
 
-36) ng generate module app-routing --flat --module=app
+*36) ng generate module app-routing --flat --module=app
 --flat puts the file in src/app instead of its own folder.
 --module=app tells the CLI to register it in the imports array of the AppModule.
 
@@ -327,7 +327,7 @@ look for AppCompment's "selector(app-root)" in index.html, replace the selector
 
 8) debug frontend in IDE
 in chrome://extensions, install jetbrains ide support
-settings->debuuger->built-in server
+settings->debuger->built-in server
 
 9）install admin-lte template
 npm install --save admin-lte 
@@ -483,6 +483,281 @@ this.isProd = this.routeInfo.snapshot.data[0]["isProd"];
 
 27）Resolve： 在路由激活之前获取路由数据
 
+28） Dependency Injection:
+- In module
+@NgModule({
+	providers: [ProductService] 
+	//prodviders: [{provide:ProductService, useClass: ProductService}]
+	//providers: [AnotherProductService] 
+	//providers: [MockProductService] 
+})
+
+- In component which will use the service:
+constructor(productService: productService) {
+	this.product = productService.getProudct();
+}
+
+29) Injector: 
+constructor(productService: ProductService) {} //angular injector search for ProductService and inject into component constructor
+
+30) provider:
+providers: [ProductService]
+prodviders: [{provide:ProductService, useClass: ProductService}]
+//provide ProductService to injector
+prodviders: [{provide:ProductService, useClass: AnotherProductService}]
+prodviders: [{provide:ProductService, useFactory: () => {...}}]
+
+31）provider scope:
+- what are the differences bewteen declared services in component or in module?
+- 1) service declared in module providers, can be used by all components in the module （components in declarations)
+- 2) service declared in @component providers, can be used by only by the component and its subcomponent.
+- 3) when same token is used by both module and component, the token decared in component overrides the token in module.
+- 4) service are preferrably delared in module, only declaration is necessary in component then declared in component.
+
+32) @Injectable()
+- annotated class can injecte OTHER services into constructor  
+- suggested add @Injectable to all service class
+- @Component is subclass of @Injectable
+
+33）使用工厂(factory)和值声明提供器
+ providers: [
+    {
+      provide: StockService, useFactory: (logger:LoggerService, isDev) => {
+      console.log(isDev);
+      if (isDev) {
+        return new StockService(logger);
+      } else {
+        return new AnotherStockService(logger);
+      }
+    }, deps: [LoggerService, "IS_DEV_ENV"]
+    }
+    , LoggerService,
+    {provide: "IS_DEV_ENV", useValue: {isDev: false}}],
+
+34) 注入器的层级关系
+（1） 应用级注入器
+- 当angular应用启动时，angular创建应用级注入器，将angular app module中声明的所有providers注册到应用级注入器
+- 同时将所有import的模块中声明的providers也注册到应用级注入器
+(2) 组件级注入器
+- angular会启动主组件， 同时应用级注入器会为主组件创建主组件注入器， 并将组件中声明的providers注入到主组件中
+（3） 子组件注入器
+- 父组件的注入器为子组件创建注入器，并将子组件声明的providers注入到子组件中
+（4）当组件注入service时，会从组件，父组件，应用逐级寻找provider
+（5）不同于Java/Spring component有许多注入点，angular component只能从constructor注入
+
+35）数据绑定
+<h1>{{productTitle}}!</h1> //insert value of productTitle
+<img [src] = "imgUrl"> //HMTL tag binding to expression imgUrl
+<button (click)="toProductDetail()">商品详情</button> //event handling binding to method toProductDetail()
+
+36) event binding
+- <button (click)="onButtonClick($event)"> //$event = 浏览器事件对象，target对象指向产生事件的节点
+- <button (click)="saved = true"> //可以是函数调用，也可以是属性赋值。 组件TS的saved attribute设置为true
+- 事件可以是标准的DOM事件，也可以是自定义事件， 自定义事件，并发射出来。
+
+37) 属性绑定 = 插值表达式
+<img [src]="imgUrl"><br>
+<img src="{{imgUrl}}">
+
+38) html属性 vs. DOM属性
+<input value="Tom" (input)="doOnInput($event)">
+- 当浏览器渲染以上字符串时，会创建一个dom节点，即一个类型为html input element的对象，每一个DOM元素都有自己的属性和方法
+- 以此input为例，DOM input元素的value属性会被初始化为Tom
+
+doOnInput(event: any) {
+    console.log(event.target.value) //打印input的value属性(DOM属性） ：变化
+    console.log(event.target.getAttribute("value")); //打印html属性： 不变
+  }
+
+39) <button disabled>点我</button>
+- html attribute disabled出现即禁用，不管设置为true或者false
+- 然后可以通过dom属性disabled来设置是否禁用
+
+40) html属性和DOM属性的关系
+- 少量html属性和DOM属性之间有着1：1的映射，如Id.
+- 有些html属性没有对应的DOM属性， 如colspan
+- 有些dom属性没有对应的html属性。 如textContent
+- 就是名字相同，html属性和DOM属性也不是同一样东西
+- html属性的值指定了初始值；DOM属性的值表示当前值。 
+- DOM属性的值可以改变，html属性的值不能改变
+- 模板绑定是通过DOM属性和事件来工作的，而不是html属性
+
+41） angular bind attriute value (name: string = 'IBM') to DOM element (inputELement.value === 'IBM'); browser render the DOM, so that IBM is deplayed on browser
+
+42) html binding: 
+- basic html attribute binding: 
+<td [attr.colspan]="size">Something</td>
+
+- CSS class binding: 
+<div class="aaa bbb" [class]="someExpression">something</div> //someExpression replace 'aaa bbb'
+<div [class.special]="isSpecial">something</div> //if isSpecial=true, apply class special 
+<div [ngClass]="{aaa:isA, bbb:isB}}"> //isA. isB true then aaa and bbb
+
+- style binding
+<button [style.color]="isSpecial"?'red':'green'">Red</button> //color = expression value"
+<div [ngStyle]="{'font-style':this.canSave?'italic':'normal'}"> //multiple styles
+
+43) 双向绑定
+- <input [(ngModel)]="dname">
+{{dname}}
+- input, textArea
+- 绑定在显示类的标签上是没用的。 <div>, <span>...
+
+44) reactive programming
+	Observable.from([1,2,3,4,5,6])
+      .filter(e => e % 2 == 0)
+      .map(e => e*e)
+      .subscribe(
+        e => console.log(e),
+        err => console.log(err),
+        () => console.log("end")
+      );
+- Observable (stream): a collection of values or events
+- Observer: 3 callback functions: 
+- Subscription: use to cancel subscription. subscribtion.unscribe()
+- Operator: functions such as filter, map
+
+45) 模板本地变量 (Template local variable)
+- <input (keyup)="onKey($event)">
+- <input #myField (keyup)="onKey(myField.value)"> //myField is a ref to the input element 
+
+onKey1(value: string) {
+    console.log(value);
+  }
+
+46) Treat event as stream
+- import ReactiveFormModule
+- FormControl represents form element
+searchInput: FormControl = new FormControl();
+- <input [formControl]="searchInput">
+this.searchInput.valueChanges
+.debounceTime(500)
+.subscribe(stockCode => getStockInfo(stockCode));
+
+#Pipe
+47) lowercase; uppercase; date; number; async
+<p>我的生日是{{birthday | date | uppercase}}</p><br>
+我的生日是FEB 18, 2018
+<p>我的生日是{{birthday | date : 'yyyy-MM-dd HH:mm:ss'}}</p><br>
+我的生日是2018-02-18 21:15:14
+
+<p>圆周率是{{pi | number: '2.2-2'}}</p> //2 is 整数位， 2-2最少小数位，最大的小数位
+圆周率是03.14
+
+<p>圆周率是{{pi | async }}
+在页面处理异步流
+
+48) custom pipe
+- ng g pipe pipe/multiple
+
+<tr *ngFor="let stock of stocks | stockFilter: 'name': keyword; let i = index;">
+
+export class StockFilterPipe implements PipeTransform {
+  transform(list: any, field:string, keyword:string): any {
+    if (!field || !keyword) {
+      return list;
+    }
+    return list.filter(item => {
+      let itemFieldValue = item[field].toLowerCase();
+      return itemFieldValue.indexOf(keyword) >= 0;
+    })
+  }
+
+  49）Parent -> child @Input: 输入属性
+父组件html
+  <div>我是父组件</div>
+<div>
+  <input placeholder="请输入搜索关键字" [(ngModel)]="search">
+  <app-stock-search [keyword]="search"></app-stock-search>
+</div>
+
+子组件ts
+ @Input()
+  private keyword:string;
+}
+
+50) EventEmitter: a subclass of Subject, can be either event Observer or Observable, therefore, EventEmitter can both emit custom event and subscribe to event stream.
+
+51) child -> parent @Output
+子组件ts：
+ @Output('lastPrice')
+ private searchResult: EventEmitter<StockInfo> = new EventEmitter();
+
+ this.searchResult.emit(stockInfo);
+
+父组件html：
+<app-stock-search [keyword]="search" (lastPrice)="getStockInfo($event)"></app-stock-search>
+父组件ts：
+getStockInfo(stockInfo: StockInfo) {
+    this.currentPrice = stockInfo.price;
+}
+
+52) 中间人模式: child1 -> child2
+child1 -> parent @Output; trigger emit
+parent -> child2 @Input 
+
+
+53) Lifecycle hook
+组件初始化, 组件变化*，组件销毁+
+- constructor
+- ngOnChanges*
+- ngOnInit
+- ngDoCheck*
+- ngAfterContentInit
+- ngAfterContentChecked*
+- ngAfteViewInit
+- ngAfterViewChecked*
+- ngDestroy+
+
+54) ngOnChanges在parent initialize/change child component attributes时调用, first invocation happens before ngOnInit
+- @Input() attributes are not initlized when constructor is called, therefore, if the initilization logic needs input from parent, 
+then the logic need to be done in ngOnInit
+- 可变对象 vs. 不可变对象： string不可变，object是可变的
+- ngOnChanges方法只有在输入属性，不可变对象属性变化时才会调用；内部属性，可变对象属性的属性值变化时不会调用。 
+
+55）ngOnInit 组件初始化
+56) ngDoCheck 变更检测，在angular每个变更周期内调用
+- zone.js来实现
+- 浏览器的任何事件（包括原生事件）都会引起变更检测，整个组件树都会被检测， 因此DoCheck被频繁调用，因此需要进行检测看是否是由关注的属性变化引起的
+- 每个组件都有一个变更检测器
+- default，OnPush策略
+
+57）如何从父组件调用子组件的方法
+parent html:
+	<app-view-child #child1></app-view-child>
+  	<app-view-child #child2></app-view-child>
+  	<button (click)="child2.greeting('Jerry')">点击</button>
+
+parent ts:
+	@ViewChild("child1")
+  child1: ViewChildComponent;
+
+  ngOnInit():void {
+    this.child1.greeting("Tom");
+  }
+
+child ts：
+greeting(name:string) {
+    console.log("hello " + name);
+  }
+
+58）View钩子
+- ngAfterViewInit, ngAfterViewCheck 与组件模板检查相关
+
+59) 中间人模式，第六章又讲，基本思路是用Service当中间人，在无关系的两个组件里都注入同一个Service，一个组件里用Service的EventEmitter类型的属性发射事件，另一个组件里去监听。
+
+57） ngAfterContentInit, ngAfterContentCheck 与组件内容投影相关
+
+58) 模板式表单 (使用指令定义数据模型)
+NgForm: 代表整个表单， 被自动添加到每一个表单上，会隐式创建一个FormGroup object。 代表表单实例， 并存储表单数据
+NgModel
+NgModelGroup
+
+59) angular自动接管form表单，加ngForm指令，可以用ngNoForm指令取消接管
+NgForm, NgNoForm
+
+
+
 
 
 ***************************************************************************************************************************************
@@ -533,12 +808,13 @@ addJoke(joke) {
 
 7) $event is a special variable and holds whatever was emitted by the jokeCreated EventEmitter, in our case its an instance of a Joke.
 
+#Form
 8) use something called a template reference variable. We add the string #setup to our setup input control, like so:
 <input type="text"
        class="form-control"
        placeholder="Enter the setup"
        #setup>
-- setup now points to the DOM element that represents an <input> control, which is an instance of the type HTMLInputElement.
+- #setup now points to the DOM element that represents an <input> control, which is an instance of the type HTMLInputElement.
 
 9) 
 <button type="button"
@@ -552,7 +828,9 @@ createJoke(setup: string, punchline: string) {
 }
 
 11） Similar to input properties, we can also create output properties on our custom components using the "@Output annotation".
+
 12） "These output properties are always instances of the EventEmitter" class and we output events by calling the emit function. Whatever we pass in to the emit function is output as the "$event" template variable.
+
 13） We can create "local template variables" by adding variables starting with the # character on any element in our template.
 By default that variable is only visible in the template that it’s declared in and points to the DOM element it’s attached to.
 
@@ -576,7 +854,7 @@ function hello() {
 }
 hello();
 console.log(a);
-If we ran the above we would get an error, like so: CopyUncaught ReferenceError: a is not defined(…)
+If we ran the above we would get an error, like so: Uncaught ReferenceError: a is not defined(…)
 This is because the a variable is declared inside a function and is therefore only visible inside that function, trying to access it outside the function results in an error.
 
 20) This issue of no block level scope has plagued JavaScript developers since its inception. One common workaround in the past has been to use something called an Immediately Invoked Function Expression (IIFE) like so:
@@ -602,7 +880,7 @@ function something() {
   var a = "block";
 }
 something();
-It’s a function that we call immediately after defining it.
+*It’s a function that we call immediately after defining it.
 
 22) Since functions have their own scope, using an IIFE has the same effect as if we had block level scope, the variable a inside the IIFE isn’t visible outside the IIFE. THIS IS COLSURE ALL ABOUT.
 
@@ -617,7 +895,6 @@ function hello() {
 }
 hello();
 - Now the a declared in the for loop body only exists between the { and }, and the code snippet above prints out function as expected.
-
 
 24) Even though let i = 0 is strictly declared outside of the for block { }, any variables declared in the for loop expression with let has block level scope in the for loop.
 var funcs = [];
@@ -634,9 +911,9 @@ funcs.forEach(function (func) {
 
 26) const lets us declare variables which don’t change over time, which are immutable.
 
-27) The important gotcha with const is that the variable is immutable, but not the value, the thing the variable points to.
+* 27) The important gotcha with const is that the variable is immutable, but not the value, the thing the variable points to.
 
-28) This means that if we declare an object as const, confusingly we can still change properties of the object later on.
+* 28) This means that if we declare an object as const, confusingly we can still change properties of the object later on.
 
 29) To solve this and make an object immutable we use the Object.freeze(…​) function which together with the "use strict"; param throws an error if we try to change the object.
 
@@ -816,7 +1093,7 @@ function returnNothing(): void {
   console.log("Moo");
 }
 
-63) Sometimes we end up in a situation where we know more than TypeScript about the type of something. In those situations we can use type assertions as a hint to the transpiler about the type of something, like so:
+63) like casting in java, Sometimes we end up in a situation where we know more than TypeScript about the type of something. In those situations we can use type assertions as a hint to the transpiler about the type of something, like so:
 let value: any = "Asim Hussain";
 let length: number = (<string>value).length;
 
@@ -834,7 +1111,9 @@ answer = 42;
 
 #Angular CLI
 1) Start an application with ng new: ng new codecraft
+
 2) Serve an application with ng serve: With the CLI we can also easily serve our application using a local web-server. This builds our application, bundles all our code using webpack and makes it all available through localhost:4200. ng serve also watches for any changes to files in our project and auto-reloads the browser for us. The command runs the application through a web-server that support HTML5 push-state routing.
+
 3) Each of the above types of things it can create is called a scaffold. We can run this command using ng generate <scaffold> <name>
 Component: ng g component My // Creates MyComponent
 Directive: ng g directive My // Creates MyDirective
@@ -854,20 +1133,18 @@ ng build --prod
 
 7) Adding a third party module: The build system simplifies the process of serving and releasing your application considerably. It works only because Angular knows about all the files used by your application.
 
-8) If we want to include a module to use in our Angular javascript code, perhaps we want to to use the moment.js library, we just need to install it via npm like so:
+*8) If we want to include a module to use in our Angular javascript code, perhaps we want to to use the moment.js library, we just need to install it via npm like so:
 npm install moment --save
 
-9) If we also want to include the typescript type definition file for our module we can install it via:
+*9) If we also want to include the typescript type definition file for our module we can install it via:
 npm install @types/moment --save
 
-10) Global Library Installation: Some javascript libraries need to be added to the global scope, and loaded as if they were in a script tag. We can do this by editing the angular-cli.json file in our project root.
+*10) Global Library Installation: Some javascript libraries need to be added to the global scope, and loaded as if they were in a script tag. We can do this by editing the angular-cli.json file in our project root.
 
 11) First we install the bootstrap library via npm like so: npm install bootstrap@next. Then we add the required javascript files to the app.scripts section or the app.styles in angular-cli.json like so:
 "apps": [
     {
-      .
-      .
-      .
+       .
       "styles": [
         "styles.css",
         "../node_modules/bootstrap/dist/css/bootstrap.css"
@@ -878,7 +1155,6 @@ npm install @types/moment --save
         "../node_modules/bootstrap/dist/js/bootstrap.js"
       ],
 ...
-
 
 12) The default mechanism for unit testing in Angular is via jasmine and karma. Whenever we generate code via scaffolds it also generates a .spec.ts. The code the CLI bootstraps inside this file depends on the scaffold type but essentially is a jasmine test spec which you can flesh out with more test cases.
 
@@ -1003,12 +1279,9 @@ const routes: Routes = [
 9)We then install these routes into our application by importing RouterModule.forRoot(routes) into our NgModule, like so:
 @NgModule({
 	imports: [
-	  .
-	  .
+	 .
 		RouterModule.forRoot(routes, {useHash: true})
 	]
-	.
-	.
 	.
 })
 class AppModule { }
