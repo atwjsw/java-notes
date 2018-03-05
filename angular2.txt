@@ -750,11 +750,209 @@ greeting(name:string) {
 
 58) 模板式表单 (使用指令定义数据模型)
 NgForm: 代表整个表单， 被自动添加到每一个表单上，会隐式创建一个FormGroup object。 代表表单实例， 并存储表单数据
-NgModel
-NgModelGroup
+NgModel: 代表表单字段， 不需要[()], 不需要在ts中声明对象. 创建FormControl object. 
+NgModelGrou：
 
-59) angular自动接管form表单，加ngForm指令，可以用ngNoForm指令取消接管
-NgForm, NgNoForm
+59) angular自动接管form表单，加ngForm指令，可以用ngNoForm指令取消接管. div + ngForm = form
+<div>
+  {{myForm.value | json}}
+</div>
+
+60) <div>Username: <input #myNickName="ngModel" ngModel name="nickname" type="text"></div>
+<div>
+  {{myNickname.value}}
+</div>
+
+61) NgModelGroup： 代表表单的一组输入字段, 形成层次
+<div ngModelGroup="passwordInfo">
+    <div>Password: <input type="password"></div>
+    <div>Confirm password: <input type="password"></div>
+ </div>
+
+62) 模板式表单样例
+ <form #myForm="ngForm" (ngSubmit)="createUser(myForm.value)">
+  <div>Username: <input ngModel name="nickname" type="text" required pattern="[a-zA-Z0-9]+"></div>
+  <div>Email: <input ngModel name="email" type="text"></div>
+  <div>Mobile: <input ngModel name="mobile" type="number"></div>
+  <div ngModelGroup="passwordInfo">
+    <div>Password: <input ngModel name="password" type="password"></div>
+    <div>Confirm password: <input ngModel name="passwordConfirm" type="password"></div>
+  </div>
+  <button type="submit">Register</button>
+</form>
+
+<div>
+  {{myForm.value | json}}
+</div>
+
+63) 响应式表单
+- 编码创建数据模型
+- 用指令连接模板和数据模型
+
+64) 响应式表单 - 数据模型类
+- FormControl: 输入元素的信息, 值，校验信息等等
+- FormGroup: FormControl的集合
+- FormArray: an array of FormControl
+
+65) 响应式表单ts - 在constructor里面建立数据模型：
+constructor() {
+    this.formModel = new FormGroup({
+      nickname: new FormControl(),
+      emails: new FormArray([
+        new FormControl()
+      ]),
+      mobile: new FormControl(),
+      passwordInfo: new FormGroup({
+        password: new FormControl(),
+        passwordConfirm: new FormControl()
+      })
+    })
+
+66）指令与模板式表单完全不同：
+- formGroup, formGroupName
+- formControl, formControlName
+- formArrayName
+- 模板式表单都是以ng开头，如ngModel, ngForm, ngSubmit
+
+67) 响应式表单html: formGroup, formControlName 指令
+<form [formGroup]="formModel" (submit)="createUser()">
+  <div>Username: <input formControlName="nickname" type="text" required pattern="[a-zA-Z0-9]+"></div>
+  <div>Emails:
+    <ul formArrayName = "emails">
+      <li *ngFor = "let email of formModel.get('emails').controls; let i = index">
+        <input [formControlName]="i">
+      </li>
+    </ul>
+    <button type="button" (click)="addEmail()">Add email</button>
+  </div>
+  <div>Mobile: <input formControlName="mobile" type="number"></div>
+  <div formGroupName="passwordInfo">
+    <div>Password: <input formControlName="password" type="password"></div>
+    <div>Confirm password: <input formControlName="passwordConfirm" type="password"></div>
+  </div>
+  <button type="submit">Register</button>
+</form>
+
+(68) Use FormBuilder to reduce code volumn, 还可以传入更多的参数，例如默认值，校验器
+private fb:FormBuilder = new FormBuilder();
+
+  constructor() {
+    this.formModel = this.fb.group({
+      nickname: [''],
+      emails: this.fb.array([
+        ['']
+      ]),
+      mobile: [''],
+      passwordInfo: this.fb.group({
+        password: [''],
+        passwordConfirm: ['']
+      })
+    })
+  }
+
+（69）angular的校验器
+- custom validator: a method
+aValidationMethod(param: AbstractControl): {[key:string]: any} {
+	return null;
+}
+- AbstractControl is parent of FormControl, FormGroup, FormArray
+
+- predefine validator (Validators.required, maxLength, pattern)
+
+(70) 内置校验器
+ nickname: ['default', [Validators.required, Validators.minLength(6)]],
+
+ let nickNameValid:boolean = this.formModel.get("nickname").valid;
+    console.log("nickname is valid? " + nickNameValid );
+    let nickNameErrors:any = this.formModel.get("nickname").errors;
+    console.log("nickname's errors? " + JSON.stringify(nickNameErrors));
+
+(71) 自定义校验器
+ mobileValidator(mobile: FormControl):any {
+    let value = (mobile.value || '') + '';
+    var myreg =/^(((13[0-9]{1})|(15[0-9]{1})|(18[0-9]{1}))+\d{8})$/;
+    let valid = myreg.test(value);
+    console.log("mobile format is valid? " + valid);
+    return valid? null: {mobile: true};
+  }
+
+(72) 自定义校验器For FormGroup
+passwordValidator(info: FormGroup): any {
+    let password: FormControl = info.get('password') as FormControl;
+    let pConfirm: FormControl = info.get('passwordConfirm') as FormControl;
+    let valid: boolean = password.value === pConfirm.value;
+    console.log('password matched: ' + valid);
+    return valid ? null: {password:true};
+  }
+
+(73) refactor validator into seperate class for reuse: create a file and export global function
+export function mobileValidator(mobile: FormControl):any {
+  let value = (mobile.value || '') + '';
+  var myreg =/^(((13[0-9]{1})|(15[0-9]{1})|(18[0-9]{1}))+\d{8})$/;
+  let valid = myreg.test(value);
+  console.log("mobile format is valid? " + valid);
+  return valid? null: {mobile: true};
+}
+
+(74) 在模板上展示错误信息
+<div>Username: <input formControlName="nickname" type="text" required pattern="[a-zA-Z0-9]+"></div>
+  <div [hidden]="!formModel.hasError('required','nickname')">
+    Nickname must be provided
+  </div>
+  <div [hidden]="!formModel.hasError('minlength','nickname')">
+    Nickname's minimum length is 6
+  </div>
+
+<div [hidden]="!formModel.hasError('mobile','mobile')">
+    Mobile name is incorrect.
+  </div>
+
+(75) 输入信息来自Validator而非html
+<div [hidden]="!formModel.hasError('password','passwordInfo')">
+    {{formModel.getError('password','passwordInfo')?.description}}
+  </div>
+
+  return valid ? null: {password: {description: 'password not matched'}};
+
+（76）异步校验器
+mobile: ['', mobileValidator, mobileAsyncValidator],
+export function mobileAsyncValidator(mobile: FormControl):any {
+  let value = (mobile.value || '') + '';
+  var myreg =/^(((13[0-9]{1})|(15[0-9]{1})|(18[0-9]{1}))+\d{8})$/;
+  let valid = myreg.test(value);
+  console.log("mobile format is valid? " + valid);
+  return Observable.of(valid? null: {mobile: true}).delay(5000);
+}
+
+77) 问号的意思是问号之前的表达式如果有值，就执行问号后面的部分，如果问号之前的部分是undefine，就不执行后面的部分。
+{{formModel.getError('password','passwordInfo')?.description}}
+
+78) 状态字段： touched and untouched
+- 表示用户是否访问过该字段， 即字段是否获取过焦点
+- 常用于当用户为访问过某字段时， 不显示错误信息
+
+<div [hidden]="formModel.get('passwordInfo.password').valid || formModel.get('passwordInfo.password').untouched">
+    <div [hidden]="!formModel.hasError('required','passwordInfo.password')">
+      password must be provided
+    </div>
+    </div>
+
+79） pristine and dirty： 属性的值是否被改变过
+- <div [hidden]="formModel.get('mobile').valid || formModel.get('mobile').pristine">
+
+80） pending： 异步校验时pending为true
+<div [hidden]="!formModel.get('mobile').pending">
+    Mobile is checked remotely  </div>
+
+81) 利用字段不同状态的为字段添加不同状态下的CSS 样式
+.ng-invalid
+<input [class.inputHasError]="formModel.get('nickname').invalid" formControlName="nickname" type="text">
+
+
+
+
+
+
 
 
 
